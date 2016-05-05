@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YouShouldSpellcheck.Analyzer.Test", "YouShouldSpellcheck.Analyzer.Test\YouShouldSpellcheck.Analyzer.Test.csproj", "{6DC16588-ED52-4556-9648-91093CD330A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YouShouldSpellcheck.Analyzer.Vsix", "YouShouldSpellcheck.Analyzer.Vsix\YouShouldSpellcheck.Analyzer.Vsix.csproj", "{D476079B-82BC-44B8-8064-9F09562A8975}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YouShouldSpellcheck.Analyzer", "YouShouldSpellcheck.Analyzer\YouShouldSpellcheck.Analyzer.csproj", "{4144CA13-81AF-46B2-A90B-765344FB35BE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6DC16588-ED52-4556-9648-91093CD330A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DC16588-ED52-4556-9648-91093CD330A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DC16588-ED52-4556-9648-91093CD330A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DC16588-ED52-4556-9648-91093CD330A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D476079B-82BC-44B8-8064-9F09562A8975}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D476079B-82BC-44B8-8064-9F09562A8975}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D476079B-82BC-44B8-8064-9F09562A8975}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D476079B-82BC-44B8-8064-9F09562A8975}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4144CA13-81AF-46B2-A90B-765344FB35BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4144CA13-81AF-46B2-A90B-765344FB35BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4144CA13-81AF-46B2-A90B-765344FB35BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4144CA13-81AF-46B2-A90B-765344FB35BE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
