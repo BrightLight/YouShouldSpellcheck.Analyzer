@@ -350,17 +350,10 @@ namespace YouShouldSpellcheck.Analyzer
       }
 
       var wordParts = this.splitWordsByCasing.Matches(word).OfType<Match>();
-      if (wordParts.Count() < 2)
+      foreach (var wordPart in wordParts)
       {
-        CheckWordParts(rule, word, wordLocation, context);
-      }
-      else
-      {
-        foreach (var wordPart in wordParts)
-        {
-          var wordPartLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(wordLocation.SourceSpan.Start + wordPart.Index, wordLocation.SourceSpan.Start + wordPart.Index + wordPart.Length));
-          CheckWordParts(rule, wordPart.Value, wordPartLocation, context);
-        }
+        var wordPartLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(wordLocation.SourceSpan.Start + wordPart.Index, wordLocation.SourceSpan.Start + wordPart.Index + wordPart.Length));
+        CheckWordParts(rule, wordPart.Value, wordPartLocation, context);
       }
     }
 
