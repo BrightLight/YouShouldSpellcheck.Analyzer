@@ -76,7 +76,7 @@
 
     protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()
     {
-      return new YouShouldSpellcheckAnalyzer();
+      return new ClassNameSpellcheckAnalyzer();
     }
   }
 }

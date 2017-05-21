@@ -18,13 +18,13 @@
   public class YouShouldSpellcheckAnalyzerCodeFixProvider : CodeFixProvider
   {
     public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
-      YouShouldSpellcheckAnalyzer.AttributeArgumentStringDiagnosticId,
-      YouShouldSpellcheckAnalyzer.ClassNameDiagnosticId,
-      YouShouldSpellcheckAnalyzer.CommentDiagnosticId,
-      YouShouldSpellcheckAnalyzer.MethodNameDiagnosticId,
-      YouShouldSpellcheckAnalyzer.PropertyNameDiagnosticId,
-      YouShouldSpellcheckAnalyzer.StringLiteralDiagnosticId,
-      YouShouldSpellcheckAnalyzer.VariableNameDiagnosticId
+      SpellcheckAnalyzerBase.AttributeArgumentStringDiagnosticId,
+      ClassNameSpellcheckAnalyzer.ClassNameDiagnosticId,
+      XmlTextSpellcheckAnalyzer.CommentDiagnosticId,
+      MethodNameSpellcheckAnalyzer.MethodNameDiagnosticId,
+      PropertyNameSpellcheckAnalyzer.PropertyNameDiagnosticId,
+      StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId,
+      VariableNameSpellcheckAnalyzer.VariableNameDiagnosticId
     );
 
     public sealed override FixAllProvider GetFixAllProvider()
@@ -57,7 +57,7 @@
         if (diagnostic.Properties.TryGetValue("offendingWord", out offendingWord))
         {
           List<string> suggestions;
-          if (Suggestions(offendingWord, YouShouldSpellcheckAnalyzer.LanguagesByRule(diagnostic.Id), out suggestions))
+          if (Suggestions(offendingWord, SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id), out suggestions))
           {
             if (declaration == null)
             {

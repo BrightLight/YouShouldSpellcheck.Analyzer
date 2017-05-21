@@ -1,0 +1,54 @@
+﻿namespace YouShouldSpellcheck.Analyzer
+{
+  using System;
+  using System.Collections.Immutable;
+  using System.Linq;
+  using System.Text.RegularExpressions;
+  using Microsoft.CodeAnalysis;
+  using Microsoft.CodeAnalysis.CSharp;
+  using Microsoft.CodeAnalysis.CSharp.Syntax;
+  using Microsoft.CodeAnalysis.Diagnostics;
+
+  [DiagnosticAnalyzer(LanguageNames.CSharp)]
+  public class ClassNameSpellcheckAnalyzer : SpellcheckAnalyzerBase
+  {
+    public const string ClassNameDiagnosticId = "YS103";
+    private const string ClassNameRuleDescription = "Class name should be spelled correctly.";
+    private static readonly DiagnosticDescriptor ClassNameRule = new DiagnosticDescriptor(ClassNameDiagnosticId, Title, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: ClassNameRuleDescription);
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(ClassNameRule);
+
+    public override void Initialize(AnalysisContext context)
+    {
+      context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+      ////context.EnableConcurrentExecution();
+
+      // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
+      // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
+      context.RegisterSyntaxNodeAction(this.AnalyzeClassDeclaration, SyntaxKind.ClassDeclaration);
+    }
+
+    private void AnalyzeClassDeclaration(SyntaxNodeAnalysisContext context)
+    {
+      try
+      {
+        var classDeclarationSyntax = context.Node as ClassDeclarationSyntax;
+        if (classDeclarationSyntax != null)
+        {
+          var identifierToken = classDeclarationSyntax.ChildTokens().FirstOrDefault(x => x.IsKind(SyntaxKind.IdentifierToken));
+          if (identifierToken != null)
+          {
+            var text = identifierToken.ValueText;
+            this.CheckWord(ClassNameRule, text, identifierToken.GetLocation(), context);
+          }
+        }
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
+      }
+    }
+
+  }
+}
+

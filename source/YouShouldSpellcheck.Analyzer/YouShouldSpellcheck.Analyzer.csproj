@@ -102,8 +102,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AnalyzerContext.cs" />
+    <Compile Include="ClassNameSpellcheckAnalyzer.cs" />
     <Compile Include="CodeFixProvider.cs" />
     <Compile Include="DictionaryManager.cs" />
+    <Compile Include="MethodNameSpellcheckAnalyzer.cs" />
+    <Compile Include="PropertyNameSpellcheckAnalyzer.cs" />
     <Compile Include="SpellcheckSettings.cs" />
     <Compile Include="Foo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -112,7 +115,10 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
-    <Compile Include="YouShouldSpellcheck.Analyzer.cs" />
+    <Compile Include="StringLiteralSpellcheckAnalyzer.cs" />
+    <Compile Include="VariableNameSpellcheckAnalyzer.cs" />
+    <Compile Include="XmlTextSpellcheckAnalyzer.cs" />
+    <Compile Include="SpellcheckAnalyzerBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
