@@ -52,17 +52,6 @@ namespace YouShouldSpellcheck.Analyzer
 
     private const string ContentCategory = "Content";
 
-    // TODO: analyzer should be able to allow configuration for separate types of nodes
-    // and allow a configuration (on/off) and valid languages/dictionaries per node type:
-    // - attribute argument (maybe attribute-specific, e.g. ResourceNames?)
-    // - string (e.g. as constant somewhere)
-    // - variable name
-    // - method name
-    // - class name
-    // - argument name
-    // - allow default language(s) (used if not specified otherwise on node type level)
-    // - coming later: grammar check!
-
     private static readonly DiagnosticDescriptor AttributeArgumentStringRule = new DiagnosticDescriptor(AttributeArgumentStringDiagnosticId, Title, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: AttributeArgumentRuleDescription);
 
     private static readonly DiagnosticDescriptor StringLiteralRule = new DiagnosticDescriptor(StringLiteralDiagnosticId, Title, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: StringLiteralRuleDescription);
@@ -82,6 +71,8 @@ namespace YouShouldSpellcheck.Analyzer
 
     ////private Regex splitWordsByCasing = new Regex(@"([A-Z]+|[a-z])[a-z]*", RegexOptions.Compiled);
     private readonly Regex splitWordsByCasing = new Regex(@"(\p{Lu}+|\p{Ll})\p{Ll}*", RegexOptions.Compiled);
+
+    private readonly Regex isGuid = new Regex(@"[{(]?[0-9A-Fa-f]{8}[-]?([0-9A-Fa-f]{4}[-]?){3}[0-9A-Fa-f]{12}[)}]?", RegexOptions.Compiled);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(AttributeArgumentStringRule, StringLiteralRule, VariableNameRule, ClassNameRule, MethodNameRule, PropertyNameRule, CommentRule);
 
@@ -121,30 +112,102 @@ namespace YouShouldSpellcheck.Analyzer
     {
       try
       {
-        var attributeSyntax = context.Node?.Parent?.Parent?.Parent as AttributeSyntax;
-        if (attributeSyntax != null)
+        var attributeArgumentSyntax = context.Node?.Parent as AttributeArgumentSyntax;
+        if (attributeArgumentSyntax != null)
         {
-          if (attributeSyntax.Name.ToFullString() == "Desc")
-          {
-          }
+          this.AnalyzeAttributeArgument(context, attributeArgumentSyntax);
         }
-
-        // TODO: use "context.Node.SyntaxTree.FilePath" to find the "custom dictionary"
-        var literalExpressionSyntax = context.Node as LiteralExpressionSyntax;
-        if (literalExpressionSyntax != null)
+        else
         {
-          var foo = literalExpressionSyntax.Token;
-          var text = foo.ValueText;
-          var nodeLocation = literalExpressionSyntax.GetLocation();
-          var stringLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
+          // TODO: use "context.Node.SyntaxTree.FilePath" to find the "custom dictionary"
+          var literalExpressionSyntax = context.Node as LiteralExpressionSyntax;
+          if (literalExpressionSyntax != null)
+          {
+            var foo = literalExpressionSyntax.Token;
+            var text = foo.ValueText;
+            var nodeLocation = literalExpressionSyntax.GetLocation();
+            var stringLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
 
-          this.CheckLine(StringLiteralRule, text, stringLocation, context);
+            this.CheckLine(StringLiteralRule, text, stringLocation, context);
+          }
         }
       }
       catch (Exception e)
       {
         Console.WriteLine(e);
       }
+    }
+
+    private void AnalyzeAttributeArgument(SyntaxNodeAnalysisContext context, AttributeArgumentSyntax attributeArgumentSyntax)
+    {
+      var attributeSyntax = attributeArgumentSyntax.Parent?.Parent as AttributeSyntax;
+      if (attributeSyntax != null)
+      {
+        var attributeName = attributeSyntax.Name.ToFullString();
+        if (!SpellcheckSettings.InspectedAttributes.Contains(attributeName))
+        {
+          return;
+        }
+
+        var attributeArgumentName = this.DetermineAttributeArgumentName(context.SemanticModel, attributeArgumentSyntax);
+        if (attributeArgumentName == null)
+        {
+          return;
+        }
+
+        if (SpellcheckSettings.CheckAttributeArgument(attributeName, attributeArgumentName))
+        {
+          // next lines are identical to the ones in AnalyzeStringLiteralToken.
+          // this will be resolved ones we have one class per analyzer and can use inheritance to override stuff
+          // TODO: use "context.Node.SyntaxTree.FilePath" to find the "custom dictionary"
+          var literalExpressionSyntax = context.Node as LiteralExpressionSyntax;
+          if (literalExpressionSyntax != null)
+          {
+            var foo = literalExpressionSyntax.Token;
+            var text = foo.ValueText;
+            var nodeLocation = literalExpressionSyntax.GetLocation();
+            var stringLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
+
+            this.CheckLine(StringLiteralRule, text, stringLocation, context);
+          }
+        }
+      }
+    }
+
+    private string DetermineAttributeArgumentName(SemanticModel semanticModel, AttributeArgumentSyntax attributeArgumentSyntax)
+    {
+      // check if syntax represents a named argument
+      // -> name is specified directly with the argument
+      if (attributeArgumentSyntax.NameEquals != null)
+      {
+        return attributeArgumentSyntax.NameEquals.Name.Identifier.ValueText;
+      }
+
+      // syntax does not represent a named argument
+      // -> we need to find suitable construtor to deduct argument name
+      var attributeSyntax = attributeArgumentSyntax.Parent?.Parent as AttributeSyntax;
+      if (attributeSyntax != null)
+      {
+        var attributeTypeInfo = semanticModel.GetTypeInfo(attributeSyntax);
+        var namedTypeSymbol = attributeTypeInfo.Type as INamedTypeSymbol;
+        if (namedTypeSymbol != null)
+        {
+          var nonNamedArguments = attributeSyntax.ArgumentList.Arguments.Where(x => x.NameEquals == null).ToList();
+          foreach (var constructorDefinition in namedTypeSymbol.InstanceConstructors)
+          {
+            var constructorArguments = constructorDefinition.Parameters.ToList();
+            if (constructorArguments.Count >= nonNamedArguments.Count)
+            {              
+              for (var i = 0; i < nonNamedArguments.Count; i++)
+              {
+                //if (constructorArguments[i].Type == nonNamedArguments[i].
+              }
+            }
+          }
+        }
+      }
+
+      return null;
     }
 
     private void AnalyzeVariableDeclarator(SyntaxNodeAnalysisContext context)
@@ -276,6 +339,12 @@ namespace YouShouldSpellcheck.Analyzer
     {
       // check if the whole "word" with exactly that casing is configured as a custom word (e.g. "HiFi")
       if (DictionaryManager.IsCustomWord(word))
+      {
+        return;
+      }
+
+      // check if the "word" actually represents a GUID which should not further be parsed
+      if (this.isGuid.IsMatch(word))
       {
         return;
       }
