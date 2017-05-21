@@ -1,5 +1,6 @@
 ﻿namespace YouShouldSpellcheck.Analyzer
 {
+  using System;
   using System.Collections.Generic;
   using System.IO;
   using System.Text;
@@ -8,26 +9,39 @@
   public static class DictionaryManager
   {
     private static bool NHunspellNativeDllPathIsInitialized;
+
     private static readonly Dictionary<string, Hunspell> dictionaries = new Dictionary<string, Hunspell>();
+
     private static List<string> customWords;
 
-    public static bool IsWordCorrect(string word, out List<string> suggestions, string language)
+    private static readonly Dictionary<Tuple<string, string>, bool> cache = new Dictionary<Tuple<string, string>, bool>();
+
+    public static bool IsWordCorrect(string word, string language)
     {
+      bool wordIsOkay;
+      var key = new Tuple<string, string>(language, word);
+      if (cache.TryGetValue(key, out wordIsOkay))
+      {
+        return wordIsOkay;
+      }
+
       if (IsCustomWord(word))
       {
-        suggestions = null;
+        cache.Add(key, true);
         return true;
       }
 
       var hunspell = GetDictionaryForLanguage(language);
-      if (hunspell.Spell(word))
-      {
-        suggestions = null;
-        return true;
-      }
+      wordIsOkay = hunspell.Spell(word);
+      cache.Add(key, wordIsOkay);
+      return wordIsOkay;
+    }
 
+    public static bool Suggest(string word, out List<string> suggestions, string language)
+    {
+      var hunspell = GetDictionaryForLanguage(language);
       suggestions = hunspell.Suggest(word);
-      return false;
+      return true;
     }
 
     public static void AddToCustomDictionary(string wordToIgnore)
@@ -40,7 +54,7 @@
       }
     }
 
-    private static bool IsCustomWord(string word)
+    public static bool IsCustomWord(string word)
     {
       if (customWords == null)
       {

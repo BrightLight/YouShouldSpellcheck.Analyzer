@@ -1,5 +1,7 @@
 ﻿namespace YouShouldSpellcheck.Analyzer
 {
+  using System;
+  using System.Collections.Generic;
   using System.Collections.Immutable;
   using System.Composition;
   using System.Linq;
@@ -15,10 +17,15 @@
   [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(YouShouldSpellcheckAnalyzerCodeFixProvider)), Shared]
   public class YouShouldSpellcheckAnalyzerCodeFixProvider : CodeFixProvider
   {
-    public sealed override ImmutableArray<string> FixableDiagnosticIds
-    {
-      get { return ImmutableArray.Create(YouShouldSpellcheckAnalyzer.DiagnosticId); }
-    }
+    public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
+      YouShouldSpellcheckAnalyzer.AttributeArgumentStringDiagnosticId,
+      YouShouldSpellcheckAnalyzer.ClassNameDiagnosticId,
+      YouShouldSpellcheckAnalyzer.CommentDiagnosticId,
+      YouShouldSpellcheckAnalyzer.MethodNameDiagnosticId,
+      YouShouldSpellcheckAnalyzer.PropertyNameDiagnosticId,
+      YouShouldSpellcheckAnalyzer.StringLiteralDiagnosticId,
+      YouShouldSpellcheckAnalyzer.VariableNameDiagnosticId
+    );
 
     public sealed override FixAllProvider GetFixAllProvider()
     {
@@ -31,7 +38,7 @@
       var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
       // TODO: Replace the following code with your own analysis, generating a CodeAction for each fix to suggest
-      foreach (var diagnostic in context.Diagnostics.Where(x => x.Id == YouShouldSpellcheckAnalyzer.DiagnosticId))
+      foreach (var diagnostic in context.Diagnostics.Where(x => this.FixableDiagnosticIds.Contains(x.Id)))
       {
         var diagnosticSpan = diagnostic.Location.SourceSpan;
 
@@ -46,29 +53,33 @@
         ////        createChangedSolution: c => MakeUppercaseAsync(context.Document, declaration, c),
         ////        equivalenceKey: title),
         ////    diagnostic);
-        if (declaration == null)
-        {
-          foreach (var suggestion in diagnostic.Properties.Where(x => x.Key.StartsWith("suggestion")).OrderBy(x => x.Key).Select(x => x.Value))
-          {
-            ////var codeAction = CodeAction.Create(string.Format("Replace with: {0}", suggestion), x => ReplaceText(context.Document, diagnostic.Location, suggestion, x), suggestion);
-            var codeAction = CodeAction.Create(string.Format("Replace with: {0}", suggestion), x => ReplaceText(context.Document, diagnostic.Location, suggestion, x));
-            context.RegisterCodeFix(codeAction, diagnostic);
-          }
-        }
-        else
-        {
-          foreach (var suggestion in diagnostic.Properties.Where(x => x.Key.StartsWith("suggestion")).OrderBy(x => x.Key).Select(x => x.Value))
-          {
-            var codeAction = CodeAction.Create(suggestion, x => RenameSymbol(context.Document, diagnostic.Location, suggestion, declaration, x), suggestion);
-            context.RegisterCodeFix(codeAction, diagnostic);
-          }
-        }
-
-        // add "Ignore" action
         string offendingWord;
         if (diagnostic.Properties.TryGetValue("offendingWord", out offendingWord))
         {
-          var ignoreSpellingAction = CodeAction.Create(string.Format("Ignore spelling for \"{0}\"", offendingWord), x => IgnoreWord(context.Document, offendingWord));
+          List<string> suggestions;
+          if (Suggestions(offendingWord, YouShouldSpellcheckAnalyzer.LanguagesByRule(diagnostic.Id), out suggestions))
+          {
+            if (declaration == null)
+            {
+              foreach (var suggestion in suggestions)
+              {
+                ////var codeAction = CodeAction.Create(string.Format("Replace with: {0}", suggestion), x => ReplaceText(context.Document, diagnostic.Location, suggestion, x), suggestion);
+                var codeAction = CodeAction.Create(string.Format("Replace with: {0}", suggestion), x => this.ReplaceText(context.Document, diagnostic.Location, suggestion, x));
+                context.RegisterCodeFix(codeAction, diagnostic);
+              }
+            }
+            else
+            {
+              foreach (var suggestion in suggestions)
+              {
+                var codeAction = CodeAction.Create(suggestion, x => RenameSymbol(context.Document, diagnostic.Location, suggestion, declaration, x), suggestion);
+                context.RegisterCodeFix(codeAction, diagnostic);
+              }
+            }
+          }
+
+          // add "Ignore" action
+          var ignoreSpellingAction = CodeAction.Create(string.Format("Ignore spelling for \"{0}\"", offendingWord), x => this.IgnoreWord(context.Document, offendingWord));
           context.RegisterCodeFix(ignoreSpellingAction, diagnostic);
         }
       }
@@ -103,6 +114,26 @@
 
       // Return the new solution with the now-uppercase type name.
       return newSolution;
+    }
+
+    private static bool Suggestions(string word, string[] languages, out List<string> allSuggestions)
+    {
+      allSuggestions = null;
+      foreach (var language in languages)
+      {
+        List<string> suggestions;
+        if (DictionaryManager.Suggest(word, out suggestions, language))
+        {
+          if (allSuggestions == null)
+          {
+            allSuggestions = new List<string>();
+          }
+
+          allSuggestions.AddRange(suggestions);
+        }
+      }
+
+      return allSuggestions != null;
     }
   }
 }

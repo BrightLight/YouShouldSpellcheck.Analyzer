@@ -1,6 +1,6 @@
 namespace YouShouldSpellcheck.Analyzer
 {
-  using System.Collections.Generic;
+  using System;
   using System.Collections.Immutable;
   using System.Linq;
   using System.Text.RegularExpressions;
@@ -12,41 +12,98 @@ namespace YouShouldSpellcheck.Analyzer
   [DiagnosticAnalyzer(LanguageNames.CSharp)]
   public class YouShouldSpellcheckAnalyzer : DiagnosticAnalyzer
   {
-    public const string DiagnosticId = "YouShouldSpellcheckAnalyzer";
+    public const string AttributeArgumentStringDiagnosticId = "YS100";
+
+    public const string StringLiteralDiagnosticId = "YS101";
+
+    public const string VariableNameDiagnosticId = "YS102";
+
+    public const string ClassNameDiagnosticId = "YS103";
+
+    public const string MethodNameDiagnosticId = "YS104";
+
+    public const string PropertyNameDiagnosticId = "YS105";
+
+    public const string CommentDiagnosticId = "YS106";
 
     // You can change these strings in the Resources.resx file. If you do not want your analyzer to be localize-able, you can use regular strings for Title and MessageFormat.
     // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Localizing%20Analyzers.md for more on localization
     private const string Title = "Spelling error";
-    private const string MessageFormat = "Spelling error: {0}";
-    private const string Description = "All text should be spelled correctly.";
-    private const string Category = "Naming";
 
-    private static DiagnosticDescriptor Rule = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
+    private const string MessageFormat = "Spelling error: {0}";
+
+    private const string AttributeArgumentRuleDescription = "Attribute argument should be spelled correctly.";
+
+    private const string StringLiteralRuleDescription = "All text should be spelled correctly.";
+
+    private const string VariableNameRuleDescription = "Variable name should be spelled correctly.";
+
+    private const string MethodNameRuleDescription = "Method name should be spelled correctly.";
+
+    private const string ClassNameRuleDescription = "Class name should be spelled correctly.";
+
+    private const string PropertyNameRuleDescription = "Property name should be spelled correctly.";
+
+    private const string CommentRuleDescription = "Comment should be spelled correctly.";
+
+    private const string NamingCategory = "Naming";
+
+    private const string CommentCategory = "Comment";
+
+    private const string ContentCategory = "Content";
+
+    // TODO: analyzer should be able to allow configuration for separate types of nodes
+    // and allow a configuration (on/off) and valid languages/dictionaries per node type:
+    // - attribute argument (maybe attribute-specific, e.g. ResourceNames?)
+    // - string (e.g. as constant somewhere)
+    // - variable name
+    // - method name
+    // - class name
+    // - argument name
+    // - allow default language(s) (used if not specified otherwise on node type level)
+    // - coming later: grammar check!
+
+    private static readonly DiagnosticDescriptor AttributeArgumentStringRule = new DiagnosticDescriptor(AttributeArgumentStringDiagnosticId, Title, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: AttributeArgumentRuleDescription);
+
+    private static readonly DiagnosticDescriptor StringLiteralRule = new DiagnosticDescriptor(StringLiteralDiagnosticId, Title, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: StringLiteralRuleDescription);
+
+    private static readonly DiagnosticDescriptor VariableNameRule = new DiagnosticDescriptor(VariableNameDiagnosticId, Title, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: VariableNameRuleDescription);
+
+    private static readonly DiagnosticDescriptor ClassNameRule = new DiagnosticDescriptor(ClassNameDiagnosticId, Title, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: ClassNameRuleDescription);
+
+    private static readonly DiagnosticDescriptor MethodNameRule = new DiagnosticDescriptor(MethodNameDiagnosticId, Title, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: MethodNameRuleDescription);
+
+    private static readonly DiagnosticDescriptor PropertyNameRule = new DiagnosticDescriptor(PropertyNameDiagnosticId, Title, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: PropertyNameRuleDescription);
+
+    private static readonly DiagnosticDescriptor CommentRule = new DiagnosticDescriptor(CommentDiagnosticId, Title, MessageFormat, CommentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: CommentRuleDescription);
 
     // See http://stackoverflow.com/questions/7311734/split-sentence-into-words-but-having-trouble-with-the-punctuations-in-c-sharp
-    private Regex splitLineIntoWords = new Regex(@"((\b[^\s]+\b)((?<=\.\w).)?)", RegexOptions.Compiled);
+    private readonly Regex splitLineIntoWords = new Regex(@"((\b[^\s.]+\b)((?<=\.\w).)?)", RegexOptions.Compiled);
 
     ////private Regex splitWordsByCasing = new Regex(@"([A-Z]+|[a-z])[a-z]*", RegexOptions.Compiled);
-    private Regex splitWordsByCasing = new Regex(@"(\p{Lu}+|\p{Ll})\p{Ll}*", RegexOptions.Compiled);
+    private readonly Regex splitWordsByCasing = new Regex(@"(\p{Lu}+|\p{Ll})\p{Ll}*", RegexOptions.Compiled);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get { return ImmutableArray.Create(Rule); } }
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(AttributeArgumentStringRule, StringLiteralRule, VariableNameRule, ClassNameRule, MethodNameRule, PropertyNameRule, CommentRule);
 
     public override void Initialize(AnalysisContext context)
     {
+      context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+      ////context.EnableConcurrentExecution();
+
       // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
       // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
       ////context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
-      context.RegisterSyntaxNodeAction(AnalyzeStringLiteralToken, SyntaxKind.StringLiteralToken, SyntaxKind.StringLiteralExpression);
-      context.RegisterSyntaxNodeAction(AnalyzeVariableDeclarator, SyntaxKind.VariableDeclarator);
-      context.RegisterSyntaxNodeAction(AnalyzeClassDeclaration, SyntaxKind.ClassDeclaration);
-      context.RegisterSyntaxNodeAction(AnalyzeMethodDeclaration, SyntaxKind.MethodDeclaration);
-      context.RegisterSyntaxNodeAction(AnalyzePropertyDeclaration, SyntaxKind.PropertyDeclaration);
-      context.RegisterSyntaxNodeAction(AnalyzeXmlText, SyntaxKind.XmlText);
-      context.RegisterSyntaxNodeAction(AnalyzeSingleLineCommentTrivia, SyntaxKind.SingleLineCommentTrivia);      
+      context.RegisterSyntaxNodeAction(this.AnalyzeStringLiteralToken, SyntaxKind.StringLiteralToken, SyntaxKind.StringLiteralExpression);
+      context.RegisterSyntaxNodeAction(this.AnalyzeVariableDeclarator, SyntaxKind.VariableDeclarator);
+      context.RegisterSyntaxNodeAction(this.AnalyzeClassDeclaration, SyntaxKind.ClassDeclaration);
+      context.RegisterSyntaxNodeAction(this.AnalyzeMethodDeclaration, SyntaxKind.MethodDeclaration);
+      context.RegisterSyntaxNodeAction(this.AnalyzePropertyDeclaration, SyntaxKind.PropertyDeclaration);
+      context.RegisterSyntaxNodeAction(this.AnalyzeXmlText, SyntaxKind.XmlText);
+      context.RegisterSyntaxNodeAction(AnalyzeSingleLineCommentTrivia, SyntaxKind.SingleLineCommentTrivia);
     }
 
     private void AnalyzeSymbol(SymbolAnalysisContext context)
-    {      
+    {
       // TODO: Replace the following code with your own analysis, generating Diagnostic objects for any issues you find
       var namedTypeSymbol = (INamedTypeSymbol)context.Symbol;
 
@@ -54,7 +111,7 @@ namespace YouShouldSpellcheck.Analyzer
       if (namedTypeSymbol.Name.ToCharArray().Any(char.IsLower))
       {
         // For all such symbols, produce a diagnostic.
-        var diagnostic = Diagnostic.Create(Rule, namedTypeSymbol.Locations[0], namedTypeSymbol.Name);
+        var diagnostic = Diagnostic.Create(CommentRule, namedTypeSymbol.Locations[0], namedTypeSymbol.Name);
 
         context.ReportDiagnostic(diagnostic);
       }
@@ -62,71 +119,121 @@ namespace YouShouldSpellcheck.Analyzer
 
     private void AnalyzeStringLiteralToken(SyntaxNodeAnalysisContext context)
     {
-      // TODO: use "context.Node.SyntaxTree.FilePath" to find the "custom dictionary"
-      var literalExpressionSyntax = context.Node as LiteralExpressionSyntax;
-      if (literalExpressionSyntax != null)
+      try
       {
-        var foo = literalExpressionSyntax.Token;
-        var text = foo.ValueText;
-        var nodeLocation = literalExpressionSyntax.GetLocation();
-        var stringLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
+        var attributeSyntax = context.Node?.Parent?.Parent?.Parent as AttributeSyntax;
+        if (attributeSyntax != null)
+        {
+          if (attributeSyntax.Name.ToFullString() == "Desc")
+          {
+          }
+        }
 
-        CheckLine(text, stringLocation, context);
+        // TODO: use "context.Node.SyntaxTree.FilePath" to find the "custom dictionary"
+        var literalExpressionSyntax = context.Node as LiteralExpressionSyntax;
+        if (literalExpressionSyntax != null)
+        {
+          var foo = literalExpressionSyntax.Token;
+          var text = foo.ValueText;
+          var nodeLocation = literalExpressionSyntax.GetLocation();
+          var stringLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
+
+          this.CheckLine(StringLiteralRule, text, stringLocation, context);
+        }
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
       }
     }
 
     private void AnalyzeVariableDeclarator(SyntaxNodeAnalysisContext context)
     {
-      var variableDeclaratorSyntax = context.Node as VariableDeclaratorSyntax;
-      if (variableDeclaratorSyntax != null)
+      try
       {
-        var identifierToken = variableDeclaratorSyntax.ChildTokens().FirstOrDefault(x => x.IsKind(SyntaxKind.IdentifierToken));
-        if (identifierToken != null)
+        var variableDeclaratorSyntax = context.Node as VariableDeclaratorSyntax;
+        if (variableDeclaratorSyntax != null)
         {
-          var text = identifierToken.ValueText;
-          CheckWord(text, identifierToken.GetLocation(), context);
+          var identifierToken = variableDeclaratorSyntax.ChildTokens().FirstOrDefault(x => x.IsKind(SyntaxKind.IdentifierToken));
+          if (identifierToken != null)
+          {
+            var text = identifierToken.ValueText;
+            this.CheckWord(VariableNameRule, text, identifierToken.GetLocation(), context);
+          }
         }
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
       }
     }
 
     private void AnalyzeClassDeclaration(SyntaxNodeAnalysisContext context)
     {
-      var classDeclarationSyntax = context.Node as ClassDeclarationSyntax;
-      if (classDeclarationSyntax != null)
+      try
       {
-        var identifierToken = classDeclarationSyntax.ChildTokens().FirstOrDefault(x => x.IsKind(SyntaxKind.IdentifierToken));
-        if (identifierToken != null)
+        var classDeclarationSyntax = context.Node as ClassDeclarationSyntax;
+        if (classDeclarationSyntax != null)
         {
-          var text = identifierToken.ValueText;
-          CheckWord(text, identifierToken.GetLocation(), context);
+          var identifierToken = classDeclarationSyntax.ChildTokens().FirstOrDefault(x => x.IsKind(SyntaxKind.IdentifierToken));
+          if (identifierToken != null)
+          {
+            var text = identifierToken.ValueText;
+            this.CheckWord(ClassNameRule, text, identifierToken.GetLocation(), context);
+          }
         }
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
       }
     }
 
     private void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
     {
-      var methodDeclarationSyntax = context.Node as MethodDeclarationSyntax;
-      if (methodDeclarationSyntax != null)
+      try
       {
-        CheckAllTokensOfType(context, methodDeclarationSyntax, SyntaxKind.IdentifierToken);
+        var methodDeclarationSyntax = context.Node as MethodDeclarationSyntax;
+        if (methodDeclarationSyntax != null)
+        {
+          this.CheckAllTokensOfType(MethodNameRule, context, methodDeclarationSyntax, SyntaxKind.IdentifierToken);
+        }
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
       }
     }
 
     private void AnalyzePropertyDeclaration(SyntaxNodeAnalysisContext context)
     {
-      var propertyDeclarationSyntax = context.Node as PropertyDeclarationSyntax;
-      if (propertyDeclarationSyntax != null)
+      try
       {
-        CheckAllTokensOfType(context, propertyDeclarationSyntax, SyntaxKind.IdentifierToken);
+        var propertyDeclarationSyntax = context.Node as PropertyDeclarationSyntax;
+        if (propertyDeclarationSyntax != null)
+        {
+          this.CheckAllTokensOfType(PropertyNameRule, context, propertyDeclarationSyntax, SyntaxKind.IdentifierToken);
+        }
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
       }
     }
 
     private void AnalyzeXmlText(SyntaxNodeAnalysisContext context)
     {
-      var xmlTextSyntax = context.Node as XmlTextSyntax;
-      if (xmlTextSyntax != null)
+      try
       {
-        CheckAllTokensOfType(context, xmlTextSyntax, SyntaxKind.XmlTextLiteralToken);
+        var xmlTextSyntax = context.Node as XmlTextSyntax;
+        if (xmlTextSyntax != null)
+        {
+          this.CheckAllTokensOfType(CommentRule, context, xmlTextSyntax, SyntaxKind.XmlTextLiteralToken);
+        }
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
       }
     }
 
@@ -137,90 +244,87 @@ namespace YouShouldSpellcheck.Analyzer
       }
     }
 
-    private void CheckAllTokensOfType(SyntaxNodeAnalysisContext context, SyntaxNode syntaxNode, SyntaxKind syntaxKind)
+    private void CheckAllTokensOfType(DiagnosticDescriptor rule, SyntaxNodeAnalysisContext context, SyntaxNode syntaxNode, SyntaxKind syntaxKind)
     {
       foreach (var syntaxToken in syntaxNode.ChildTokens().Where(x => x.IsKind(syntaxKind)))
       {
         var text = syntaxToken.ValueText;
-        CheckLine(text, syntaxToken.GetLocation(), context);
+        if (string.IsNullOrWhiteSpace(text))
+        {
+          continue;
+        }
+
+        this.CheckLine(rule, text, syntaxToken.GetLocation(), context);
       }
     }
 
-    private void CheckLine(string line, Location location, SyntaxNodeAnalysisContext context)
+    private void CheckLine(DiagnosticDescriptor rule, string line, Location location, SyntaxNodeAnalysisContext context)
     {
       if (string.IsNullOrWhiteSpace(line))
       {
         return;
       }
 
-      foreach (var wordMatch in splitLineIntoWords.Matches(line).OfType<Match>())
+      foreach (var wordMatch in this.splitLineIntoWords.Matches(line).OfType<Match>())
       {
         var wordLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(location.SourceSpan.Start + wordMatch.Index, location.SourceSpan.Start + wordMatch.Index + wordMatch.Length));
-        CheckWord(wordMatch.Value, wordLocation, context);
+        this.CheckWord(rule, wordMatch.Value, wordLocation, context);
       }
     }
 
-    private void CheckWord(string word, Location wordLocation, SyntaxNodeAnalysisContext context)
+    private void CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context)
     {
-      var wordParts = splitWordsByCasing.Matches(word).OfType<Match>();
+      // check if the whole "word" with exactly that casing is configured as a custom word (e.g. "HiFi")
+      if (DictionaryManager.IsCustomWord(word))
+      {
+        return;
+      }
+
+      var wordParts = this.splitWordsByCasing.Matches(word).OfType<Match>();
       if (wordParts.Count() < 2)
       {
-        CheckWordParts(word, wordLocation, context);
+        CheckWordParts(rule, word, wordLocation, context);
       }
       else
       {
         foreach (var wordPart in wordParts)
         {
           var wordPartLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(wordLocation.SourceSpan.Start + wordPart.Index, wordLocation.SourceSpan.Start + wordPart.Index + wordPart.Length));
-          CheckWordParts(wordPart.Value, wordPartLocation, context);
+          CheckWordParts(rule, wordPart.Value, wordPartLocation, context);
         }
       }
     }
 
-    private static void CheckWordParts(string word, Location location, SyntaxNodeAnalysisContext context)
+    private static void CheckWordParts(DiagnosticDescriptor rule, string word, Location location, SyntaxNodeAnalysisContext context)
     {
-      List<string> suggestions;
-      if (!string.IsNullOrWhiteSpace(word) && !IsWordCorrect(word, out suggestions))
+      if (!string.IsNullOrWhiteSpace(word)
+        && !IsWordCorrect(word, LanguagesByRule(rule.Id)))
       {
         var propertyBagForFixProvider = ImmutableDictionary.Create<string, string>();
         propertyBagForFixProvider = propertyBagForFixProvider.Add("offendingWord", word);
-        foreach (var suggestion in suggestions)
-        {
-          propertyBagForFixProvider = propertyBagForFixProvider.Add("suggestion" + propertyBagForFixProvider.Count, suggestion);
-        }
-
-        var diagnostic = Diagnostic.Create(Rule, location, propertyBagForFixProvider, word);
-
+        var diagnostic = Diagnostic.Create(rule, location, propertyBagForFixProvider, word);
         context.ReportDiagnostic(diagnostic);
       }
     }
 
-    private static bool IsWordCorrect(string word, out List<string> allSuggestions)
+    private static bool IsWordCorrect(string word, string[] languages)
     {
-      ////return DictionaryManager.IsWordCorrect(word, out allSuggestions, "en_US");
+      return languages.Any(language => DictionaryManager.IsWordCorrect(word, language));
+    }
 
-      allSuggestions = null;
-      var supportedLanguages = new[] { "en_US", "de_DE_frami" };
-      foreach (var language in supportedLanguages)
+    public static string[] LanguagesByRule(string ruleId)
+    {
+      switch (ruleId)
       {
-        List<string> suggestions;
-        if (DictionaryManager.IsWordCorrect(word, out suggestions, language))
-        {
-          allSuggestions = null;
-          return true;
-        }
-        else
-        {
-          if (allSuggestions == null)
-          {
-            allSuggestions = new List<string>();
-          }
-
-          allSuggestions.AddRange(suggestions);
-        }
+        case ClassNameDiagnosticId: return SpellcheckSettings.ClassNameLanguagses;
+        case MethodNameDiagnosticId: return SpellcheckSettings.MethodNameLanguagses;
+        case VariableNameDiagnosticId: return SpellcheckSettings.VariableNameLanguagses;
+        case PropertyNameDiagnosticId: return SpellcheckSettings.PropertyNameLanguagses;
+        case AttributeArgumentStringDiagnosticId: return SpellcheckSettings.AttributeArgumentLanguages;
+        case CommentDiagnosticId: return SpellcheckSettings.CommentLanguagses;
+        case StringLiteralDiagnosticId: return SpellcheckSettings.StringLiteralLanguages;
+        default: return SpellcheckSettings.DefaultLanguages;
       }
-
-      return false;
     }
   }
 }
