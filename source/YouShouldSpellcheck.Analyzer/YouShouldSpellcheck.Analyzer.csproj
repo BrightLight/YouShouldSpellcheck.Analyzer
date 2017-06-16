@@ -105,6 +105,7 @@
     <Compile Include="ClassNameSpellcheckAnalyzer.cs" />
     <Compile Include="CodeFixProvider.cs" />
     <Compile Include="DictionaryManager.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="MethodNameSpellcheckAnalyzer.cs" />
     <Compile Include="PropertyNameSpellcheckAnalyzer.cs" />
     <Compile Include="SpellcheckSettings.cs" />

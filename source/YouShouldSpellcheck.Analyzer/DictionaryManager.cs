@@ -8,13 +8,21 @@
 
   public static class DictionaryManager
   {
-    private static bool NHunspellNativeDllPathIsInitialized;
-
-    private static readonly Dictionary<string, Hunspell> dictionaries = new Dictionary<string, Hunspell>();
+    private static readonly Dictionary<string, Hunspell> dictionaries;
 
     private static List<string> customWords;
 
     private static readonly Dictionary<Tuple<string, string>, bool> cache = new Dictionary<Tuple<string, string>, bool>();
+
+    static DictionaryManager()
+    {
+      var analyzerBasePath = AnalyzerContext.AnalyzerDirectory;
+      Logger.Log($"AnalyzerBasePath: [{analyzerBasePath}]");
+      Hunspell.NativeDllPath = analyzerBasePath;
+      Logger.Log("Hunspell.NativeDllPath was set");
+
+      dictionaries = new Dictionary<string, Hunspell>();
+    }
 
     public static bool IsWordCorrect(string word, string language)
     {
@@ -31,6 +39,7 @@
         return true;
       }
 
+      Logger.Log($"IsWordCorrect: [{word}] [{language}]");
       var hunspell = GetDictionaryForLanguage(language);
       wordIsOkay = hunspell.Spell(word);
       cache.Add(key, wordIsOkay);
@@ -56,6 +65,7 @@
 
     public static bool IsCustomWord(string word)
     {
+      Logger.Log($"IsCustomWord: [{word}]");
       if (customWords == null)
       {
         customWords = new List<string>();
@@ -86,17 +96,14 @@
       var analyzerBasePath = AnalyzerContext.AnalyzerDirectory;
       var affixFile = Path.Combine(analyzerBasePath, "dic", language + ".aff");
       var dictionaryFile = Path.Combine(analyzerBasePath, "dic", language + ".dic");
-      if ((File.Exists(affixFile) && File.Exists(dictionaryFile)))
+      if (File.Exists(affixFile) && File.Exists(dictionaryFile))
       {
-        if (!NHunspellNativeDllPathIsInitialized)
-        {
-          NHunspellNativeDllPathIsInitialized = true;
-          Hunspell.NativeDllPath = analyzerBasePath;
-        }
-
+        Logger.Log($"Creating new Hunspell instance with dictionary file [{dictionaryFile}] and affix file [{affixFile}]");
         return new Hunspell(affixFile, dictionaryFile);
       }
 
+      Logger.Log($"Dictionary file not found: [{dictionaryFile}]");
+      Logger.Log($"Affix file not found: [{affixFile}]");
       return null;
     }
   }

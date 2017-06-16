@@ -56,6 +56,7 @@ namespace YouShouldSpellcheck.Analyzer
         return;
       }
 
+      Logger.Log($"CheckLine: [{line}]");
       foreach (var wordMatch in this.splitLineIntoWords.Matches(line).OfType<Match>())
       {
         var wordLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(location.SourceSpan.Start + wordMatch.Index, location.SourceSpan.Start + wordMatch.Index + wordMatch.Length));

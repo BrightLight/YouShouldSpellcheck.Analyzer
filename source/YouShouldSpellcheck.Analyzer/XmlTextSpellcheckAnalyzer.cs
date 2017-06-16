@@ -37,6 +37,7 @@
       }
       catch (Exception e)
       {
+        Logger.Log(e.ToString());
         Console.WriteLine(e);
       }
     }

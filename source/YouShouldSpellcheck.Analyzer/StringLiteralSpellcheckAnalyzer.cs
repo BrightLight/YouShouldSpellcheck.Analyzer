@@ -8,6 +8,7 @@
   using Microsoft.CodeAnalysis.CSharp.Syntax;
   using Microsoft.CodeAnalysis.Diagnostics;
 
+  [DiagnosticAnalyzer(LanguageNames.CSharp)]
   public class StringLiteralSpellcheckAnalyzer : SpellcheckAnalyzerBase
   {
     public const string StringLiteralDiagnosticId = "YS101";
@@ -51,6 +52,7 @@
       }
       catch (Exception e)
       {
+        Logger.Log(e.ToString());
         Console.WriteLine(e);
       }
     }
@@ -110,15 +112,17 @@
         if (namedTypeSymbol != null)
         {
           var nonNamedArguments = attributeSyntax.ArgumentList.Arguments.Where(x => x.NameEquals == null).ToList();
+          var attributeArgumentIndex = nonNamedArguments.FindIndex(x => x == attributeArgumentSyntax);
           foreach (var constructorDefinition in namedTypeSymbol.InstanceConstructors)
           {
             var constructorArguments = constructorDefinition.Parameters.ToList();
             if (constructorArguments.Count >= nonNamedArguments.Count)
             {
-              for (var i = 0; i < nonNamedArguments.Count; i++)
-              {
-                //if (constructorArguments[i].Type == nonNamedArguments[i].
-              }
+              return constructorArguments[attributeArgumentIndex].Name;
+              ////for (var i = 0; i < nonNamedArguments.Count; i++)
+              ////{
+              ////  //if (constructorArguments[i].Type == nonNamedArguments[i].
+              ////}
             }
           }
         }
