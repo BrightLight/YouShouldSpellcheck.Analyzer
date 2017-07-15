@@ -30,9 +30,6 @@ namespace YouShouldSpellcheck.Analyzer
     // See http://stackoverflow.com/questions/7311734/split-sentence-into-words-but-having-trouble-with-the-punctuations-in-c-sharp
     private readonly Regex splitLineIntoWords = new Regex(@"((\b[^\s.]+\b)((?<=\.\w).)?)", RegexOptions.Compiled);
 
-    ////private Regex splitWordsByCasing = new Regex(@"([A-Z]+|[a-z])[a-z]*", RegexOptions.Compiled);
-    private readonly Regex splitWordsByCasing = new Regex(@"(\p{Lu}+|\p{Ll})\p{Ll}*", RegexOptions.Compiled);
-
     private readonly Regex isGuid = new Regex(@"[{(]?[0-9A-Fa-f]{8}[-]?([0-9A-Fa-f]{4}[-]?){3}[0-9A-Fa-f]{12}[)}]?", RegexOptions.Compiled);
 
     protected void CheckAllTokensOfType(DiagnosticDescriptor rule, SyntaxNodeAnalysisContext context, SyntaxNode syntaxNode, SyntaxKind syntaxKind)
@@ -64,44 +61,37 @@ namespace YouShouldSpellcheck.Analyzer
       }
     }
 
-    protected void CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context)
+    protected virtual bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context)
     {
-      // check if the whole "word" with exactly that casing is configured as a custom word (e.g. "HiFi")
-      if (DictionaryManager.IsCustomWord(word))
-      {
-        return;
-      }
-
       // check if the "word" actually represents a GUID which should not further be parsed
       if (this.isGuid.IsMatch(word))
       {
-        return;
+        return true;
       }
 
-      var wordParts = this.splitWordsByCasing.Matches(word).OfType<Match>();
-      foreach (var wordPart in wordParts)
+      // check if the word is correct
+      if (IsWordCorrect(word, LanguagesByRule(rule.Id)))
       {
-        var wordPartLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(wordLocation.SourceSpan.Start + wordPart.Index, wordLocation.SourceSpan.Start + wordPart.Index + wordPart.Length));
-        CheckWordParts(rule, wordPart.Value, wordPartLocation, context);
+        return true;
       }
+
+      return false;
     }
 
-    private static void CheckWordParts(DiagnosticDescriptor rule, string word, Location location, SyntaxNodeAnalysisContext context)
+    protected static bool IsWordCorrect(string word, string[] languages)
     {
-      if (!string.IsNullOrWhiteSpace(word)
-        && !IsWordCorrect(word, LanguagesByRule(rule.Id)))
-      {
-        var propertyBagForFixProvider = ImmutableDictionary.Create<string, string>();
-        propertyBagForFixProvider = propertyBagForFixProvider.Add("offendingWord", word);
-        var diagnostic = Diagnostic.Create(rule, location, propertyBagForFixProvider, word);
-        context.ReportDiagnostic(diagnostic);
-      }
+      return string.IsNullOrWhiteSpace(word)
+        || languages.Any(language => DictionaryManager.IsWordCorrect(word, language));
     }
 
-    private static bool IsWordCorrect(string word, string[] languages)
+    protected static void ReportWord(DiagnosticDescriptor rule, string word, Location location, SyntaxNodeAnalysisContext context)
     {
-      return languages.Any(language => DictionaryManager.IsWordCorrect(word, language));
+      var propertyBagForFixProvider = ImmutableDictionary.Create<string, string>();
+      propertyBagForFixProvider = propertyBagForFixProvider.Add("offendingWord", word);
+      var diagnostic = Diagnostic.Create(rule, location, propertyBagForFixProvider, word);
+      context.ReportDiagnostic(diagnostic);
     }
+
 
     public static string[] LanguagesByRule(string ruleId)
     {
@@ -112,7 +102,7 @@ namespace YouShouldSpellcheck.Analyzer
         case VariableNameSpellcheckAnalyzer.VariableNameDiagnosticId: return SpellcheckSettings.VariableNameLanguagses;
         case PropertyNameSpellcheckAnalyzer.PropertyNameDiagnosticId: return SpellcheckSettings.PropertyNameLanguagses;
         case AttributeArgumentStringDiagnosticId: return SpellcheckSettings.AttributeArgumentLanguages;
-        case XmlTextSpellcheckAnalyzer.CommentDiagnosticId: return SpellcheckSettings.CommentLanguagses;
+        case XmlTextSpellcheckAnalyzer.CommentDiagnosticId: return SpellcheckSettings.CommentLanguages;
         case StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId: return SpellcheckSettings.StringLiteralLanguages;
         default: return SpellcheckSettings.DefaultLanguages;
       }

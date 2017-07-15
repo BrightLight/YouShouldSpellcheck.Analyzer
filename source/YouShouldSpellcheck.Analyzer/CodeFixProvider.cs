@@ -17,15 +17,7 @@
   [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(YouShouldSpellcheckAnalyzerCodeFixProvider)), Shared]
   public class YouShouldSpellcheckAnalyzerCodeFixProvider : CodeFixProvider
   {
-    public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
-      SpellcheckAnalyzerBase.AttributeArgumentStringDiagnosticId,
-      ClassNameSpellcheckAnalyzer.ClassNameDiagnosticId,
-      XmlTextSpellcheckAnalyzer.CommentDiagnosticId,
-      MethodNameSpellcheckAnalyzer.MethodNameDiagnosticId,
-      PropertyNameSpellcheckAnalyzer.PropertyNameDiagnosticId,
-      StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId,
-      VariableNameSpellcheckAnalyzer.VariableNameDiagnosticId
-    );
+    public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(SpellcheckAnalyzerBase.AttributeArgumentStringDiagnosticId, ClassNameSpellcheckAnalyzer.ClassNameDiagnosticId, XmlTextSpellcheckAnalyzer.CommentDiagnosticId, MethodNameSpellcheckAnalyzer.MethodNameDiagnosticId, PropertyNameSpellcheckAnalyzer.PropertyNameDiagnosticId, StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId, VariableNameSpellcheckAnalyzer.VariableNameDiagnosticId);
 
     public sealed override FixAllProvider GetFixAllProvider()
     {
@@ -72,7 +64,7 @@
             {
               foreach (var suggestion in suggestions)
               {
-                var codeAction = CodeAction.Create(suggestion, x => RenameSymbol(context.Document, diagnostic.Location, suggestion, declaration, x), suggestion);
+                var codeAction = CodeAction.Create(suggestion, x => this.RenameSymbol(context.Document, diagnostic.Location, suggestion, declaration, x), suggestion);
                 context.RegisterCodeFix(codeAction, diagnostic);
               }
             }

@@ -13,9 +13,11 @@
   {
     public const string VariableNameDiagnosticId = "YS102";
 
+    private const string VariableNameRuleTitle = "Variable name should be spelled correctly.";
+
     private const string VariableNameRuleDescription = "Variable name should be spelled correctly.";
 
-    private static readonly DiagnosticDescriptor VariableNameRule = new DiagnosticDescriptor(VariableNameDiagnosticId, Title, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: VariableNameRuleDescription);
+    private static readonly DiagnosticDescriptor VariableNameRule = new DiagnosticDescriptor(VariableNameDiagnosticId, VariableNameRuleTitle, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: VariableNameRuleDescription);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(VariableNameRule);
 

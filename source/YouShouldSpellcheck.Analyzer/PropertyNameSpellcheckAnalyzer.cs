@@ -13,12 +13,12 @@ namespace YouShouldSpellcheck.Analyzer
   using Microsoft.CodeAnalysis.Diagnostics;
 
   [DiagnosticAnalyzer(LanguageNames.CSharp)]
-  public class PropertyNameSpellcheckAnalyzer : SpellcheckAnalyzerBase
+  public class PropertyNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string PropertyNameDiagnosticId = "YS105";
-
+    private const string PropertyNameRuleTitle = "Property name should be spelled correctly.";
     private const string PropertyNameRuleDescription = "Property name should be spelled correctly.";
-    private static readonly DiagnosticDescriptor PropertyNameRule = new DiagnosticDescriptor(PropertyNameDiagnosticId, Title, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: PropertyNameRuleDescription);
+    private static readonly DiagnosticDescriptor PropertyNameRule = new DiagnosticDescriptor(PropertyNameDiagnosticId, PropertyNameRuleTitle, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: PropertyNameRuleDescription);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(PropertyNameRule);
 

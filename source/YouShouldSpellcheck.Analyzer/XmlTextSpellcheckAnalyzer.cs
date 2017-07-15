@@ -11,8 +11,9 @@
   public class XmlTextSpellcheckAnalyzer : SpellcheckAnalyzerBase
   {
     public const string CommentDiagnosticId = "YS106";
+    private const string CommentRuleTitle = "Comment should be spelled correctly.";
     private const string CommentRuleDescription = "Comment should be spelled correctly.";
-    private static readonly DiagnosticDescriptor CommentRule = new DiagnosticDescriptor(CommentDiagnosticId, Title, MessageFormat, CommentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: CommentRuleDescription);
+    private static readonly DiagnosticDescriptor CommentRule = new DiagnosticDescriptor(CommentDiagnosticId, CommentRuleTitle, MessageFormat, CommentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: CommentRuleDescription);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(CommentRule);
 
@@ -23,6 +24,16 @@
       // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
       // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
       context.RegisterSyntaxNodeAction(this.AnalyzeXmlText, SyntaxKind.XmlText);
+    }
+
+    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context)
+    {
+      if (!base.CheckWord(rule, word, wordLocation, context))
+      {
+        ReportWord(rule, word, wordLocation, context);
+      }
+
+      return true;
     }
 
     private void AnalyzeXmlText(SyntaxNodeAnalysisContext context)

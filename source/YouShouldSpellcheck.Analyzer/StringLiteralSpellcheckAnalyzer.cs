@@ -12,8 +12,9 @@
   public class StringLiteralSpellcheckAnalyzer : SpellcheckAnalyzerBase
   {
     public const string StringLiteralDiagnosticId = "YS101";
+    private const string StringLiteralRuleTitle = "All text should be spelled correctly.";
     private const string StringLiteralRuleDescription = "All text should be spelled correctly.";
-    private static readonly DiagnosticDescriptor StringLiteralRule = new DiagnosticDescriptor(StringLiteralDiagnosticId, Title, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: StringLiteralRuleDescription);
+    private static readonly DiagnosticDescriptor StringLiteralRule = new DiagnosticDescriptor(StringLiteralDiagnosticId, StringLiteralRuleTitle, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: StringLiteralRuleDescription);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(StringLiteralRule);
 
@@ -24,6 +25,16 @@
       // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
       // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
       context.RegisterSyntaxNodeAction(this.AnalyzeStringLiteralToken, SyntaxKind.StringLiteralToken, SyntaxKind.StringLiteralExpression);
+    }
+
+    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context)
+    {
+      if (!base.CheckWord(rule, word, wordLocation, context))
+      {
+        ReportWord(rule, word, wordLocation, context);
+      }
+
+      return true;
     }
 
     private void AnalyzeStringLiteralToken(SyntaxNodeAnalysisContext context)

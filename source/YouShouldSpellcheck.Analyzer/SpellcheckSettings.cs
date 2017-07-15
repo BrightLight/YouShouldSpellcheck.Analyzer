@@ -22,7 +22,7 @@ namespace YouShouldSpellcheck.Analyzer
 
     public static string[] PropertyNameLanguagses => DefaultLanguages;
 
-    public static string[] CommentLanguagses => new[] { "en_US", "de_DE_frami" };
+    public static string[] CommentLanguages => new[] { "en_US", "de_DE_frami" };
 
     public static string[] AttributeArgumentLanguages => new[] { "de_DE_frami" };
 
