@@ -1,5 +1,6 @@
 ﻿namespace YouShouldSpellcheck.Analyzer
 {
+  using System;
   using System.IO;
 
   public static class Logger
@@ -16,7 +17,7 @@
         logWriter.AutoFlush = true;
       }
 
-      logWriter.WriteLine(message);
+      logWriter.WriteLine($"{DateTime.Now} " + message);
     }
   }
 }

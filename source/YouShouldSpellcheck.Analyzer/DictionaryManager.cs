@@ -3,6 +3,7 @@
   using System;
   using System.Collections.Generic;
   using System.IO;
+  using System.Security.Permissions;
   using System.Text;
   using NHunspell;
 
@@ -10,7 +11,7 @@
   {
     private static readonly Dictionary<string, Hunspell> dictionaries;
 
-    private static List<string> customWords;
+    private static readonly Dictionary<string, List<string>> customWordsByLanguage = new Dictionary<string, List<string>>();
 
     private static readonly Dictionary<Tuple<string, string>, bool> cache = new Dictionary<Tuple<string, string>, bool>();
 
@@ -33,7 +34,7 @@
         return wordIsOkay;
       }
 
-      if (IsCustomWord(word))
+      if (IsCustomWord(word, language))
       {
         cache.Add(key, true);
         return true;
@@ -53,30 +54,75 @@
       return true;
     }
 
-    public static void AddToCustomDictionary(string wordToIgnore)
+    public static string GetCustomDictionaryFileName(string language)
     {
-      if (!IsCustomWord(wordToIgnore))
+      return Path.Combine(AnalyzerContext.AnalyzerDirectory, $"CustomDictionary{language}.txt");
+    }
+
+    private static void AddToInMemoryCustomDictionary(string wordToIgnore, string language)
+    {
+      var customDictionary = GetInMemoryCustomDictionary(language);
+      customDictionary.Add(wordToIgnore);
+    }
+
+    private static List<string> GetInMemoryCustomDictionary(string language)
+    {
+      List<string> customDictionary;
+      if (!customWordsByLanguage.TryGetValue(language, out customDictionary))
       {
-        customWords.Add(wordToIgnore);
-        var customDictionaryPath = Path.Combine(AnalyzerContext.AnalyzerDirectory, "CustomWords.txt");
-        File.WriteAllLines(customDictionaryPath, customWords, Encoding.UTF8);
+        customDictionary = new List<string>();
+        var customDictionaryPath = GetCustomDictionaryFileName(language);
+        if (File.Exists(customDictionaryPath))
+        {
+          using (var customDictionaryStream = File.Open(customDictionaryPath, FileMode.Open, FileAccess.Read))
+          using (var customDictionaryReader = new StreamReader(customDictionaryStream, Encoding.UTF8, true))
+          {
+            var customDictionaryContent = customDictionaryReader.ReadToEnd();
+            customDictionary.AddRange(customDictionaryContent.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
+            ////customWords.AddRange(File.ReadAllLines(customDictionaryPath, Encoding.UTF8));
+          }
+        }
+
+        customWordsByLanguage.Add(language, customDictionary);
+      }
+
+      return customDictionary;
+    }
+
+    public static void AddToCustomDictionary(string wordToIgnore, string language)
+    {
+      if (!IsCustomWord(wordToIgnore, language))
+      {
+        AddToInMemoryCustomDictionary(wordToIgnore, language);
+        var customDictionaryPath = GetCustomDictionaryFileName(language);
+        try
+        {
+          using (var customDictionaryStream = File.Open(customDictionaryPath, FileMode.OpenOrCreate, FileAccess.Write))
+          using (var customDictionaryWriter = new StreamWriter(customDictionaryStream, Encoding.UTF8))
+          {
+            foreach (var line in customWordsByLanguage[language])
+            {
+              customDictionaryWriter.WriteLine(line);
+            }
+
+            customDictionaryWriter.Flush();
+            customDictionaryWriter.Close();
+
+            ////File.WriteAllLines(customDictionaryPath, customWords, Encoding.UTF8);
+          }
+        }
+        catch (Exception e)
+        {
+          Logger.Log($"An exception occurred while adding [{wordToIgnore}] to the custom dictionary [{customDictionaryPath}]:\r\n{e}");
+        }
       }
     }
 
-    public static bool IsCustomWord(string word)
+    public static bool IsCustomWord(string word, string language)
     {
-      Logger.Log($"IsCustomWord: [{word}]");
-      if (customWords == null)
-      {
-        customWords = new List<string>();
-        var customDictionaryPath = Path.Combine(AnalyzerContext.AnalyzerDirectory, "CustomWords.txt");
-        if (File.Exists(customDictionaryPath))
-        {
-          customWords.AddRange(File.ReadAllLines(customDictionaryPath, Encoding.UTF8));
-        }
-      }
-
-      return customWords.Contains(word);
+      Logger.Log($"IsCustomWord ({language}): [{word}]");
+      var customDictionary = GetInMemoryCustomDictionary(language);
+      return customDictionary != null && customDictionary.Contains(word);
     }
 
     private static Hunspell GetDictionaryForLanguage(string language)

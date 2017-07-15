@@ -70,16 +70,19 @@
             }
           }
 
-          // add "Ignore" action
-          var ignoreSpellingAction = CodeAction.Create(string.Format("Ignore spelling for \"{0}\"", offendingWord), x => this.IgnoreWord(context.Document, offendingWord));
-          context.RegisterCodeFix(ignoreSpellingAction, diagnostic);
+          // add "Add to custom dictionary" action
+          foreach (var language in SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id))
+          {
+            var ignoreSpellingAction = new NoPreviewCodeAction($"Add \"{offendingWord}\" to custom dictionary for {language}", x => this.AddToCustomDictionary(context.Document, offendingWord, language));
+            context.RegisterCodeFix(ignoreSpellingAction, diagnostic);
+          }
         }
       }
     }
 
-    private async Task<Document> IgnoreWord(Document document, string wordToIgnore)
+    private async Task<Document> AddToCustomDictionary(Document document, string wordToIgnore, string language)
     {
-      DictionaryManager.AddToCustomDictionary(wordToIgnore);
+      DictionaryManager.AddToCustomDictionary(wordToIgnore, language);
       return document;
     }
 
@@ -126,6 +129,33 @@
       }
 
       return allSuggestions != null;
+    }
+
+    private class NoPreviewCodeAction : CodeAction
+    {
+      private readonly Func<CancellationToken, Task<Document>> createChangedSolution;
+
+      public override string Title { get; }
+
+      public override string EquivalenceKey { get; }
+
+      public NoPreviewCodeAction(string title, Func<CancellationToken, Task<Document>> createChangedSolution, string equivalenceKey = null)
+      {
+        this.createChangedSolution = createChangedSolution;
+
+        this.Title = title;
+        this.EquivalenceKey = equivalenceKey;
+      }
+
+      protected override Task<IEnumerable<CodeActionOperation>> ComputePreviewOperationsAsync(CancellationToken cancellationToken)
+      {
+        return Task.FromResult(Enumerable.Empty<CodeActionOperation>());
+      }
+
+      protected override Task<Document> GetChangedDocumentAsync(CancellationToken cancellationToken)
+      {
+        return this.createChangedSolution(cancellationToken);
+      }
     }
   }
 }
