@@ -3,13 +3,13 @@
   using System;
   using System.Collections.Generic;
   using System.IO;
-  using System.Security.Permissions;
+  using System.Linq;
   using System.Text;
-  using NHunspell;
+  using WeCantSpell.Hunspell;
 
   public static class DictionaryManager
   {
-    private static readonly Dictionary<string, Hunspell> dictionaries;
+    private static readonly Dictionary<string, WordList> dictionaries;
 
     private static readonly Dictionary<string, List<string>> customWordsByLanguage = new Dictionary<string, List<string>>();
 
@@ -19,10 +19,8 @@
     {
       var analyzerBasePath = AnalyzerContext.AnalyzerDirectory;
       Logger.Log($"AnalyzerBasePath: [{analyzerBasePath}]");
-      Hunspell.NativeDllPath = analyzerBasePath;
-      Logger.Log("Hunspell.NativeDllPath was set");
 
-      dictionaries = new Dictionary<string, Hunspell>();
+      dictionaries = new Dictionary<string, WordList>();
     }
 
     public static bool IsWordCorrect(string word, string language)
@@ -41,16 +39,16 @@
       }
 
       Logger.Log($"IsWordCorrect: [{word}] [{language}]");
-      var hunspell = GetDictionaryForLanguage(language);
-      wordIsOkay = hunspell.Spell(word);
+      var dictionary = GetDictionaryForLanguage(language);
+      wordIsOkay = dictionary.Check(word);
       cache.Add(key, wordIsOkay);
       return wordIsOkay;
     }
 
     public static bool Suggest(string word, out List<string> suggestions, string language)
     {
-      var hunspell = GetDictionaryForLanguage(language);
-      suggestions = hunspell.Suggest(word);
+      var dictionary = GetDictionaryForLanguage(language);
+      suggestions = dictionary.Suggest(word).ToList();
       return true;
     }
 
@@ -125,27 +123,27 @@
       return customDictionary != null && customDictionary.Contains(word);
     }
 
-    private static Hunspell GetDictionaryForLanguage(string language)
+    private static WordList GetDictionaryForLanguage(string language)
     {
-      Hunspell hunspell;
-      if (!dictionaries.TryGetValue(language, out hunspell))
+      WordList dictionary;
+      if (!dictionaries.TryGetValue(language, out dictionary))
       {
-        hunspell = CreateHunspell(language);
-        dictionaries.Add(language, hunspell);
+        dictionary = CreateDictionary(language);
+        dictionaries.Add(language, dictionary);
       }
 
-      return hunspell;
+      return dictionary;
     }
 
-    private static Hunspell CreateHunspell(string language)
+    private static WordList CreateDictionary(string language)
     {
       var analyzerBasePath = AnalyzerContext.AnalyzerDirectory;
       var affixFile = Path.Combine(analyzerBasePath, "dic", language + ".aff");
       var dictionaryFile = Path.Combine(analyzerBasePath, "dic", language + ".dic");
       if (File.Exists(affixFile) && File.Exists(dictionaryFile))
       {
-        Logger.Log($"Creating new Hunspell instance with dictionary file [{dictionaryFile}] and affix file [{affixFile}]");
-        return new Hunspell(affixFile, dictionaryFile);
+        Logger.Log($"Creating new dictionary instance with dictionary file [{dictionaryFile}] and affix file [{affixFile}]");
+        return WordList.CreateFromFiles(dictionaryFile, affixFile);
       }
 
       Logger.Log($"Dictionary file not found: [{dictionaryFile}]");
