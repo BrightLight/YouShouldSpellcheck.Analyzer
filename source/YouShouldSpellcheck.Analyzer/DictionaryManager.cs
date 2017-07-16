@@ -113,6 +113,10 @@
         {
           Logger.Log($"An exception occurred while adding [{wordToIgnore}] to the custom dictionary [{customDictionaryPath}]:\r\n{e}");
         }
+
+        // remove from internal cache
+        var key = new Tuple<string, string>(language, wordToIgnore);
+        cache.Remove(key);
       }
     }
 
