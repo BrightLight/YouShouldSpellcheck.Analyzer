@@ -53,7 +53,7 @@ namespace YouShouldSpellcheck.Analyzer
         return;
       }
 
-      Logger.Log($"CheckLine: [{line}]");
+      Logger.Log($"{this.GetType().Name} - CheckLine: [{line}]");
       foreach (var wordMatch in this.splitLineIntoWords.Matches(line).OfType<Match>())
       {
         var wordLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(location.SourceSpan.Start + wordMatch.Index, location.SourceSpan.Start + wordMatch.Index + wordMatch.Length));
@@ -81,6 +81,7 @@ namespace YouShouldSpellcheck.Analyzer
     protected static bool IsWordCorrect(string word, string[] languages)
     {
       return string.IsNullOrWhiteSpace(word)
+        || languages == null
         || languages.Any(language => DictionaryManager.IsWordCorrect(word, language));
     }
 
@@ -92,19 +93,26 @@ namespace YouShouldSpellcheck.Analyzer
       context.ReportDiagnostic(diagnostic);
     }
 
-
     public static string[] LanguagesByRule(string ruleId)
     {
       switch (ruleId)
       {
-        case ClassNameSpellcheckAnalyzer.ClassNameDiagnosticId: return SpellcheckSettings.ClassNameLanguagses;
-        case MethodNameSpellcheckAnalyzer.MethodNameDiagnosticId: return SpellcheckSettings.MethodNameLanguagses;
-        case VariableNameSpellcheckAnalyzer.VariableNameDiagnosticId: return SpellcheckSettings.VariableNameLanguagses;
-        case PropertyNameSpellcheckAnalyzer.PropertyNameDiagnosticId: return SpellcheckSettings.PropertyNameLanguagses;
-        case AttributeArgumentStringDiagnosticId: return SpellcheckSettings.AttributeArgumentLanguages;
-        case XmlTextSpellcheckAnalyzer.CommentDiagnosticId: return SpellcheckSettings.CommentLanguages;
-        case StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId: return SpellcheckSettings.StringLiteralLanguages;
-        default: return SpellcheckSettings.DefaultLanguages;
+        case ClassNameSpellcheckAnalyzer.ClassNameDiagnosticId:
+          return AnalyzerContext.SpellcheckSettings.ClassNameLanguages;
+        case MethodNameSpellcheckAnalyzer.MethodNameDiagnosticId:
+          return AnalyzerContext.SpellcheckSettings.MethodNameLanguages;
+        case VariableNameSpellcheckAnalyzer.VariableNameDiagnosticId:
+          return AnalyzerContext.SpellcheckSettings.VariableNameLanguages;
+        case PropertyNameSpellcheckAnalyzer.PropertyNameDiagnosticId:
+          return AnalyzerContext.SpellcheckSettings.PropertyNameLanguages;
+        case AttributeArgumentStringDiagnosticId:
+          return AnalyzerContext.SpellcheckSettings.AttributeArgumentLanguages;
+        case XmlTextSpellcheckAnalyzer.CommentDiagnosticId:
+          return AnalyzerContext.SpellcheckSettings.CommentLanguages;
+        case StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId:
+          return AnalyzerContext.SpellcheckSettings.StringLiteralLanguages;
+        default:
+          return AnalyzerContext.SpellcheckSettings.DefaultLanguages;
       }
     }
   }

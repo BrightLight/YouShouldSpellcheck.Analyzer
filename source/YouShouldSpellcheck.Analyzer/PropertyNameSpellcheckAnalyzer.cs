@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace YouShouldSpellcheck.Analyzer
 {
+  using System;
   using System.Collections.Immutable;
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.CSharp;
@@ -25,7 +21,7 @@ namespace YouShouldSpellcheck.Analyzer
     public override void Initialize(AnalysisContext context)
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-      ////context.EnableConcurrentExecution();
+      context.EnableConcurrentExecution();
 
       // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
       // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
@@ -37,6 +33,7 @@ namespace YouShouldSpellcheck.Analyzer
     {
       try
       {
+        AnalyzerContext.InitializeSettings(context);
         var propertyDeclarationSyntax = context.Node as PropertyDeclarationSyntax;
         if (propertyDeclarationSyntax != null)
         {

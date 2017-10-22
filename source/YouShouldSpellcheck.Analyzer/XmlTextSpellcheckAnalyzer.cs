@@ -20,6 +20,7 @@
     public override void Initialize(AnalysisContext context)
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+      context.EnableConcurrentExecution();
 
       // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
       // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
@@ -40,6 +41,7 @@
     {
       try
       {
+        AnalyzerContext.InitializeSettings(context);
         var xmlTextSyntax = context.Node as XmlTextSyntax;
         if (xmlTextSyntax != null)
         {

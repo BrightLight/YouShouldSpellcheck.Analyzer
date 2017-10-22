@@ -3,6 +3,7 @@
   using System;
   using System.Collections.Immutable;
   using System.Linq;
+  using System.Threading;
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.CSharp;
   using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -21,6 +22,7 @@
     public override void Initialize(AnalysisContext context)
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+      context.EnableConcurrentExecution();
 
       // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
       // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
@@ -41,6 +43,7 @@
     {
       try
       {
+        AnalyzerContext.InitializeSettings(context);
         var attributeArgumentSyntax = context.Node?.Parent as AttributeArgumentSyntax;
         if (attributeArgumentSyntax != null)
         {
@@ -74,7 +77,9 @@
       if (attributeSyntax != null)
       {
         var attributeName = attributeSyntax.Name.ToFullString();
-        if (!SpellcheckSettings.InspectedAttributes.Contains(attributeName))
+        var spellcheckSettings = AnalyzerContext.SpellcheckSettings;
+        if (spellcheckSettings.InspectedAttributes == null
+          || !spellcheckSettings.InspectedAttributes.Contains(attributeName))
         {
           return;
         }
@@ -85,7 +90,7 @@
           return;
         }
 
-        if (SpellcheckSettings.CheckAttributeArgument(attributeName, attributeArgumentName))
+        if (spellcheckSettings.CheckAttributeArgument(attributeName, attributeArgumentName))
         {
           // next lines are identical to the ones in AnalyzeStringLiteralToken.
           // this will be resolved ones we have one class per analyzer and can use inheritance to override stuff

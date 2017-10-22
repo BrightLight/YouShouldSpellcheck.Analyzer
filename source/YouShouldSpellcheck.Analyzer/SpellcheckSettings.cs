@@ -1,3 +1,5 @@
+using System;
+
 namespace YouShouldSpellcheck.Analyzer
 {
   // TODO: analyzer should be able to allow configuration for separate types of nodes
@@ -10,27 +12,30 @@ namespace YouShouldSpellcheck.Analyzer
   // - argument name
   // - allow default language(s) (used if not specified otherwise on node type level)
   // - coming later: grammar check!
-  public static class SpellcheckSettings
+  [Serializable]
+  public class SpellcheckSettings
   {
-    public static readonly string[] DefaultLanguages = { "en_US" };
+    public string[] DefaultLanguages { get; set; }
 
-    public static string[] ClassNameLanguagses => DefaultLanguages;
+    public string[] ClassNameLanguages { get; set; }
 
-    public static string[] MethodNameLanguagses => DefaultLanguages;
+    public string[] MethodNameLanguages { get; set; }
 
-    public static string[] VariableNameLanguagses => DefaultLanguages;
+    public string[] VariableNameLanguages { get; set; }
 
-    public static string[] PropertyNameLanguagses => DefaultLanguages;
+    public string[] PropertyNameLanguages { get; set; }
 
-    public static string[] CommentLanguages => new[] { "en_US", "de_DE_frami" };
+    public string[] CommentLanguages { get; set; }
 
-    public static string[] AttributeArgumentLanguages => new[] { "de_DE_frami" };
+    public string[] AttributeArgumentLanguages { get; set; }
 
-    public static string[] StringLiteralLanguages => new[] { "de_DE_frami" };
+    public string[] StringLiteralLanguages { get; set; }
 
-    public static string[] InspectedAttributes => new[] { "LayoutGroupDefinition" };
+    public string[] InspectedAttributes { get; set; }
 
-    public static bool CheckAttributeArgument(string attributeName, string argumentName)
+    public string CustomDictionariesFolder { get; set; }
+
+    public bool CheckAttributeArgument(string attributeName, string argumentName)
     {
       switch (attributeName)
       {
@@ -48,6 +53,6 @@ namespace YouShouldSpellcheck.Analyzer
       }
 
       return true;
-      }
     }
   }
+}

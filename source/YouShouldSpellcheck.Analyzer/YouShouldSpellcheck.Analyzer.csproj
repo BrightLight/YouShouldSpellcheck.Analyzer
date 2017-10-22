@@ -110,7 +110,6 @@
     <Compile Include="MethodNameSpellcheckAnalyzer.cs" />
     <Compile Include="PropertyNameSpellcheckAnalyzer.cs" />
     <Compile Include="SpellcheckSettings.cs" />
-    <Compile Include="Foo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources.Designer.cs">
       <DependentUpon>Resources.resx</DependentUpon>

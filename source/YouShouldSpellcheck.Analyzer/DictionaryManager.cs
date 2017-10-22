@@ -1,6 +1,7 @@
 ﻿namespace YouShouldSpellcheck.Analyzer
 {
   using System;
+  using System.Collections.Concurrent;
   using System.Collections.Generic;
   using System.IO;
   using System.Linq;
@@ -9,22 +10,19 @@
 
   public static class DictionaryManager
   {
-    private static readonly Dictionary<string, WordList> dictionaries;
+    private static readonly ConcurrentDictionary<string, WordList> dictionaries = new ConcurrentDictionary<string, WordList>();
 
-    private static readonly Dictionary<string, List<string>> customWordsByLanguage = new Dictionary<string, List<string>>();
+    private static readonly ConcurrentDictionary<string, List<string>> customWordsByLanguage = new ConcurrentDictionary<string, List<string>>();
 
-    private static readonly Dictionary<Tuple<string, string>, bool> cache = new Dictionary<Tuple<string, string>, bool>();
-
-    static DictionaryManager()
-    {
-      var analyzerBasePath = AnalyzerContext.AnalyzerDirectory;
-      Logger.Log($"AnalyzerBasePath: [{analyzerBasePath}]");
-
-      dictionaries = new Dictionary<string, WordList>();
-    }
+    private static readonly ConcurrentDictionary<Tuple<string, string>, bool> cache = new ConcurrentDictionary<Tuple<string, string>, bool>();
 
     public static bool IsWordCorrect(string word, string language)
     {
+      if (string.IsNullOrEmpty(language))
+      {
+        return true;
+      }
+
       bool wordIsOkay;
       var key = new Tuple<string, string>(language, word);
       if (cache.TryGetValue(key, out wordIsOkay))
@@ -34,14 +32,14 @@
 
       if (IsCustomWord(word, language))
       {
-        cache.Add(key, true);
+        cache.TryAdd(key, true);
         return true;
       }
 
       Logger.Log($"IsWordCorrect: [{word}] [{language}]");
       var dictionary = GetDictionaryForLanguage(language);
       wordIsOkay = dictionary.Check(word);
-      cache.Add(key, wordIsOkay);
+      cache.TryAdd(key, wordIsOkay);
       return wordIsOkay;
     }
 
@@ -52,9 +50,9 @@
       return true;
     }
 
-    public static string GetCustomDictionaryFileName(string language)
+    private static string GetCustomDictionaryFileName(string language)
     {
-      return Path.Combine(AnalyzerContext.AnalyzerDirectory, $"CustomDictionary{language}.txt");
+      return Path.Combine(AnalyzerContext.SpellcheckSettings.CustomDictionariesFolder, $"CustomDictionary{language}.txt");
     }
 
     private static void AddToInMemoryCustomDictionary(string wordToIgnore, string language)
@@ -81,7 +79,7 @@
           }
         }
 
-        customWordsByLanguage.Add(language, customDictionary);
+        customWordsByLanguage.TryAdd(language, customDictionary);
       }
 
       return customDictionary;
@@ -116,7 +114,7 @@
 
         // remove from internal cache
         var key = new Tuple<string, string>(language, wordToIgnore);
-        cache.Remove(key);
+        cache.TryUpdate(key, true, false);
       }
     }
 
@@ -133,7 +131,7 @@
       if (!dictionaries.TryGetValue(language, out dictionary))
       {
         dictionary = CreateDictionary(language);
-        dictionaries.Add(language, dictionary);
+        dictionaries.TryAdd(language, dictionary);
       }
 
       return dictionary;
@@ -141,9 +139,9 @@
 
     private static WordList CreateDictionary(string language)
     {
-      var analyzerBasePath = AnalyzerContext.AnalyzerDirectory;
-      var affixFile = Path.Combine(analyzerBasePath, "dic", language + ".aff");
-      var dictionaryFile = Path.Combine(analyzerBasePath, "dic", language + ".dic");
+      var dictionariesFolder = AnalyzerContext.SpellcheckSettings.CustomDictionariesFolder;
+      var affixFile = Path.Combine(dictionariesFolder, language + ".aff");
+      var dictionaryFile = Path.Combine(dictionariesFolder, language + ".dic");
       if (File.Exists(affixFile) && File.Exists(dictionaryFile))
       {
         Logger.Log($"Creating new dictionary instance with dictionary file [{dictionaryFile}] and affix file [{affixFile}]");
