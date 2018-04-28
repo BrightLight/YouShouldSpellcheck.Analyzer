@@ -8,7 +8,7 @@
   using TestHelper;
   using YouShouldSpellcheck.Analyzer;
 
-  [TestClass]
+  ////[TestClass]
   public class UnitTest : CodeFixVerifier
   {
 
@@ -35,7 +35,8 @@
 
     namespace ConsoleApplication1
     {
-        class TypeName
+        // 'TypeName' spelled wrong
+        class TypeNam
         {   
         }
     }";
@@ -62,7 +63,7 @@
 
     namespace ConsoleApplication1
     {
-        class TYPENAME
+        class TypeName
         {   
         }
     }";
