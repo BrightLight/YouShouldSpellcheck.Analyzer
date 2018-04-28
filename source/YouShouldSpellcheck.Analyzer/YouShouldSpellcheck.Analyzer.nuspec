@@ -4,15 +4,17 @@
     <id>YouShouldSpellcheck.Analyzer</id>
     <version>0.3.0.0</version>
     <title>YouShouldSpellcheck.Analyzer</title>
-    <authors>mh</authors>
-    <owners>mh</owners>
-    <licenseUrl>http://LICENSE_URL_HERE_OR_DELETE_THIS_LINE</licenseUrl>
-    <projectUrl>http://PROJECT_URL_HERE_OR_DELETE_THIS_LINE</projectUrl>
-    <iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>
+    <authors>Markus Hastreiter</authors>
+    <owners>Markus Hastreiter</owners>
+    <licenseUrl>https://github.com/BrightLight/YouShouldSpellcheck.Analyzer/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/BrightLight/YouShouldSpellcheck.Analyzer</projectUrl>
+    <iconUrl>https://bytebucket.org/BrightLight/youcantspell/raw/5fe629c1d17e69ef82acbafebed98affb3cfb64a/YouCantSpell.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>YouShouldSpellcheck</description>
-    <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
-    <copyright>Copyright</copyright>
+    <description>A Roslyn based spellchecker. Supports multiple simultaneous dictionaries (e.g. for multiple languages in one project).
+Uses WeCantSpell.Hunspell: https://github.com/aarondandy/WeCantSpell.Hunspell</description>
+    <releaseNotes>Alpha release for experimental field tests.</releaseNotes>
+    <summary>A Roslyn based spellcheck analyzer.</summary>
+    <copyright>Copyright 2018 Markus Hastreiter</copyright>
     <tags>spellcheck, spellchecker, language, YouShouldSpellcheck, analyzers</tags>
     <frameworkAssemblies>
       <frameworkAssembly assemblyName="System" targetFramework="" />
