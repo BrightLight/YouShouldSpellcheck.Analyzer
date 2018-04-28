@@ -36,14 +36,32 @@ namespace YouShouldSpellcheck.Analyzer
     {
       foreach (var syntaxToken in syntaxNode.ChildTokens().Where(x => x.IsKind(syntaxKind)))
       {
-        var text = syntaxToken.ValueText;
-        if (string.IsNullOrWhiteSpace(text))
-        {
-          continue;
-        }
-
-        this.CheckLine(rule, text, syntaxToken.GetLocation(), context);
+        this.CheckToken(rule, context, syntaxToken);
       }
+    }
+
+    protected void CheckToken(DiagnosticDescriptor rule, SyntaxNodeAnalysisContext context, SyntaxToken? syntaxToken)
+    {
+      if (syntaxToken.HasValue)
+      {
+        this.CheckToken(rule, context, syntaxToken.Value);
+      }
+    }
+
+    protected void CheckToken(DiagnosticDescriptor rule, SyntaxNodeAnalysisContext context, SyntaxToken syntaxToken)
+    {
+      var text = syntaxToken.ValueText;
+      if (string.IsNullOrWhiteSpace(text))
+      {
+        return;
+      }
+
+      this.CheckText(rule, text, syntaxToken.GetLocation(), context);
+    }
+
+    protected virtual void CheckText(DiagnosticDescriptor rule, string text, Location location, SyntaxNodeAnalysisContext context)
+    {
+      this.CheckLine(rule, text, location, context);
     }
 
     protected void CheckLine(DiagnosticDescriptor rule, string line, Location location, SyntaxNodeAnalysisContext context)
@@ -111,6 +129,12 @@ namespace YouShouldSpellcheck.Analyzer
           return AnalyzerContext.SpellcheckSettings.CommentLanguages;
         case StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId:
           return AnalyzerContext.SpellcheckSettings.StringLiteralLanguages;
+        case EnumNameSpellcheckAnalyzer.EnumNameDiagnosticId:
+          return AnalyzerContext.SpellcheckSettings.EnumNameLanguages;
+        case EnumMemberNameSpellcheckAnalyzer.EnumMemberNameDiagnosticId:
+          return AnalyzerContext.SpellcheckSettings.EnumMemberNameLanguages;
+        case EventNameSpellcheckAnalyzer.EventNameDiagnosticId:
+          return AnalyzerContext.SpellcheckSettings.EventNameLanguages;
         default:
           return AnalyzerContext.SpellcheckSettings.DefaultLanguages;
       }

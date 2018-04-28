@@ -1,5 +1,3 @@
-using System;
-
 namespace YouShouldSpellcheck.Analyzer
 {
   // TODO: analyzer should be able to allow configuration for separate types of nodes
@@ -12,36 +10,31 @@ namespace YouShouldSpellcheck.Analyzer
   // - argument name
   // - allow default language(s) (used if not specified otherwise on node type level)
   // - coming later: grammar check!
-  [Serializable]
-  public class SpellcheckSettings : ISpellcheckSettings
+  public class SpellcheckSettings
   {
-    public string[] DefaultLanguages { get; set; }
+    public readonly string[] DefaultLanguages = { "en_US" };
 
-    public string[] IdentifierLanguages { get; set; }
-
+    public string[] ClassNameLanguagses => DefaultLanguages;
     public string[] ClassNameLanguages { get; set; }
 
+    public string[] MethodNameLanguagses => DefaultLanguages;
     public string[] MethodNameLanguages { get; set; }
 
+    public string[] VariableNameLanguagses => DefaultLanguages;
     public string[] VariableNameLanguages { get; set; }
 
+    public string[] PropertyNameLanguagses => DefaultLanguages;
     public string[] PropertyNameLanguages { get; set; }
 
-    public string[] EnumNameLanguages { get; set; }
+    public string[] CommentLanguages => new[] { "en_US", "de_DE_frami" };
 
-    public string[] EnumMemberNameLanguages { get; set; }
+    public string[] AttributeArgumentLanguages => new[] { "de_DE_frami" };
 
-    public string[] EventNameLanguages { get; set; }
+    public string[] StringLiteralLanguages => new[] { "de_DE_frami" };
 
-    public string[] CommentLanguages { get; set; }
+    public string[] InspectedAttributes => new[] { "SoloProperty", "LayoutGroupDefinition", "Desc" };
 
-    public string[] AttributeArgumentLanguages { get; set; }
-
-    public string[] StringLiteralLanguages { get; set; }
-
-    public string[] InspectedAttributes { get; set; }
-
-    public string CustomDictionariesFolder { get; set; }
+    public string CustomDictionariesFolder => @"c:\YouShouldSpellCheckConfig";
 
     public bool CheckAttributeArgument(string attributeName, string argumentName)
     {
@@ -53,8 +46,10 @@ namespace YouShouldSpellcheck.Analyzer
             case "Caption":
             case "Description":
             case "NativeCaption":
-            case "NativeDescription": return true;
-            default: return false;
+            case "NativeDescription":
+              return true;
+            default:
+              return false;
           }
       }
 

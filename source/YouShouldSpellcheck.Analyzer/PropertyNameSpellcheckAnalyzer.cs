@@ -35,10 +35,7 @@ namespace YouShouldSpellcheck.Analyzer
       {
         AnalyzerContext.InitializeSettings(context);
         var propertyDeclarationSyntax = context.Node as PropertyDeclarationSyntax;
-        if (propertyDeclarationSyntax != null)
-        {
-          this.CheckAllTokensOfType(PropertyNameRule, context, propertyDeclarationSyntax, SyntaxKind.IdentifierToken);
-        }
+        this.CheckToken(PropertyNameRule, context, propertyDeclarationSyntax?.Identifier);
       }
       catch (Exception e)
       {

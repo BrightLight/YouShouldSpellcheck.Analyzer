@@ -71,7 +71,7 @@
 
     protected override CodeFixProvider GetCSharpCodeFixProvider()
     {
-      return new YouShouldSpellcheckAnalyzerCodeFixProvider();
+      return new ClassNameCodeFixProvider();
     }
 
     protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()

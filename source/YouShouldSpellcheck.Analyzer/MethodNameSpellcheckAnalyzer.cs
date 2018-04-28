@@ -33,10 +33,7 @@
       {
         AnalyzerContext.InitializeSettings(context);
         var methodDeclarationSyntax = context.Node as MethodDeclarationSyntax;
-        if (methodDeclarationSyntax != null)
-        {
-          this.CheckAllTokensOfType(MethodNameRule, context, methodDeclarationSyntax, SyntaxKind.IdentifierToken);
-        }
+        this.CheckToken(MethodNameRule, context, methodDeclarationSyntax?.Identifier);
       }
       catch (Exception e)
       {

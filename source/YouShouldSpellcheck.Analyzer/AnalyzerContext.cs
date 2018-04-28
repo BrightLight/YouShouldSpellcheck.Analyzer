@@ -12,11 +12,11 @@
   {
     internal const string SettingsFileName = "youshouldspellcheck.config.xml";
 
-    private static SpellcheckSettings spellcheckSettings;
+    private static ISpellcheckSettings spellcheckSettings;
 
-    private static SpellcheckSettings defaultSettings = new SpellcheckSettings();
+    private static ISpellcheckSettings defaultSettings = new SpellcheckSettings();
 
-    public static SpellcheckSettings SpellcheckSettings
+    public static ISpellcheckSettings SpellcheckSettings
     {
       get
       {
@@ -48,12 +48,12 @@
     /// <param name="options">The analyzer options that will be used to find the <see cref="SettingsFileName"/> file.</param>
     /// <param name="cancellationToken">The cancellation token that the operation will observe.</param>
     /// <returns>A <see cref="SpellcheckSettings"/> instance that represents the settings of the specified <paramref name="options"/>.</returns>
-    private static SpellcheckSettings GetSpellcheckSettings(AnalyzerOptions options, CancellationToken cancellationToken)
+    private static ISpellcheckSettings GetSpellcheckSettings(AnalyzerOptions options, CancellationToken cancellationToken)
     {
       return GetSpellcheckSettings(options?.AdditionalFiles ?? ImmutableArray.Create<AdditionalText>(), cancellationToken);
     }
 
-    private static SpellcheckSettings GetSpellcheckSettingsFromTextFile(SourceText settingsXml)
+    private static ISpellcheckSettings GetSpellcheckSettingsFromTextFile(SourceText settingsXml)
     {
       using (var spellcheckSettingsAsTemporaryMemoryStream = new MemoryStream())
       using (var temporaryStreamWriter = new StreamWriter(spellcheckSettingsAsTemporaryMemoryStream))
@@ -65,13 +65,18 @@
       }
     }
 
-    private static SpellcheckSettings GetSpellcheckSettings(Stream settingsXml)
+    private static ISpellcheckSettings GetSpellcheckSettings(Stream settingsXml)
     {
       try
       {
         var spellcheckSettingsSerializer = new XmlSerializer(typeof(SpellcheckSettings));
         spellcheckSettings = spellcheckSettingsSerializer.Deserialize(settingsXml) as SpellcheckSettings;
-        return spellcheckSettings;
+        if (spellcheckSettings != null)
+        {
+          return new SpellcheckSettingsWrapper(spellcheckSettings);
+        }
+
+        return null;
       }
       catch
       {
@@ -79,7 +84,7 @@
       }
     }
 
-    private static SpellcheckSettings GetSpellcheckSettings(ImmutableArray<AdditionalText> additionalFiles, CancellationToken cancellationToken)
+    private static ISpellcheckSettings GetSpellcheckSettings(ImmutableArray<AdditionalText> additionalFiles, CancellationToken cancellationToken)
     {
       foreach (var additionalFile in additionalFiles)
       {

@@ -2,14 +2,13 @@
 {
   using System;
   using System.Collections.Immutable;
-  using System.Linq;
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.CSharp;
   using Microsoft.CodeAnalysis.CSharp.Syntax;
   using Microsoft.CodeAnalysis.Diagnostics;
 
   [DiagnosticAnalyzer(LanguageNames.CSharp)]
-  public class VariableNameSpellcheckAnalyzer : SpellcheckAnalyzerBase
+  public class VariableNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string VariableNameDiagnosticId = "YS102";
 
@@ -37,15 +36,7 @@
       {
         AnalyzerContext.InitializeSettings(context);
         var variableDeclaratorSyntax = context.Node as VariableDeclaratorSyntax;
-        if (variableDeclaratorSyntax != null)
-        {
-          var identifierToken = variableDeclaratorSyntax.ChildTokens().FirstOrDefault(x => x.IsKind(SyntaxKind.IdentifierToken));
-          if (identifierToken != null)
-          {
-            var text = identifierToken.ValueText;
-            this.CheckWord(VariableNameRule, text, identifierToken.GetLocation(), context);
-          }
-        }
+        this.CheckToken(VariableNameRule, context, variableDeclaratorSyntax?.Identifier);
       }
       catch (Exception e)
       {

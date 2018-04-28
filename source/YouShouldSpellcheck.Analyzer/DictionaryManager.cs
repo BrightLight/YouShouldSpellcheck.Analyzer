@@ -52,7 +52,7 @@
 
     private static string GetCustomDictionaryFileName(string language)
     {
-      return Path.Combine(AnalyzerContext.SpellcheckSettings.CustomDictionariesFolder, $"CustomDictionary{language}.txt");
+      return Path.Combine(AnalyzerContext.SpellcheckSettings.CustomDictionariesFolder, $"CustomDictionary.{language}.txt");
     }
 
     private static void AddToInMemoryCustomDictionary(string wordToIgnore, string language)
