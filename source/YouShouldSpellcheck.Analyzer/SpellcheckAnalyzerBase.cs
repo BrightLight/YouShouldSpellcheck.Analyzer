@@ -4,8 +4,8 @@ namespace YouShouldSpellcheck.Analyzer
   using System.Linq;
   using System.Text.RegularExpressions;
   using Microsoft.CodeAnalysis;
-  using Microsoft.CodeAnalysis.CSharp;
   using Microsoft.CodeAnalysis.Diagnostics;
+  using Microsoft.CodeAnalysis.Text;
 
   public abstract class SpellcheckAnalyzerBase : DiagnosticAnalyzer
   {
@@ -32,22 +32,6 @@ namespace YouShouldSpellcheck.Analyzer
 
     private readonly Regex isGuid = new Regex(@"[{(]?[0-9A-Fa-f]{8}[-]?([0-9A-Fa-f]{4}[-]?){3}[0-9A-Fa-f]{12}[)}]?", RegexOptions.Compiled);
 
-    protected void CheckAllTokensOfType(DiagnosticDescriptor rule, SyntaxNodeAnalysisContext context, SyntaxNode syntaxNode, SyntaxKind syntaxKind)
-    {
-      foreach (var syntaxToken in syntaxNode.ChildTokens().Where(x => x.IsKind(syntaxKind)))
-      {
-        this.CheckToken(rule, context, syntaxToken);
-      }
-    }
-
-    protected void CheckToken(DiagnosticDescriptor rule, SyntaxNodeAnalysisContext context, SyntaxToken? syntaxToken)
-    {
-      if (syntaxToken.HasValue)
-      {
-        this.CheckToken(rule, context, syntaxToken.Value);
-      }
-    }
-
     protected void CheckToken(DiagnosticDescriptor rule, SyntaxNodeAnalysisContext context, SyntaxToken syntaxToken)
     {
       var text = syntaxToken.ValueText;
@@ -56,15 +40,15 @@ namespace YouShouldSpellcheck.Analyzer
         return;
       }
 
-      this.CheckText(rule, text, syntaxToken.GetLocation(), context);
+      this.CheckText(rule, text, syntaxToken.GetLocation(), context, LanguagesByRule(rule.Id));
     }
 
-    protected virtual void CheckText(DiagnosticDescriptor rule, string text, Location location, SyntaxNodeAnalysisContext context)
+    protected virtual void CheckText(DiagnosticDescriptor rule, string text, Location location, SyntaxNodeAnalysisContext context, string[] languages)
     {
-      this.CheckLine(rule, text, location, context);
+      this.CheckLine(rule, text, location, context, languages);
     }
 
-    protected void CheckLine(DiagnosticDescriptor rule, string line, Location location, SyntaxNodeAnalysisContext context)
+    protected void CheckLine(DiagnosticDescriptor rule, string line, Location location, SyntaxNodeAnalysisContext context, string[] languages)
     {
       if (string.IsNullOrWhiteSpace(line))
       {
@@ -74,12 +58,12 @@ namespace YouShouldSpellcheck.Analyzer
       Logger.Log($"{this.GetType().Name} - CheckLine: [{line}]");
       foreach (var wordMatch in this.splitLineIntoWords.Matches(line).OfType<Match>())
       {
-        var wordLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(location.SourceSpan.Start + wordMatch.Index, location.SourceSpan.Start + wordMatch.Index + wordMatch.Length));
-        this.CheckWord(rule, wordMatch.Value, wordLocation, context);
+        var wordLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(location.SourceSpan.Start + wordMatch.Index, location.SourceSpan.Start + wordMatch.Index + wordMatch.Length));
+        this.CheckWord(rule, wordMatch.Value, wordLocation, context, languages);
       }
     }
 
-    protected virtual bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context)
+    protected virtual bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, string[] languages)
     {
       // check if the "word" actually represents a GUID which should not further be parsed
       if (this.isGuid.IsMatch(word))
@@ -88,7 +72,7 @@ namespace YouShouldSpellcheck.Analyzer
       }
 
       // check if the word is correct
-      if (IsWordCorrect(word, LanguagesByRule(rule.Id)))
+      if (IsWordCorrect(word, languages))
       {
         return true;
       }
@@ -123,8 +107,6 @@ namespace YouShouldSpellcheck.Analyzer
           return AnalyzerContext.SpellcheckSettings.VariableNameLanguages;
         case PropertyNameSpellcheckAnalyzer.PropertyNameDiagnosticId:
           return AnalyzerContext.SpellcheckSettings.PropertyNameLanguages;
-        case AttributeArgumentStringDiagnosticId:
-          return AnalyzerContext.SpellcheckSettings.AttributeArgumentLanguages;
         case XmlTextSpellcheckAnalyzer.CommentDiagnosticId:
           return AnalyzerContext.SpellcheckSettings.CommentLanguages;
         case StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId:

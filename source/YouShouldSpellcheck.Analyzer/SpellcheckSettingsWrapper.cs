@@ -36,17 +36,10 @@ namespace YouShouldSpellcheck.Analyzer
 
     public string[] CommentLanguages => this.spellcheckSettings.CommentLanguages;
 
-    public string[] AttributeArgumentLanguages => this.spellcheckSettings.AttributeArgumentLanguages;
-
     public string[] StringLiteralLanguages => this.spellcheckSettings.StringLiteralLanguages;
 
-    public string[] InspectedAttributes => this.spellcheckSettings.InspectedAttributes;
+    public AttributePropertyLanguages[] Attributes => this.spellcheckSettings.Attributes;
 
     public string CustomDictionariesFolder => this.spellcheckSettings.CustomDictionariesFolder;
-
-    public bool CheckAttributeArgument(string attributeName, string argumentName)
-    {
-      return this.spellcheckSettings.CheckAttributeArgument(attributeName, argumentName);
-    }
   }
 }

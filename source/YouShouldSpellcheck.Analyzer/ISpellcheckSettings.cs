@@ -22,14 +22,10 @@ namespace YouShouldSpellcheck.Analyzer
 
     string[] CommentLanguages { get; }
 
-    string[] AttributeArgumentLanguages { get; }
-
     string[] StringLiteralLanguages { get; }
 
-    string[] InspectedAttributes { get; }
+    AttributePropertyLanguages[] Attributes { get; }
 
     string CustomDictionariesFolder { get; }
-
-    bool CheckAttributeArgument(string attributeName, string argumentName);
   }
 }

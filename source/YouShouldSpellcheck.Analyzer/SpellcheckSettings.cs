@@ -35,30 +35,18 @@ namespace YouShouldSpellcheck.Analyzer
 
     public string[] CommentLanguages { get; set; }
 
-    public string[] AttributeArgumentLanguages { get; set; }
-
     public string[] StringLiteralLanguages { get; set; }
 
-    public string[] InspectedAttributes { get; set; }
+    public AttributePropertyLanguages[] Attributes { get; set; }
 
     public string CustomDictionariesFolder { get; set; }
+  }
 
-    public bool CheckAttributeArgument(string attributeName, string argumentName)
-    {
-      switch (attributeName)
-      {
-        case "LayoutGroupDefinition":
-          switch (argumentName)
-          {
-            case "Caption":
-            case "Description":
-            case "NativeCaption":
-            case "NativeDescription": return true;
-            default: return false;
-          }
-      }
-
-      return true;
-    }
+  [Serializable]
+  public class AttributePropertyLanguages
+  {
+    public string AttributeName { get; set; }
+    public string PropertyName { get; set; }
+    public string[] Languages { get; set; }
   }
 }

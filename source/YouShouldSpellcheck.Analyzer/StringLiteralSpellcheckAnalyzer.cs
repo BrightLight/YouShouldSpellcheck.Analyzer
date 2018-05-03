@@ -7,6 +7,7 @@
   using Microsoft.CodeAnalysis.CSharp;
   using Microsoft.CodeAnalysis.CSharp.Syntax;
   using Microsoft.CodeAnalysis.Diagnostics;
+  using Microsoft.CodeAnalysis.Text;
 
   [DiagnosticAnalyzer(LanguageNames.CSharp)]
   public class StringLiteralSpellcheckAnalyzer : SpellcheckAnalyzerBase
@@ -28,9 +29,9 @@
       context.RegisterSyntaxNodeAction(this.AnalyzeStringLiteralToken, SyntaxKind.StringLiteralToken, SyntaxKind.StringLiteralExpression);
     }
 
-    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context)
+    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, string[] languages)
     {
-      if (!base.CheckWord(rule, word, wordLocation, context))
+      if (!base.CheckWord(rule, word, wordLocation, context, languages))
       {
         ReportWord(rule, word, wordLocation, context);
       }
@@ -57,9 +58,9 @@
             var foo = literalExpressionSyntax.Token;
             var text = foo.ValueText;
             var nodeLocation = literalExpressionSyntax.GetLocation();
-            var stringLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
+            var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
 
-            this.CheckLine(StringLiteralRule, text, stringLocation, context);
+            this.CheckLine(StringLiteralRule, text, stringLocation, context, LanguagesByRule(StringLiteralRule.Id));
           }
         }
       }
@@ -77,8 +78,8 @@
       {
         var attributeName = attributeSyntax.Name.ToFullString();
         var spellcheckSettings = AnalyzerContext.SpellcheckSettings;
-        if (spellcheckSettings.InspectedAttributes == null
-          || !spellcheckSettings.InspectedAttributes.Contains(attributeName))
+        var attributeProperties = spellcheckSettings.Attributes?.Where(x => (x.AttributeName == attributeName) || (x.AttributeName + "Attribute" == attributeName) || (x.AttributeName == attributeName + "Attribute")).ToList();
+        if (attributeProperties == null || !attributeProperties.Any())
         {
           return;
         }
@@ -89,10 +90,11 @@
           return;
         }
 
-        if (spellcheckSettings.CheckAttributeArgument(attributeName, attributeArgumentName))
+        var attributePropertyLanguages = attributeProperties.FirstOrDefault(x => x.PropertyName == attributeArgumentName);
+        if (attributePropertyLanguages != null)
         {
           // next lines are identical to the ones in AnalyzeStringLiteralToken.
-          // this will be resolved ones we have one class per analyzer and can use inheritance to override stuff
+          // this will be resolved once we have one class per analyzer and can use inheritance to override stuff
           // TODO: use "context.Node.SyntaxTree.FilePath" to find the "custom dictionary"
           var literalExpressionSyntax = context.Node as LiteralExpressionSyntax;
           if (literalExpressionSyntax != null)
@@ -100,9 +102,9 @@
             var foo = literalExpressionSyntax.Token;
             var text = foo.ValueText;
             var nodeLocation = literalExpressionSyntax.GetLocation();
-            var stringLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
+            var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
 
-            this.CheckLine(StringLiteralRule, text, stringLocation, context);
+            this.CheckLine(StringLiteralRule, text, stringLocation, context, attributePropertyLanguages.Languages);
           }
         }
       }

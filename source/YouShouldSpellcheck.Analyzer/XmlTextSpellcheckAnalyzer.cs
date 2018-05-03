@@ -2,6 +2,7 @@
 {
   using System;
   using System.Collections.Immutable;
+  using System.Linq;
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.CSharp;
   using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -27,14 +28,22 @@
       context.RegisterSyntaxNodeAction(this.AnalyzeXmlText, SyntaxKind.XmlText);
     }
 
-    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context)
+    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, string[] languages)
     {
-      if (!base.CheckWord(rule, word, wordLocation, context))
+      if (!base.CheckWord(rule, word, wordLocation, context, languages))
       {
         ReportWord(rule, word, wordLocation, context);
       }
 
       return true;
+    }
+
+    protected void CheckAllTokensOfType(SyntaxNodeAnalysisContext context, SyntaxNode syntaxNode, SyntaxKind syntaxKind)
+    {
+      foreach (var syntaxToken in syntaxNode.ChildTokens().Where(x => x.IsKind(syntaxKind)))
+      {
+        this.CheckToken(CommentRule, context, syntaxToken);
+      }
     }
 
     private void AnalyzeXmlText(SyntaxNodeAnalysisContext context)
@@ -45,7 +54,7 @@
         var xmlTextSyntax = context.Node as XmlTextSyntax;
         if (xmlTextSyntax != null)
         {
-          this.CheckAllTokensOfType(CommentRule, context, xmlTextSyntax, SyntaxKind.XmlTextLiteralToken);
+          this.CheckAllTokensOfType(context, xmlTextSyntax, SyntaxKind.XmlTextLiteralToken);
         }
       }
       catch (Exception e)

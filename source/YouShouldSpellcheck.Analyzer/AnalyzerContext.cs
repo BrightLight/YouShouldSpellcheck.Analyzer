@@ -112,16 +112,21 @@
     private static void TrySaveXml()
     {
       var foo = new SpellcheckSettings();
-      foo.AttributeArgumentLanguages = new[] { "Demo1", "Demo2" };
       foo.ClassNameLanguages = new[] { "Demo1", "Demo2" };
       foo.CommentLanguages = new[] { "Demo1", "Demo2" };
       foo.CustomDictionariesFolder = "Demo1";
       foo.DefaultLanguages = new[] { "Demo1", "Demo2" };
-      foo.InspectedAttributes = new[] { "Demo1", "Demo2" };
       foo.MethodNameLanguages = new[] { "Demo1", "Demo2" };
       foo.PropertyNameLanguages = new[] { "Demo1", "Demo2" };
       foo.StringLiteralLanguages = new[] { "Demo1", "Demo2" };
       foo.VariableNameLanguages = new[] { "Demo1", "Demo2" };
+      foo.Attributes = new[] 
+      {
+        new AttributePropertyLanguages { AttributeName = "Display", PropertyName = "Name", Languages = new[] { "en_US", "en_UK" } },
+        new AttributePropertyLanguages { AttributeName = "Display", PropertyName = "Description", Languages = new[] { "en_US", "de_DE_frami" } },
+        new AttributePropertyLanguages { AttributeName = "RegularExpression", PropertyName = "ErrorMessage", Languages = new[] { "en_US", "fr" } },
+      };
+      foo.CustomDictionariesFolder = @"c:\temp\customdictionariesfolder";
       var writer = new StreamWriter(@"c:\temp\settings.xml");
       var spellcheckSettingsSerializer = new XmlSerializer(typeof(SpellcheckSettings));
       spellcheckSettingsSerializer.Serialize(writer, foo);
