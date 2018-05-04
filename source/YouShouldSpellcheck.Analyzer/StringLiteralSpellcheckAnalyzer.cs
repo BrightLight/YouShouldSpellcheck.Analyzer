@@ -90,7 +90,7 @@
           return;
         }
 
-        var attributePropertyLanguages = attributeProperties.FirstOrDefault(x => x.PropertyName == attributeArgumentName);
+        var attributePropertyLanguages = attributeProperties.FirstOrDefault(x => string.Equals(x.PropertyName, attributeArgumentName, StringComparison.OrdinalIgnoreCase));
         if (attributePropertyLanguages != null)
         {
           // next lines are identical to the ones in AnalyzeStringLiteralToken.
@@ -120,7 +120,10 @@
       }
 
       // syntax does not represent a named argument
-      // -> we need to find suitable construtor to deduct argument name
+      // -> we need to find suitable constructor to deduct argument name
+      // ToDo this is a very, very simplified "constructor resolution" approach
+      // I guess it should be possible, somehow, to ask Roslyn to which compiled the current attribute-argument belongs
+      // but I don't know how to do that, hence this "has-to-do-for-now" approach
       var attributeSyntax = attributeArgumentSyntax.Parent?.Parent as AttributeSyntax;
       if (attributeSyntax != null)
       {
