@@ -27,5 +27,7 @@ namespace YouShouldSpellcheck.Analyzer
     AttributePropertyLanguages[] Attributes { get; }
 
     string CustomDictionariesFolder { get; }
+
+    string LanguageToolUrl { get; }
   }
 }

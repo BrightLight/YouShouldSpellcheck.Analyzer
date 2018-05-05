@@ -40,6 +40,8 @@ namespace YouShouldSpellcheck.Analyzer
     public AttributePropertyLanguages[] Attributes { get; set; }
 
     public string CustomDictionariesFolder { get; set; }
+
+    public string LanguageToolUrl { get; set; }
   }
 
   [Serializable]

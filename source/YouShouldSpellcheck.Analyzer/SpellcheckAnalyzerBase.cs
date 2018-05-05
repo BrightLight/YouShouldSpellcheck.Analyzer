@@ -1,11 +1,17 @@
 namespace YouShouldSpellcheck.Analyzer
 {
+  using System;
+  using System.Collections.Generic;
   using System.Collections.Immutable;
   using System.Linq;
+  using System.Text;
   using System.Text.RegularExpressions;
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.Diagnostics;
   using Microsoft.CodeAnalysis.Text;
+  using RestSharp.Extensions;
+  using YouShouldSpellcheck.Analyzer.LanguageTool;
+  using Match = System.Text.RegularExpressions.Match;
 
   public abstract class SpellcheckAnalyzerBase : DiagnosticAnalyzer
   {
@@ -93,6 +99,47 @@ namespace YouShouldSpellcheck.Analyzer
       propertyBagForFixProvider = propertyBagForFixProvider.Add("offendingWord", word);
       var diagnostic = Diagnostic.Create(rule, location, propertyBagForFixProvider, word);
       context.ReportDiagnostic(diagnostic);
+    }
+
+    protected static void CheckTextWithLanguageTool(DiagnosticDescriptor rule, Location location, string text, string[] languages, SyntaxNodeAnalysisContext context)
+    {
+      var languageToolUriString = AnalyzerContext.SpellcheckSettings.LanguageToolUrl;
+      if (Uri.TryCreate(languageToolUriString, UriKind.Absolute, out var languageToolUri))
+      {
+        foreach (var language in languages)
+        {
+          // temporary hack because dictionaries use other language "code" than language tool :-/
+          var languageMapping = new Dictionary<string, string>
+          {
+            { "de_DE_frami", "de-DE" },
+            { "en_US", "en-US" }
+          };
+          var languageToolLanguage = languageMapping[language];
+
+          var response = LanguageToolClient.Check(languageToolUri, text, languageToolLanguage);
+          foreach (var match in response.Matches)
+          {
+            var issueLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(location.SourceSpan.Start + match.Offset, location.SourceSpan.Start + match.Offset + match.Length));
+            var propertyBagForFixProvider = ImmutableDictionary.Create<string, string>();
+            propertyBagForFixProvider = propertyBagForFixProvider.Add("offendingWord", match.Context.Text.Substring(match.Offset, match.Length));
+
+            var suggestionsAsText = new StringBuilder();
+            var i = 1;
+            foreach (var replacement in match.Replacements)
+            {
+              var suggestion = match.Sentence.Substring(0, match.Offset) + replacement.Value + match.Sentence.Substring(match.Offset + match.Length);
+              suggestionsAsText.AppendLine(suggestion);
+              propertyBagForFixProvider = propertyBagForFixProvider.Add($"suggestion_{i}", suggestion);
+              i++;
+            }
+
+            var message = $"{match.ShortMessage}: {match.Rule.Description}\r\n{match.Message}\r\nReplace with\r\n{suggestionsAsText}";
+
+            var diagnostic = Diagnostic.Create(rule, issueLocation, propertyBagForFixProvider, message);
+            context.ReportDiagnostic(diagnostic);
+          }
+        }
+      }
     }
 
     public static string[] LanguagesByRule(string ruleId)

@@ -41,5 +41,7 @@ namespace YouShouldSpellcheck.Analyzer
     public AttributePropertyLanguages[] Attributes => this.spellcheckSettings.Attributes;
 
     public string CustomDictionariesFolder => this.spellcheckSettings.CustomDictionariesFolder;
+
+    public string LanguageToolUrl => this.spellcheckSettings.LanguageToolUrl;
   }
 }

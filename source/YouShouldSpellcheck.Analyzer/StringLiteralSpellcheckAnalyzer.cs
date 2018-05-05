@@ -105,6 +105,7 @@
             var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
 
             this.CheckLine(StringLiteralRule, text, stringLocation, context, attributePropertyLanguages.Languages);
+            CheckTextWithLanguageTool(StringLiteralRule, stringLocation, text, attributePropertyLanguages.Languages, context);
           }
         }
       }
