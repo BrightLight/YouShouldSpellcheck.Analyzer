@@ -10,12 +10,12 @@ namespace YouShouldSpellcheck.Analyzer
     ////private Regex splitWordsByCasing = new Regex(@"([A-Z]+|[a-z])[a-z]*", RegexOptions.Compiled);
     private readonly Regex splitWordsByCasing = new Regex(@"(\p{Lu}+|\p{Ll})\p{Ll}*", RegexOptions.Compiled);
 
-    protected override void CheckText(DiagnosticDescriptor rule, string text, Location location, SyntaxNodeAnalysisContext context, string[] languages)
+    protected override void CheckText(DiagnosticDescriptor rule, string text, Location location, SyntaxNodeAnalysisContext context, ILanguage[] languages)
     {
       this.CheckWord(rule, text, location, context, languages);
     }
 
-    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, string[] languages)
+    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, ILanguage[] languages)
     {
       if (base.CheckWord(rule, word, wordLocation, context, languages))
       {

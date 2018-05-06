@@ -1,33 +1,49 @@
+using System;
+
 namespace YouShouldSpellcheck.Analyzer
 {
   public interface ISpellcheckSettings
   {
-    string[] DefaultLanguages { get; }
+    ILanguage[] DefaultLanguages { get; }
 
-    string[] IdentifierLanguages { get; }
+    ILanguage[] IdentifierLanguages { get; }
 
-    string[] ClassNameLanguages { get; }
+    ILanguage[] ClassNameLanguages { get; }
 
-    string[] MethodNameLanguages { get; }
+    ILanguage[] MethodNameLanguages { get; }
 
-    string[] VariableNameLanguages { get; }
+    ILanguage[] VariableNameLanguages { get; }
 
-    string[] PropertyNameLanguages { get; }
+    ILanguage[] PropertyNameLanguages { get; }
 
-    string[] EnumNameLanguages { get; }
+    ILanguage[] EnumNameLanguages { get; }
 
-    string[] EnumMemberNameLanguages { get; }
+    ILanguage[] EnumMemberNameLanguages { get; }
 
-    string[] EventNameLanguages { get; }
+    ILanguage[] EventNameLanguages { get; }
 
-    string[] CommentLanguages { get; }
+    ILanguage[] CommentLanguages { get; }
 
-    string[] StringLiteralLanguages { get; }
+    ILanguage[] StringLiteralLanguages { get; }
 
-    AttributePropertyLanguages[] Attributes { get; }
+    IAttributeProperty[] Attributes { get; }
 
     string CustomDictionariesFolder { get; }
 
     string LanguageToolUrl { get; }
+  }
+
+  public interface IAttributeProperty
+  {
+    string AttributeName { get; }
+    string PropertyName { get; }
+    ILanguage[] Languages { get; }
+  }
+
+  public interface ILanguage
+  {
+    string LocalDictionaryLanguage { get; }
+
+    string LanguageToolLanguage { get; }
   }
 }

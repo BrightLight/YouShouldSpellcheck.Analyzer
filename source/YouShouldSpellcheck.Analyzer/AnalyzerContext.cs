@@ -112,25 +112,51 @@
     private static void TrySaveXml()
     {
       var foo = new SpellcheckSettings();
-      foo.ClassNameLanguages = new[] { "Demo1", "Demo2" };
-      foo.CommentLanguages = new[] { "Demo1", "Demo2" };
-      foo.CustomDictionariesFolder = "Demo1";
-      foo.DefaultLanguages = new[] { "Demo1", "Demo2" };
-      foo.MethodNameLanguages = new[] { "Demo1", "Demo2" };
-      foo.PropertyNameLanguages = new[] { "Demo1", "Demo2" };
-      foo.StringLiteralLanguages = new[] { "Demo1", "Demo2" };
-      foo.VariableNameLanguages = new[] { "Demo1", "Demo2" };
+      foo.ClassNameLanguages = new[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-US" } };
+      foo.CommentLanguages = new[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-US" }, new Language { LocalDictionaryLanguage = "de_DE_frami", LanguageToolLanguage = "de-DE" } };
+      foo.DefaultLanguages = new[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-US" } };
+      foo.MethodNameLanguages = new[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-US" } };
+      foo.PropertyNameLanguages = new[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-US" } };
+      foo.StringLiteralLanguages = new[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-US" }, new Language { LocalDictionaryLanguage = "de_DE_frami", LanguageToolLanguage = "de-DE" } };
+      foo.VariableNameLanguages = new[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-US" } };
       foo.Attributes = new[] 
       {
-        new AttributePropertyLanguages { AttributeName = "Display", PropertyName = "Name", Languages = new[] { "en_US", "en_UK" } },
-        new AttributePropertyLanguages { AttributeName = "Display", PropertyName = "Description", Languages = new[] { "en_US", "de_DE_frami" } },
-        new AttributePropertyLanguages { AttributeName = "RegularExpression", PropertyName = "ErrorMessage", Languages = new[] { "en_US", "fr" } },
+        new AttributeProperty
+        {
+          AttributeName = "Display",
+          PropertyName = "Name",
+          Languages = new[]
+          {
+            new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-US" },
+            new Language { LocalDictionaryLanguage = "en_UK" , LanguageToolLanguage = "en-UK" }
+          },
+        },
+        new AttributeProperty
+        {
+          AttributeName = "Display",
+          PropertyName = "Description",
+          Languages = new[]
+          {
+            new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-US" },
+            new Language { LocalDictionaryLanguage = "de_DE_frami", LanguageToolLanguage = "de-DE" }
+          },
+        },
+        new AttributeProperty
+        {
+          AttributeName = "RegularExpression",
+          PropertyName = "ErrorMessage",
+          Languages = new[]
+          {
+            new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-US" },
+            new Language { LocalDictionaryLanguage = "en_UK" , LanguageToolLanguage = "en-UK" }
+          },
+        },
       };
       foo.CustomDictionariesFolder = @"c:\temp\customdictionariesfolder";
+
       var writer = new StreamWriter(@"c:\temp\settings.xml");
       var spellcheckSettingsSerializer = new XmlSerializer(typeof(SpellcheckSettings));
       spellcheckSettingsSerializer.Serialize(writer, foo);
-
     }
   }
 }

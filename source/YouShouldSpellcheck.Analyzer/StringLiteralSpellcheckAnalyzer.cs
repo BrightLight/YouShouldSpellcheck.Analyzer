@@ -29,7 +29,7 @@
       context.RegisterSyntaxNodeAction(this.AnalyzeStringLiteralToken, SyntaxKind.StringLiteralToken, SyntaxKind.StringLiteralExpression);
     }
 
-    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, string[] languages)
+    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, ILanguage[] languages)
     {
       if (!base.CheckWord(rule, word, wordLocation, context, languages))
       {

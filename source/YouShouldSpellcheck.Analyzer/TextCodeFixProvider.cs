@@ -49,7 +49,7 @@
           }
 
           // add "Add to custom dictionary" action
-          foreach (var language in SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id))
+          foreach (var language in SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id).Select(x => x.LocalDictionaryLanguage))
           {
             var ignoreSpellingAction = new NoPreviewCodeAction($"Add \"{offendingWord}\" to custom dictionary for {language}", x => this.AddToCustomDictionary(context.Document, offendingWord, language));
             context.RegisterCodeFix(ignoreSpellingAction, diagnostic);

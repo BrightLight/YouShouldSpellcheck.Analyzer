@@ -17,14 +17,14 @@ namespace YouShouldSpellcheck.Analyzer
       return document;
     }
 
-    protected static bool Suggestions(string word, string[] languages, out Dictionary<string, List<string>> allSuggestions)
+    protected static bool Suggestions(string word, ILanguage[] languages, out Dictionary<string, List<string>> allSuggestions)
     {
       allSuggestions = null;
       List<string> suggestionsForLanguage = null;
       foreach (var language in languages)
       {
         List<string> suggestions;
-        if (DictionaryManager.Suggest(word, out suggestions, language))
+        if (DictionaryManager.Suggest(word, out suggestions, language.LocalDictionaryLanguage))
         {
           if (allSuggestions == null)
           {
@@ -34,7 +34,7 @@ namespace YouShouldSpellcheck.Analyzer
           if (suggestionsForLanguage == null)
           {
             suggestionsForLanguage = new List<string>();
-            allSuggestions.Add(language, suggestionsForLanguage);
+            allSuggestions.Add(language.LocalDictionaryLanguage, suggestionsForLanguage);
           }
 
           suggestionsForLanguage.AddRange(suggestions);

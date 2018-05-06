@@ -49,12 +49,12 @@ namespace YouShouldSpellcheck.Analyzer
       this.CheckText(rule, text, syntaxToken.GetLocation(), context, LanguagesByRule(rule.Id));
     }
 
-    protected virtual void CheckText(DiagnosticDescriptor rule, string text, Location location, SyntaxNodeAnalysisContext context, string[] languages)
+    protected virtual void CheckText(DiagnosticDescriptor rule, string text, Location location, SyntaxNodeAnalysisContext context, ILanguage[] languages)
     {
       this.CheckLine(rule, text, location, context, languages);
     }
 
-    protected void CheckLine(DiagnosticDescriptor rule, string line, Location location, SyntaxNodeAnalysisContext context, string[] languages)
+    protected void CheckLine(DiagnosticDescriptor rule, string line, Location location, SyntaxNodeAnalysisContext context, ILanguage[] languages)
     {
       if (string.IsNullOrWhiteSpace(line))
       {
@@ -69,7 +69,7 @@ namespace YouShouldSpellcheck.Analyzer
       }
     }
 
-    protected virtual bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, string[] languages)
+    protected virtual bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, ILanguage[] languages)
     {
       // check if the "word" actually represents a GUID which should not further be parsed
       if (this.isGuid.IsMatch(word))
@@ -86,11 +86,11 @@ namespace YouShouldSpellcheck.Analyzer
       return false;
     }
 
-    protected static bool IsWordCorrect(string word, string[] languages)
+    protected static bool IsWordCorrect(string word, ILanguage[] languages)
     {
       return string.IsNullOrWhiteSpace(word)
         || languages == null
-        || languages.Any(language => DictionaryManager.IsWordCorrect(word, language));
+        || languages.Any(language => DictionaryManager.IsWordCorrect(word, language.LocalDictionaryLanguage));
     }
 
     protected static void ReportWord(DiagnosticDescriptor rule, string word, Location location, SyntaxNodeAnalysisContext context)
@@ -101,22 +101,14 @@ namespace YouShouldSpellcheck.Analyzer
       context.ReportDiagnostic(diagnostic);
     }
 
-    protected static void CheckTextWithLanguageTool(DiagnosticDescriptor rule, Location location, string text, string[] languages, SyntaxNodeAnalysisContext context)
+    protected static void CheckTextWithLanguageTool(DiagnosticDescriptor rule, Location location, string text, ILanguage[] languages, SyntaxNodeAnalysisContext context)
     {
       var languageToolUriString = AnalyzerContext.SpellcheckSettings.LanguageToolUrl;
       if (Uri.TryCreate(languageToolUriString, UriKind.Absolute, out var languageToolUri))
       {
         foreach (var language in languages)
         {
-          // temporary hack because dictionaries use other language "code" than language tool :-/
-          var languageMapping = new Dictionary<string, string>
-          {
-            { "de_DE_frami", "de-DE" },
-            { "en_US", "en-US" }
-          };
-          var languageToolLanguage = languageMapping[language];
-
-          var response = LanguageToolClient.Check(languageToolUri, text, languageToolLanguage);
+          var response = LanguageToolClient.Check(languageToolUri, text, language.LanguageToolLanguage);
           foreach (var match in response.Matches)
           {
             var issueLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(location.SourceSpan.Start + match.Offset, location.SourceSpan.Start + match.Offset + match.Length));
@@ -142,7 +134,7 @@ namespace YouShouldSpellcheck.Analyzer
       }
     }
 
-    public static string[] LanguagesByRule(string ruleId)
+    public static ILanguage[] LanguagesByRule(string ruleId)
     {
       switch (ruleId)
       {
