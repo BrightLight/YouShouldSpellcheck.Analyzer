@@ -9,7 +9,6 @@ namespace YouShouldSpellcheck.Analyzer
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.Diagnostics;
   using Microsoft.CodeAnalysis.Text;
-  using RestSharp.Extensions;
   using YouShouldSpellcheck.Analyzer.LanguageTool;
   using Match = System.Text.RegularExpressions.Match;
 
@@ -33,10 +32,13 @@ namespace YouShouldSpellcheck.Analyzer
 
     private static readonly DiagnosticDescriptor AttributeArgumentStringRule = new DiagnosticDescriptor(AttributeArgumentStringDiagnosticId, Title, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: AttributeArgumentRuleDescription);
 
+    private static bool languageToolIsOffline;
+
     // See http://stackoverflow.com/questions/7311734/split-sentence-into-words-but-having-trouble-with-the-punctuations-in-c-sharp
     private readonly Regex splitLineIntoWords = new Regex(@"((\b[^\s.]+\b)((?<=\.\w).)?)", RegexOptions.Compiled);
 
     private readonly Regex isGuid = new Regex(@"[{(]?[0-9A-Fa-f]{8}[-]?([0-9A-Fa-f]{4}[-]?){3}[0-9A-Fa-f]{12}[)}]?", RegexOptions.Compiled);
+
 
     protected void CheckToken(DiagnosticDescriptor rule, SyntaxNodeAnalysisContext context, SyntaxToken syntaxToken)
     {
@@ -49,12 +51,12 @@ namespace YouShouldSpellcheck.Analyzer
       this.CheckText(rule, text, syntaxToken.GetLocation(), context, LanguagesByRule(rule.Id));
     }
 
-    protected virtual void CheckText(DiagnosticDescriptor rule, string text, Location location, SyntaxNodeAnalysisContext context, ILanguage[] languages)
+    protected virtual void CheckText(DiagnosticDescriptor rule, string text, Location location, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
     {
       this.CheckLine(rule, text, location, context, languages);
     }
 
-    protected void CheckLine(DiagnosticDescriptor rule, string line, Location location, SyntaxNodeAnalysisContext context, ILanguage[] languages)
+    protected void CheckLine(DiagnosticDescriptor rule, string line, Location location, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
     {
       if (string.IsNullOrWhiteSpace(line))
       {
@@ -69,7 +71,7 @@ namespace YouShouldSpellcheck.Analyzer
       }
     }
 
-    protected virtual bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, ILanguage[] languages)
+    protected virtual bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
     {
       // check if the "word" actually represents a GUID which should not further be parsed
       if (this.isGuid.IsMatch(word))
@@ -86,7 +88,7 @@ namespace YouShouldSpellcheck.Analyzer
       return false;
     }
 
-    protected static bool IsWordCorrect(string word, ILanguage[] languages)
+    protected static bool IsWordCorrect(string word, IEnumerable<ILanguage> languages)
     {
       return string.IsNullOrWhiteSpace(word)
         || languages == null
@@ -101,14 +103,25 @@ namespace YouShouldSpellcheck.Analyzer
       context.ReportDiagnostic(diagnostic);
     }
 
-    protected static void CheckTextWithLanguageTool(DiagnosticDescriptor rule, Location location, string text, ILanguage[] languages, SyntaxNodeAnalysisContext context)
+    // result: true is LanguageTool was configured, otherwise false
+    protected static bool CheckTextWithLanguageTool(DiagnosticDescriptor rule, Location location, string text, IEnumerable<ILanguage> languages, SyntaxNodeAnalysisContext context)
     {
       var languageToolUriString = AnalyzerContext.SpellcheckSettings.LanguageToolUrl;
-      if (Uri.TryCreate(languageToolUriString, UriKind.Absolute, out var languageToolUri))
+      if (!languageToolIsOffline
+          && !string.IsNullOrEmpty(languageToolUriString) 
+          && Uri.TryCreate(languageToolUriString, UriKind.Absolute, out var languageToolUri))
       {
         foreach (var language in languages)
         {
           var response = LanguageToolClient.Check(languageToolUri, text, language.LanguageToolLanguage);
+          if (response == null)
+          {
+            // seems like an error occured. Disable LanguageTool analysis
+            // maybe later just do a timeout and retry after 10 seconds or so
+            languageToolIsOffline = true;
+            return false;
+          }
+
           foreach (var match in response.Matches)
           {
             var issueLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(location.SourceSpan.Start + match.Offset, location.SourceSpan.Start + match.Offset + match.Length));
@@ -131,10 +144,14 @@ namespace YouShouldSpellcheck.Analyzer
             context.ReportDiagnostic(diagnostic);
           }
         }
+
+        return true;
       }
+
+      return false;
     }
 
-    public static ILanguage[] LanguagesByRule(string ruleId)
+    public static IEnumerable<ILanguage> LanguagesByRule(string ruleId)
     {
       switch (ruleId)
       {

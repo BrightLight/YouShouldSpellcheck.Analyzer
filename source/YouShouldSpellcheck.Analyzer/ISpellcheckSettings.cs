@@ -2,31 +2,33 @@ using System;
 
 namespace YouShouldSpellcheck.Analyzer
 {
+  using System.Collections.Generic;
+
   public interface ISpellcheckSettings
   {
-    ILanguage[] DefaultLanguages { get; }
+    IEnumerable<ILanguage> DefaultLanguages { get; }
 
-    ILanguage[] IdentifierLanguages { get; }
+    IEnumerable<ILanguage> IdentifierLanguages { get; }
 
-    ILanguage[] ClassNameLanguages { get; }
+    IEnumerable<ILanguage> ClassNameLanguages { get; }
 
-    ILanguage[] MethodNameLanguages { get; }
+    IEnumerable<ILanguage> MethodNameLanguages { get; }
 
-    ILanguage[] VariableNameLanguages { get; }
+    IEnumerable<ILanguage> VariableNameLanguages { get; }
 
-    ILanguage[] PropertyNameLanguages { get; }
+    IEnumerable<ILanguage> PropertyNameLanguages { get; }
 
-    ILanguage[] EnumNameLanguages { get; }
+    IEnumerable<ILanguage> EnumNameLanguages { get; }
 
-    ILanguage[] EnumMemberNameLanguages { get; }
+    IEnumerable<ILanguage> EnumMemberNameLanguages { get; }
 
-    ILanguage[] EventNameLanguages { get; }
+    IEnumerable<ILanguage> EventNameLanguages { get; }
 
-    ILanguage[] CommentLanguages { get; }
+    IEnumerable<ILanguage> CommentLanguages { get; }
 
-    ILanguage[] StringLiteralLanguages { get; }
+    IEnumerable<ILanguage> StringLiteralLanguages { get; }
 
-    IAttributeProperty[] Attributes { get; }
+    IEnumerable<IAttributeProperty> Attributes { get; }
 
     string CustomDictionariesFolder { get; }
 
@@ -37,7 +39,7 @@ namespace YouShouldSpellcheck.Analyzer
   {
     string AttributeName { get; }
     string PropertyName { get; }
-    ILanguage[] Languages { get; }
+    IEnumerable<ILanguage> Languages { get; }
   }
 
   public interface ILanguage

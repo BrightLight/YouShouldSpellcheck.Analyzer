@@ -1,6 +1,7 @@
 ﻿namespace YouShouldSpellcheck.Analyzer
 {
   using System;
+  using System.Collections.Generic;
   using System.Collections.Immutable;
   using System.Linq;
   using Microsoft.CodeAnalysis;
@@ -29,7 +30,7 @@
       context.RegisterSyntaxNodeAction(this.AnalyzeStringLiteralToken, SyntaxKind.StringLiteralToken, SyntaxKind.StringLiteralExpression);
     }
 
-    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, ILanguage[] languages)
+    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
     {
       if (!base.CheckWord(rule, word, wordLocation, context, languages))
       {
@@ -104,8 +105,12 @@
             var nodeLocation = literalExpressionSyntax.GetLocation();
             var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
 
-            this.CheckLine(StringLiteralRule, text, stringLocation, context, attributePropertyLanguages.Languages);
-            CheckTextWithLanguageTool(StringLiteralRule, stringLocation, text, attributePropertyLanguages.Languages, context);
+            // try to do a languagetool check
+            // if languagetool is not configured, use local dictionary
+            if (!CheckTextWithLanguageTool(StringLiteralRule, stringLocation, text, attributePropertyLanguages.Languages, context))
+            {
+              this.CheckLine(StringLiteralRule, text, stringLocation, context, attributePropertyLanguages.Languages);
+            }
           }
         }
       }

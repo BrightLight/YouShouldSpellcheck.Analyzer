@@ -1,47 +1,60 @@
 namespace YouShouldSpellcheck.Analyzer
 {
   using System;
+  using System.Collections.Generic;
+  using System.Linq;
 
   public class SpellcheckSettingsWrapper : ISpellcheckSettings
   {
-    private readonly ISpellcheckSettings spellcheckSettings;
+    private readonly SpellcheckSettings spellcheckSettings;
 
-    public SpellcheckSettingsWrapper(ISpellcheckSettings spellcheckSettings)
+    public SpellcheckSettingsWrapper(SpellcheckSettings spellcheckSettings)
     {
-      if (spellcheckSettings == null)
-      {
-        throw new ArgumentNullException(nameof(spellcheckSettings));
-      }
-
-      this.spellcheckSettings = spellcheckSettings;
+      this.spellcheckSettings = spellcheckSettings ?? throw new ArgumentNullException(nameof(spellcheckSettings));
     }
 
-    public ILanguage[] DefaultLanguages => this.spellcheckSettings.DefaultLanguages;
+    public IEnumerable<ILanguage> DefaultLanguages => this.spellcheckSettings.DefaultLanguages;
 
-    public ILanguage[] IdentifierLanguages => this.spellcheckSettings.IdentifierLanguages ?? this.spellcheckSettings.DefaultLanguages;
+    public IEnumerable<ILanguage> IdentifierLanguages => this.spellcheckSettings.IdentifierLanguages ?? this.spellcheckSettings.DefaultLanguages;
 
-    public ILanguage[] ClassNameLanguages => this.spellcheckSettings.ClassNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> ClassNameLanguages => this.spellcheckSettings.ClassNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
 
-    public ILanguage[] MethodNameLanguages => this.spellcheckSettings.MethodNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> MethodNameLanguages => this.spellcheckSettings.MethodNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
 
-    public ILanguage[] VariableNameLanguages => this.spellcheckSettings.VariableNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> VariableNameLanguages => this.spellcheckSettings.VariableNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
 
-    public ILanguage[] PropertyNameLanguages => this.spellcheckSettings.PropertyNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> PropertyNameLanguages => this.spellcheckSettings.PropertyNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
 
-    public ILanguage[] EnumNameLanguages => this.spellcheckSettings.EnumNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> EnumNameLanguages => this.spellcheckSettings.EnumNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
 
-    public ILanguage[] EnumMemberNameLanguages => this.spellcheckSettings.EnumMemberNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> EnumMemberNameLanguages => this.spellcheckSettings.EnumMemberNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
 
-    public ILanguage[] EventNameLanguages => this.spellcheckSettings.EventNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> EventNameLanguages => this.spellcheckSettings.EventNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
 
-    public ILanguage[] CommentLanguages => this.spellcheckSettings.CommentLanguages;
+    public IEnumerable<ILanguage> CommentLanguages => this.spellcheckSettings.CommentLanguages;
 
-    public ILanguage[] StringLiteralLanguages => this.spellcheckSettings.StringLiteralLanguages;
+    public IEnumerable<ILanguage> StringLiteralLanguages => this.spellcheckSettings.StringLiteralLanguages;
 
-    public IAttributeProperty[] Attributes => this.spellcheckSettings.Attributes;
+    public IEnumerable<IAttributeProperty> Attributes => this.spellcheckSettings.Attributes.Select(x => new AttributePropertyWrapper(x));
 
     public string CustomDictionariesFolder => this.spellcheckSettings.CustomDictionariesFolder;
 
     public string LanguageToolUrl => this.spellcheckSettings.LanguageToolUrl;
+  }
+
+  public class AttributePropertyWrapper : IAttributeProperty
+  {
+    private readonly AttributeProperty attributeProperty;
+
+    public AttributePropertyWrapper(AttributeProperty attributeProperty)
+    {
+      this.attributeProperty = attributeProperty;
+    }
+
+    public string AttributeName => this.attributeProperty.AttributeName;
+
+    public string PropertyName => this.attributeProperty.PropertyName;
+
+    public IEnumerable<ILanguage> Languages => this.attributeProperty.Languages;
   }
 }

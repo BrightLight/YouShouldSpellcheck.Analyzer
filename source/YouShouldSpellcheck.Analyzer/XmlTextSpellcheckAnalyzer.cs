@@ -1,6 +1,7 @@
 ﻿namespace YouShouldSpellcheck.Analyzer
 {
   using System;
+  using System.Collections.Generic;
   using System.Collections.Immutable;
   using System.Linq;
   using Microsoft.CodeAnalysis;
@@ -28,7 +29,7 @@
       context.RegisterSyntaxNodeAction(this.AnalyzeXmlText, SyntaxKind.XmlText);
     }
 
-    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, ILanguage[] languages)
+    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
     {
       if (!base.CheckWord(rule, word, wordLocation, context, languages))
       {

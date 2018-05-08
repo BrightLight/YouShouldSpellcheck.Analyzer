@@ -14,7 +14,7 @@ namespace YouShouldSpellcheck.Analyzer
   // - allow default language(s) (used if not specified otherwise on node type level)
   // - coming later: grammar check!
   [Serializable]
-  public class SpellcheckSettings : ISpellcheckSettings
+  public class SpellcheckSettings
   {
     public Language[] DefaultLanguages { get; set; }
 
@@ -43,40 +43,14 @@ namespace YouShouldSpellcheck.Analyzer
     public string CustomDictionariesFolder { get; set; }
 
     public string LanguageToolUrl { get; set; }
-
-    ILanguage[] ISpellcheckSettings.DefaultLanguages => DefaultLanguages;
-
-    ILanguage[] ISpellcheckSettings.IdentifierLanguages => IdentifierLanguages;
-
-    ILanguage[] ISpellcheckSettings.ClassNameLanguages => ClassNameLanguages;
-
-    ILanguage[] ISpellcheckSettings.MethodNameLanguages => MethodNameLanguages;
-
-    ILanguage[] ISpellcheckSettings.VariableNameLanguages => VariableNameLanguages;
-
-    ILanguage[] ISpellcheckSettings.PropertyNameLanguages => PropertyNameLanguages;
-
-    ILanguage[] ISpellcheckSettings.EnumNameLanguages => EnumNameLanguages;
-
-    ILanguage[] ISpellcheckSettings.EnumMemberNameLanguages => EnumMemberNameLanguages;
-
-    ILanguage[] ISpellcheckSettings.EventNameLanguages => EventNameLanguages;
-
-    ILanguage[] ISpellcheckSettings.CommentLanguages => CommentLanguages;
-
-    ILanguage[] ISpellcheckSettings.StringLiteralLanguages => StringLiteralLanguages;
-
-    IAttributeProperty[] ISpellcheckSettings.Attributes => Attributes;
   }
 
   [Serializable]
-  public class AttributeProperty : IAttributeProperty
+  public class AttributeProperty
   {
     public string AttributeName { get; set; }
     public string PropertyName { get; set; }
     public Language[] Languages { get; set; }
-
-    ILanguage[] IAttributeProperty.Languages => Languages;
   }
 
   [Serializable]

@@ -108,6 +108,7 @@
     <Compile Include="AnalyzerContext.cs" />
     <Compile Include="ClassNameCodeFixProvider.cs" />
     <Compile Include="ClassNameSpellcheckAnalyzer.cs" />
+    <Compile Include="DefaultSpellcheckSettings.cs" />
     <Compile Include="LanguageTool\Category.cs" />
     <Compile Include="LanguageTool\Context.cs" />
     <Compile Include="LanguageTool\Language.cs" />

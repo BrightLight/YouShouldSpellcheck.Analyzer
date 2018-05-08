@@ -17,7 +17,7 @@ namespace YouShouldSpellcheck.Analyzer
       return document;
     }
 
-    protected static bool Suggestions(string word, ILanguage[] languages, out Dictionary<string, List<string>> allSuggestions)
+    protected static bool Suggestions(string word, IEnumerable<ILanguage> languages, out Dictionary<string, List<string>> allSuggestions)
     {
       allSuggestions = null;
       List<string> suggestionsForLanguage = null;

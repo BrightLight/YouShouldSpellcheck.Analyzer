@@ -14,7 +14,7 @@
 
     private static ISpellcheckSettings spellcheckSettings;
 
-    private static ISpellcheckSettings defaultSettings = new SpellcheckSettings();
+    private static ISpellcheckSettings defaultSettings = new DefaultSpellcheckSettings();
 
     public static ISpellcheckSettings SpellcheckSettings
     {
@@ -70,10 +70,11 @@
       try
       {
         var spellcheckSettingsSerializer = new XmlSerializer(typeof(SpellcheckSettings));
-        spellcheckSettings = spellcheckSettingsSerializer.Deserialize(settingsXml) as SpellcheckSettings;
-        if (spellcheckSettings != null)
+        var deserializedSpellcheckSettings = spellcheckSettingsSerializer.Deserialize(settingsXml) as SpellcheckSettings;
+        if (deserializedSpellcheckSettings != null)
         {
-          return new SpellcheckSettingsWrapper(spellcheckSettings);
+          spellcheckSettings = new SpellcheckSettingsWrapper(deserializedSpellcheckSettings);
+          return spellcheckSettings;
         }
 
         return null;
