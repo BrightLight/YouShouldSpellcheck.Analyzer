@@ -90,8 +90,9 @@ namespace YouShouldSpellcheck.Analyzer
 
     protected static bool IsWordCorrect(string word, IEnumerable<ILanguage> languages)
     {
-      return string.IsNullOrWhiteSpace(word)
+       return string.IsNullOrWhiteSpace(word)
         || languages == null
+        || !languages.Any()
         || languages.Any(language => DictionaryManager.IsWordCorrect(word, language.LocalDictionaryLanguage));
     }
 
@@ -122,26 +123,28 @@ namespace YouShouldSpellcheck.Analyzer
             return false;
           }
 
+          Logger.Log($"Ask LanguageTool: [{text}] => {response.Matches.Count} issues found");
           foreach (var match in response.Matches)
           {
-            var issueLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(location.SourceSpan.Start + match.Offset, location.SourceSpan.Start + match.Offset + match.Length));
-            var propertyBagForFixProvider = ImmutableDictionary.Create<string, string>();
-            propertyBagForFixProvider = propertyBagForFixProvider.Add("offendingWord", match.Context.Text.Substring(match.Offset, match.Length));
-
-            var suggestionsAsText = new StringBuilder();
-            var i = 1;
-            foreach (var replacement in match.Replacements)
+            try
             {
-              var suggestion = match.Sentence.Substring(0, match.Offset) + replacement.Value + match.Sentence.Substring(match.Offset + match.Length);
-              suggestionsAsText.AppendLine(suggestion);
-              propertyBagForFixProvider = propertyBagForFixProvider.Add($"suggestion_{i}", suggestion);
-              i++;
+              var issueLocation = CreateMatchLocation(location, text, match, context, out string textMatch);
+
+              var propertyBagForFixProvider = new Dictionary<string, string>();
+              propertyBagForFixProvider.Add("offendingWord", textMatch);
+              propertyBagForFixProvider.Add("CategoryId", match.Rule.Category.Id);
+
+              var message = BuildLanguageToolDiagnosticMessage(match, propertyBagForFixProvider);
+
+              var properties = ImmutableDictionary.Create<string, string>();
+              properties = properties.AddRange(propertyBagForFixProvider);
+              var diagnostic = Diagnostic.Create(rule, issueLocation, properties, message);
+              context.ReportDiagnostic(diagnostic);
             }
-
-            var message = $"{match.ShortMessage}: {match.Rule.Description}\r\n{match.Message}\r\nReplace with\r\n{suggestionsAsText}";
-
-            var diagnostic = Diagnostic.Create(rule, issueLocation, propertyBagForFixProvider, message);
-            context.ReportDiagnostic(diagnostic);
+            catch (Exception exception)
+            {
+              Logger.Log(exception);
+            }
           }
         }
 
@@ -149,6 +152,37 @@ namespace YouShouldSpellcheck.Analyzer
       }
 
       return false;
+    }
+
+    private static string BuildLanguageToolDiagnosticMessage(LanguageTool.Match match, Dictionary<string, string> propertyBagForFixProvider)
+    {
+      var suggestionsAsText = new StringBuilder();
+      var i = 1;
+      foreach (var replacement in match.Replacements)
+      {
+        ////var suggestion = match.Sentence.Substring(0, match.Offset) + replacement.Value + match.Sentence.Substring(match.Offset + match.Length);
+        var suggestion = replacement.Value;
+        suggestionsAsText.AppendLine(suggestion);
+        propertyBagForFixProvider.Add($"suggestion_{i}", suggestion);
+        i++;
+      }
+
+      return $"{match.ShortMessage}:\r\nRule category id: {match.Rule.Category.Id}\r\nRule category name: {match.Rule.Category.Name}\r\nRule category description: {match.Rule.Description}\r\n\r\n{match.Message}{(!string.IsNullOrEmpty(suggestionsAsText.ToString()) ? "\r\nReplace with\r\n" + suggestionsAsText.ToString() : string.Empty)}";
+    }
+
+    private static Location CreateMatchLocation(Location location, string text, LanguageTool.Match match, SyntaxNodeAnalysisContext context, out string textMatch)
+    {
+      // next lines generate the issue location (as an offset from the first character of the first line of the document)
+      // Attention: we need to take into account special whitespace characters, for instance "\n" will be counted as 1 character
+      // but it's represented in the source file as two characters. So the offset and length of the Location must
+      // take this into account and correct
+      var textBeforeMatch = text.Substring(0, match.Offset);
+      var whitespaceCharactersBeforeMatch = textBeforeMatch.Count(x => char.IsControl(x));
+      textMatch = text.Substring(match.Offset, match.Length);
+      var whitespaceCharactersInMatch = textMatch.Count(x => char.IsControl(x));
+      var startOfMatch = location.SourceSpan.Start + match.Offset + whitespaceCharactersBeforeMatch;
+      var matchLength = match.Length + whitespaceCharactersInMatch;
+      return Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(startOfMatch, startOfMatch + matchLength));
     }
 
     public static IEnumerable<ILanguage> LanguagesByRule(string ruleId)
