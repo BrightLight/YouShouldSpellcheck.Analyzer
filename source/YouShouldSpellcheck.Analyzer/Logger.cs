@@ -30,12 +30,15 @@
 
     public static void Log(LanguageTool.Match match)
     {
-      var message = $"Rule [{match.Rule.Id}] {match.Rule.Description} (Category [{match.Rule.Category.Id}] {match.Rule.Category.Name}): {match.ShortMessage}\r\n{match.Message}";
+      var message = $"Rule [{match.Rule?.Id}] {match.Rule?.Description} (Category [{match.Rule?.Category?.Id}] {match.Rule?.Category?.Name}): {match.ShortMessage}\r\n{match.Message}";
       Log(message);
 
-      foreach (var ruleUrl in match.Rule.Urls)
+      if (match.Rule.Urls != null)
       {
-        Log($"Rule-Url: {ruleUrl}");
+        foreach (var ruleUrl in match.Rule.Urls)
+        {
+          Log($"Rule-Url: {ruleUrl}");
+        }
       }
     }
   }
