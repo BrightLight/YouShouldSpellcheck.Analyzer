@@ -22,5 +22,10 @@
 
       logWriter.WriteLine($"{DateTime.Now} " + message);
     }
+
+    public static void Log(Exception exception)
+    {
+      Log(exception.ToString());
+    }
   }
 }

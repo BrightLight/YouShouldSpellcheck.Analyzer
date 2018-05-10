@@ -40,6 +40,7 @@
       }
       catch (Exception e)
       {
+        Logger.Log(e);
         Console.WriteLine(e);
       }
     }
