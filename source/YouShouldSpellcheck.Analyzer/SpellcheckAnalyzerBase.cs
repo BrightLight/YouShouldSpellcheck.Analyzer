@@ -20,7 +20,7 @@ namespace YouShouldSpellcheck.Analyzer
     // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Localizing%20Analyzers.md for more on localization
     public const string Title = "Spelling error";
 
-    public const string MessageFormat = "Spelling error: {0}";
+    public const string MessageFormat = "{0}";
 
     private const string AttributeArgumentRuleDescription = "Attribute argument should be spelled correctly.";
 
@@ -100,7 +100,7 @@ namespace YouShouldSpellcheck.Analyzer
     {
       var propertyBagForFixProvider = ImmutableDictionary.Create<string, string>();
       propertyBagForFixProvider = propertyBagForFixProvider.Add("offendingWord", word);
-      var diagnostic = Diagnostic.Create(rule, location, propertyBagForFixProvider, word);
+      var diagnostic = Diagnostic.Create(rule, location, propertyBagForFixProvider, "Spelling error: " + word);
       context.ReportDiagnostic(diagnostic);
     }
 
@@ -130,9 +130,13 @@ namespace YouShouldSpellcheck.Analyzer
             {
               var issueLocation = CreateMatchLocation(location, text, match, context, out string textMatch);
 
-              var propertyBagForFixProvider = new Dictionary<string, string>();
-              propertyBagForFixProvider.Add("offendingWord", textMatch);
-              propertyBagForFixProvider.Add("CategoryId", match.Rule.Category.Id);
+              var propertyBagForFixProvider = new Dictionary<string, string>
+              {
+                { "offendingWord", textMatch },
+                { "CategoryId", match.Rule.Category.Id },
+                { "LanguageToolRuleId", match.Rule.Id },
+                { "LanguageToolRuleIssueType", match.Rule.IssueType }
+              };
 
               var message = BuildLanguageToolDiagnosticMessage(match, propertyBagForFixProvider);
 
@@ -167,7 +171,9 @@ namespace YouShouldSpellcheck.Analyzer
         i++;
       }
 
-      return $"{match.ShortMessage}:\r\nRule category id: {match.Rule.Category.Id}\r\nRule category name: {match.Rule.Category.Name}\r\nRule category description: {match.Rule.Description}\r\n\r\n{match.Message}{(!string.IsNullOrEmpty(suggestionsAsText.ToString()) ? "\r\nReplace with\r\n" + suggestionsAsText.ToString() : string.Empty)}";
+      var header = $"{match.Rule.Category.Name}: {match.Rule.Description}";
+      var optionalShortMessage = !string.IsNullOrEmpty(match.ShortMessage) ? $"\r\n{match.ShortMessage}" : string.Empty;
+      return $"{header}{optionalShortMessage}\r\n{match.Message}{(!string.IsNullOrEmpty(suggestionsAsText.ToString()) ? "\r\nReplace with\r\n" + suggestionsAsText.ToString() : string.Empty)}";
     }
 
     private static Location CreateMatchLocation(Location location, string text, LanguageTool.Match match, SyntaxNodeAnalysisContext context, out string textMatch)
