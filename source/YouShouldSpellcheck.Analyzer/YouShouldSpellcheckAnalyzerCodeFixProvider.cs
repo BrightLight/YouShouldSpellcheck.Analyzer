@@ -17,20 +17,45 @@ namespace YouShouldSpellcheck.Analyzer
       return document;
     }
 
-    protected static bool Suggestions(string word, IEnumerable<ILanguage> languages, out Dictionary<string, List<string>> allSuggestions)
+    protected static bool Suggestions(Diagnostic diagnostic, out string offendingWord, Dictionary<string, List<string>> allSuggestions)
     {
-      allSuggestions = null;
+      if (diagnostic.Properties.TryGetValue("offendingWord", out offendingWord))
+      {
+        int i = 1;
+        List<string> languageToolSuggestions = null;
+        while (diagnostic.Properties.TryGetValue($"suggestion_{i}", out string suggestion))
+        {
+          if (languageToolSuggestions == null)
+          {
+            languageToolSuggestions = new List<string>();
+            allSuggestions.Add("LanguageTool", languageToolSuggestions);
+          }
+
+          languageToolSuggestions.Add(suggestion);
+          i++;
+        }
+
+        if (languageToolSuggestions != null)
+        {
+          // suggestions from LanguageTool found -> success and return
+          return true;
+        }
+
+        // no LanguageTool suggestions -> try to find suggestions using local dictionary
+        return Suggestions(offendingWord, SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id), allSuggestions);
+      }
+
+      return false;
+    }
+
+    protected static bool Suggestions(string word, IEnumerable<ILanguage> languages, Dictionary<string, List<string>> allSuggestions)
+    {
       List<string> suggestionsForLanguage = null;
       foreach (var language in languages)
       {
         List<string> suggestions;
         if (DictionaryManager.Suggest(word, out suggestions, language.LocalDictionaryLanguage))
         {
-          if (allSuggestions == null)
-          {
-            allSuggestions = new Dictionary<string, List<string>>();
-          }
-
           if (suggestionsForLanguage == null)
           {
             suggestionsForLanguage = new List<string>();

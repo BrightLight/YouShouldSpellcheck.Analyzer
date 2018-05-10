@@ -31,24 +31,24 @@
       foreach (var diagnostic in context.Diagnostics.Where(x => this.FixableDiagnosticIds.Contains(x.Id)))
       {
         // Register code actions that will invoke the fix.
-        string offendingWord;
-        if (diagnostic.Properties.TryGetValue("offendingWord", out offendingWord))
+        var suggestions = new Dictionary<string, List<string>>();
+        if (Suggestions(diagnostic, out var offendingWord, suggestions))
         {
-          Dictionary<string, List<string>> suggestions;
-          if (Suggestions(offendingWord, SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id), out suggestions))
+          foreach (var suggestionsForLanguage in suggestions)
           {
-            foreach (var suggestionsForLanguage in suggestions)
+            foreach (var suggestion in suggestionsForLanguage.Value)
             {
-              foreach (var suggestion in suggestionsForLanguage.Value)
-              {
-                var title = $"Replace with ({suggestionsForLanguage.Key}): {suggestion}";
-                var codeAction = CodeAction.Create(title, x => this.ReplaceText(context.Document, diagnostic.Location, suggestion, x), title);
-                context.RegisterCodeFix(codeAction, diagnostic);
-              }
+              var title = $"Replace with ({suggestionsForLanguage.Key}): {suggestion}";
+              var codeAction = CodeAction.Create(title, x => this.ReplaceText(context.Document, diagnostic.Location, suggestion, x), title);
+              context.RegisterCodeFix(codeAction, diagnostic);
             }
           }
+        }
 
-          // add "Add to custom dictionary" action
+        // add "Add to custom dictionary" action
+        if (!string.IsNullOrEmpty(offendingWord)
+          && diagnostic.Properties.GetValueOrDefault("CategoryId", "n/a") != "TYPOGRAPHY")
+        {
           foreach (var language in SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id).Select(x => x.LocalDictionaryLanguage))
           {
             var ignoreSpellingAction = new NoPreviewCodeAction($"Add \"{offendingWord}\" to custom dictionary for {language}", x => this.AddToCustomDictionary(context.Document, offendingWord, language));
