@@ -51,45 +51,44 @@ namespace YouShouldSpellcheck.Analyzer
           }
 
           // Register code actions that will invoke the fix.
-          string offendingWord;
-          if (diagnostic.Properties.TryGetValue("offendingWord", out offendingWord))
+          var suggestions = new Dictionary<string, List<string>>();
+          if (Suggestions(diagnostic, out var offendingWord, suggestions))
           {
-            Dictionary<string, List<string>> suggestions;
-            if (Suggestions(offendingWord, SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id), out suggestions))
+            foreach (var suggestionsForLanguage in suggestions)
             {
-              foreach (var suggestionsForLanguage in suggestions)
+              foreach (var suggestion in suggestionsForLanguage.Value)
               {
-                foreach (var suggestion in suggestionsForLanguage.Value)
+                try
                 {
-                  try
+                  // we might only replacing part of the identifier, in which case we need to supply the complete new identifier
+                  var newIdentifier = suggestion;
+                  var identifierToken = this.GetIdentifierToken(declaration);
+                  var originalIdentifierSpan = identifierToken.Span;
+                  if (originalIdentifierSpan != diagnosticSpan)
                   {
-                    // we might only replacing part of the identifier, in which case we need to supply the complete new identifier
-                    var newIdentifier = suggestion;
-                    var identifierToken = this.GetIdentifierToken(declaration);
-                    var originalIdentifierSpan = identifierToken.Span;
-                    if (originalIdentifierSpan != diagnosticSpan)
-                    {
-                      var originalIdentifier = identifierToken.Text;
-                      newIdentifier = originalIdentifier.Substring(0, diagnosticSpan.Start - originalIdentifierSpan.Start)
-                        + suggestion
-                        + originalIdentifier.Substring(diagnosticSpan.Start - originalIdentifierSpan.Start + diagnosticSpan.Length);
-                    }
-
-                    // Get the symbol representing the type to be renamed.
-                    var typeSymbol = await this.GetDeclaredSymbolAsync(context.Document, declaration, context.CancellationToken);
-
-                    var title = $"Replace with ({suggestionsForLanguage.Key}): {newIdentifier}";
-                    var codeAction = CodeAction.Create(title, x => this.RenameSymbol(context.Document, typeSymbol, newIdentifier, x), title);
-                    context.RegisterCodeFix(codeAction, diagnostic);
+                    var originalIdentifier = identifierToken.Text;
+                    newIdentifier = originalIdentifier.Substring(0, diagnosticSpan.Start - originalIdentifierSpan.Start)
+                      + suggestion
+                      + originalIdentifier.Substring(diagnosticSpan.Start - originalIdentifierSpan.Start + diagnosticSpan.Length);
                   }
-                  catch (Exception e)
-                  {
-                    Logger.Log(e.Message);
-                  }
+
+                  // Get the symbol representing the type to be renamed.
+                  var typeSymbol = await this.GetDeclaredSymbolAsync(context.Document, declaration, context.CancellationToken);
+
+                  var title = $"Replace with ({suggestionsForLanguage.Key}): {newIdentifier}";
+                  var codeAction = CodeAction.Create(title, x => this.RenameSymbol(context.Document, typeSymbol, newIdentifier, x), title);
+                  context.RegisterCodeFix(codeAction, diagnostic);
+                }
+                catch (Exception e)
+                {
+                  Logger.Log(e);
                 }
               }
             }
+          }
 
+          if (!string.IsNullOrEmpty(offendingWord))
+          {
             // add "Add to custom dictionary" action
             foreach (var language in SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id).Select(x => x.LocalDictionaryLanguage))
             {
