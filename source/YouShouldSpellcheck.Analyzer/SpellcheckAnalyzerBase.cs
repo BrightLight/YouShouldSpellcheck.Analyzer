@@ -126,6 +126,7 @@ namespace YouShouldSpellcheck.Analyzer
           Logger.Log($"Ask LanguageTool: [{text}] => {response.Matches.Count} issues found");
           foreach (var match in response.Matches)
           {
+            Logger.Log(match);
             try
             {
               var issueLocation = CreateMatchLocation(location, text, match, context, out string textMatch);
