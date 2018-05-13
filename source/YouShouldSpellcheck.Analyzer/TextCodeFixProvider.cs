@@ -26,6 +26,7 @@
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
       var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+      var codeFixCount = 0;
 
       // TODO: Replace the following code with your own analysis, generating a CodeAction for each fix to suggest
       foreach (var diagnostic in context.Diagnostics.Where(x => this.FixableDiagnosticIds.Contains(x.Id)))
@@ -41,6 +42,7 @@
               var title = $"Replace with ({suggestionsForLanguage.Key}): {suggestion}";
               var codeAction = CodeAction.Create(title, x => this.ReplaceText(context.Document, diagnostic.Location, suggestion, x), title);
               context.RegisterCodeFix(codeAction, diagnostic);
+              codeFixCount++;
             }
           }
         }
@@ -53,7 +55,14 @@
           {
             var ignoreSpellingAction = new NoPreviewCodeAction($"Add \"{offendingWord}\" to custom dictionary for {language}", x => this.AddToCustomDictionary(context.Document, offendingWord, language));
             context.RegisterCodeFix(ignoreSpellingAction, diagnostic);
+            codeFixCount++;
           }
+        }
+
+        if (codeFixCount == 0)
+        {
+          var noSuggestionsAction = new NoPreviewCodeAction("No suggestions found", x => null);
+          context.RegisterCodeFix(noSuggestionsAction, diagnostic);
         }
       }
     }
