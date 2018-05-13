@@ -37,7 +37,7 @@ namespace YouShouldSpellcheck.Analyzer
 
     public IEnumerable<IAttributeProperty> Attributes => this.spellcheckSettings.Attributes.Select(x => new AttributePropertyWrapper(x));
 
-    public string CustomDictionariesFolder => this.spellcheckSettings.CustomDictionariesFolder;
+    public string CustomDictionariesFolder => Environment.ExpandEnvironmentVariables(this.spellcheckSettings.CustomDictionariesFolder);
 
     public string LanguageToolUrl => this.spellcheckSettings.LanguageToolUrl;
   }
