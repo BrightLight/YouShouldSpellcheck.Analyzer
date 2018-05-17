@@ -35,7 +35,8 @@ namespace YouShouldSpellcheck.Analyzer
     private static bool languageToolIsOffline;
 
     // See http://stackoverflow.com/questions/7311734/split-sentence-into-words-but-having-trouble-with-the-punctuations-in-c-sharp
-    private readonly Regex splitLineIntoWords = new Regex(@"((\b[^\s.]+\b)((?<=\.\w).)?)", RegexOptions.Compiled);
+    // private readonly Regex splitLineIntoWords = new Regex(@"((\b[^\s.]+\b)((?<=\.\w).)?)", RegexOptions.Compiled); // original with additional "." (for reasons I no longer no) 
+    private readonly Regex splitLineIntoWords = new Regex(@"((\b[^\s\/]+\b)((?<=\.\w).)?)", RegexOptions.Compiled); // version from StackOverflow modified to split forwared dash as well (e.g. "sender/receiver").
 
     private readonly Regex isGuid = new Regex(@"[{(]?[0-9A-Fa-f]{8}[-]?([0-9A-Fa-f]{4}[-]?){3}[0-9A-Fa-f]{12}[)}]?", RegexOptions.Compiled);
 
