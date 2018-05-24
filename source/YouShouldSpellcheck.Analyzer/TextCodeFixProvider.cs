@@ -15,7 +15,8 @@
   {
     public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
       XmlTextSpellcheckAnalyzer.CommentDiagnosticId,
-      StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId);
+      StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId,
+      StringLiteralSpellcheckAnalyzer.AttributeArgumentStringDiagnosticId);
 
     public sealed override FixAllProvider GetFixAllProvider()
     {

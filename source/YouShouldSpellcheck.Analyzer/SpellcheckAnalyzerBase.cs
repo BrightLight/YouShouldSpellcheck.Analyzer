@@ -14,23 +14,15 @@ namespace YouShouldSpellcheck.Analyzer
 
   public abstract class SpellcheckAnalyzerBase : DiagnosticAnalyzer
   {
-    public const string AttributeArgumentStringDiagnosticId = "YS100";
-
     // You can change these strings in the Resources.resx file. If you do not want your analyzer to be localize-able, you can use regular strings for Title and MessageFormat.
     // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Localizing%20Analyzers.md for more on localization
-    public const string Title = "Spelling error";
-
     public const string MessageFormat = "{0}";
-
-    private const string AttributeArgumentRuleDescription = "Attribute argument should be spelled correctly.";
 
     public const string NamingCategory = "Naming";
 
     public const string CommentCategory = "Comment";
 
     public const string ContentCategory = "Content";
-
-    private static readonly DiagnosticDescriptor AttributeArgumentStringRule = new DiagnosticDescriptor(AttributeArgumentStringDiagnosticId, Title, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: AttributeArgumentRuleDescription);
 
     private static bool languageToolIsOffline;
 

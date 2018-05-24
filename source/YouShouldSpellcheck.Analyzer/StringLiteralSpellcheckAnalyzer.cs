@@ -13,12 +13,17 @@
   [DiagnosticAnalyzer(LanguageNames.CSharp)]
   public class StringLiteralSpellcheckAnalyzer : SpellcheckAnalyzerBase
   {
+    public const string AttributeArgumentStringDiagnosticId = "YS100";
     public const string StringLiteralDiagnosticId = "YS101";
-    private const string StringLiteralRuleTitle = "All text should be spelled correctly.";
-    private const string StringLiteralRuleDescription = "All text should be spelled correctly.";
-    private static readonly DiagnosticDescriptor StringLiteralRule = new DiagnosticDescriptor(StringLiteralDiagnosticId, StringLiteralRuleTitle, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: StringLiteralRuleDescription);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(StringLiteralRule);
+    private const string StringLiteralRuleTitle = "String literal should be spelled correctly.";
+    private const string StringLiteralRuleDescription = "String literal should be spelled correctly.";
+    public const string AttributeArgumentRuleTitle = "Attribute argument should be spelled correctly.";
+    private const string AttributeArgumentRuleDescription = "Attribute argument should be spelled correctly.";
+    private static readonly DiagnosticDescriptor StringLiteralRule = new DiagnosticDescriptor(StringLiteralDiagnosticId, StringLiteralRuleTitle, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: StringLiteralRuleDescription);
+    private static readonly DiagnosticDescriptor AttributeArgumentStringRule = new DiagnosticDescriptor(AttributeArgumentStringDiagnosticId, AttributeArgumentRuleTitle, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: AttributeArgumentRuleDescription);
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(StringLiteralRule, AttributeArgumentStringRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -107,9 +112,9 @@
 
             // try to do a languagetool check
             // if languagetool is not configured, use local dictionary
-            if (!CheckTextWithLanguageTool(StringLiteralRule, stringLocation, text, attributePropertyLanguages.Languages, context))
+            if (!CheckTextWithLanguageTool(AttributeArgumentStringRule, stringLocation, text, attributePropertyLanguages.Languages, context))
             {
-              this.CheckLine(StringLiteralRule, text, stringLocation, context, attributePropertyLanguages.Languages);
+              this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages);
             }
           }
         }
