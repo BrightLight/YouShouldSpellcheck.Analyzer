@@ -2,7 +2,9 @@ namespace YouShouldSpellcheck.Analyzer
 {
   using System;
   using System.Collections.Generic;
+  using System.Globalization;
   using System.Linq;
+  using System.Text;
   using System.Threading;
   using System.Threading.Tasks;
   using Microsoft.CodeAnalysis;
@@ -60,25 +62,29 @@ namespace YouShouldSpellcheck.Analyzer
               {
                 try
                 {
-                  // we might only replacing part of the identifier, in which case we need to supply the complete new identifier
-                  var newIdentifier = suggestion;
-                  var identifierToken = this.GetIdentifierToken(declaration);
-                  var originalIdentifierSpan = identifierToken.Span;
-                  if (originalIdentifierSpan != diagnosticSpan)
-                  {
-                    var originalIdentifier = identifierToken.Text;
-                    newIdentifier = originalIdentifier.Substring(0, diagnosticSpan.Start - originalIdentifierSpan.Start)
-                      + suggestion
-                      + originalIdentifier.Substring(diagnosticSpan.Start - originalIdentifierSpan.Start + diagnosticSpan.Length);
+                  var sanitizedSuggestion = SyntaxFacts.IsValidIdentifier(suggestion) ? suggestion : MakeCamelCase(suggestion);
+                  if (SyntaxFacts.IsValidIdentifier(sanitizedSuggestion))
+                  { 
+                    // we might only replacing part of the identifier, in which case we need to supply the complete new identifier
+                    var newIdentifier = sanitizedSuggestion;
+                    var identifierToken = this.GetIdentifierToken(declaration);
+                    var originalIdentifierSpan = identifierToken.Span;
+                    if (originalIdentifierSpan != diagnosticSpan)
+                    {
+                      var originalIdentifier = identifierToken.Text;
+                      newIdentifier = originalIdentifier.Substring(0, diagnosticSpan.Start - originalIdentifierSpan.Start)
+                        + suggestion
+                        + originalIdentifier.Substring(diagnosticSpan.Start - originalIdentifierSpan.Start + diagnosticSpan.Length);
+                    }
+
+                    // Get the symbol representing the type to be renamed.
+                    var typeSymbol = await this.GetDeclaredSymbolAsync(context.Document, declaration, context.CancellationToken);
+
+                    var title = $"Replace with ({suggestionsForLanguage.Key}): {newIdentifier}";
+                    var codeAction = CodeAction.Create(title, x => this.RenameSymbol(context.Document, typeSymbol, newIdentifier, x), title);
+                    context.RegisterCodeFix(codeAction, diagnostic);
+                    codeFixCount++;
                   }
-
-                  // Get the symbol representing the type to be renamed.
-                  var typeSymbol = await this.GetDeclaredSymbolAsync(context.Document, declaration, context.CancellationToken);
-
-                  var title = $"Replace with ({suggestionsForLanguage.Key}): {newIdentifier}";
-                  var codeAction = CodeAction.Create(title, x => this.RenameSymbol(context.Document, typeSymbol, newIdentifier, x), title);
-                  context.RegisterCodeFix(codeAction, diagnostic);
-                  codeFixCount++;
                 }
                 catch (Exception e)
                 {
@@ -130,6 +136,35 @@ namespace YouShouldSpellcheck.Analyzer
 
       // Return the new solution with the now-uppercase type name.
       return newSolution;
+    }
+
+    /// <summary>
+    /// Checks if the specified <paramref name="suggestedIdentifierName"/> is a compound word,
+    /// like "upper class" or "upper-class", which would not be valid identifier names,
+    /// in which case we remove the extra " " or "-" and let every word start with an uppercase character.
+    /// </summary>
+    /// <param name="identifierName">An identifier name as suggested by the spellchecker engine.</param>
+    /// <returns>The <paramref name="suggestedIdentifierName"/> without any "-" or " ".</returns>
+    /// <remarks>
+    /// This method currently supports one space (" ") and one dash ("-") as a separation character.
+    /// </remarks>
+    private string MakeCamelCase(string suggestedIdentifierName)
+    {
+      if (suggestedIdentifierName.Contains('-')
+        || suggestedIdentifierName.Contains(' '))
+      {
+        var titleCasedSuggestion = new StringBuilder();
+        var parts = suggestedIdentifierName.Split('-', ' ');
+        foreach (var part in parts)
+        {
+          var titleCasedPart = CultureInfo.CurrentUICulture.TextInfo.ToTitleCase(part);
+          titleCasedSuggestion.Append(titleCasedPart);
+        }
+
+        return titleCasedSuggestion.ToString();
+      }
+
+      return suggestedIdentifierName;
     }
   }
 }
