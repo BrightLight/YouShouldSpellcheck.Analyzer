@@ -39,7 +39,7 @@
     {
       if (!base.CheckWord(rule, word, wordLocation, context, languages))
       {
-        ReportWord(rule, word, wordLocation, context);
+        ReportWord(rule, word, wordLocation, context, languages);
       }
 
       return true;

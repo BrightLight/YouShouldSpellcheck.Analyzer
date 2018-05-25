@@ -89,10 +89,15 @@ namespace YouShouldSpellcheck.Analyzer
         || languages.Any(language => DictionaryManager.IsWordCorrect(word, language.LocalDictionaryLanguage));
     }
 
-    protected static void ReportWord(DiagnosticDescriptor rule, string word, Location location, SyntaxNodeAnalysisContext context)
+    protected static void ReportWord(DiagnosticDescriptor rule, string word, Location location, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages = null)
     {
       var propertyBagForFixProvider = ImmutableDictionary.Create<string, string>();
       propertyBagForFixProvider = propertyBagForFixProvider.Add("offendingWord", word);
+      if (languages != null)
+      {
+        propertyBagForFixProvider = propertyBagForFixProvider.Add("validLanguages", languages.Select(x => x.LocalDictionaryLanguage).Aggregate(string.Empty, (allSupportedLanguages, supportedLanguage) => allSupportedLanguages + supportedLanguage + ";"));
+      }
+
       var diagnostic = Diagnostic.Create(rule, location, propertyBagForFixProvider, "Spelling error: " + word);
       context.ReportDiagnostic(diagnostic);
     }

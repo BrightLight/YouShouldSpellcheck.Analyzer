@@ -17,7 +17,7 @@ namespace YouShouldSpellcheck.Analyzer
       return document;
     }
 
-    protected static bool Suggestions(Diagnostic diagnostic, out string offendingWord, Dictionary<string, List<string>> allSuggestions)
+    protected static bool Suggestions(Diagnostic diagnostic, out string offendingWord, Dictionary<string, List<string>> allSuggestions, IEnumerable<string> languages)
     {
       if (diagnostic.Properties.TryGetValue("offendingWord", out offendingWord))
       {
@@ -42,24 +42,24 @@ namespace YouShouldSpellcheck.Analyzer
         }
 
         // no LanguageTool suggestions -> try to find suggestions using local dictionary
-        return Suggestions(offendingWord, SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id), allSuggestions);
+        return Suggestions(offendingWord, languages, allSuggestions);
       }
 
       return false;
     }
 
-    protected static bool Suggestions(string word, IEnumerable<ILanguage> languages, Dictionary<string, List<string>> allSuggestions)
+    protected static bool Suggestions(string word, IEnumerable<string> languages, Dictionary<string, List<string>> allSuggestions)
     {
       List<string> suggestionsForLanguage = null;
       foreach (var language in languages)
       {
         List<string> suggestions;
-        if (DictionaryManager.Suggest(word, out suggestions, language.LocalDictionaryLanguage))
+        if (DictionaryManager.Suggest(word, out suggestions, language))
         {
           if (suggestionsForLanguage == null)
           {
             suggestionsForLanguage = new List<string>();
-            allSuggestions.Add(language.LocalDictionaryLanguage, suggestionsForLanguage);
+            allSuggestions.Add(language, suggestionsForLanguage);
           }
 
           suggestionsForLanguage.AddRange(suggestions);

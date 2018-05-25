@@ -9,6 +9,7 @@
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.CodeFixes;
   using Microsoft.CodeAnalysis.CodeActions;
+  using System;
 
   [ExportCodeFixProvider(LanguageNames.CSharp, "", Name = nameof(TextCodeFixProvider)), Shared]
   public class TextCodeFixProvider : YouShouldSpellcheckAnalyzerCodeFixProvider
@@ -32,9 +33,15 @@
       // TODO: Replace the following code with your own analysis, generating a CodeAction for each fix to suggest
       foreach (var diagnostic in context.Diagnostics.Where(x => this.FixableDiagnosticIds.Contains(x.Id)))
       {
+        string[] validLanguages = SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id).Select(x => x.LocalDictionaryLanguage).ToArray();
+        if (diagnostic.Properties.TryGetValue("validLanguages", out string supportedLanguages))
+        {
+          validLanguages = supportedLanguages.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
         // Register code actions that will invoke the fix.
         var suggestions = new Dictionary<string, List<string>>();
-        if (Suggestions(diagnostic, out var offendingWord, suggestions))
+        if (Suggestions(diagnostic, out var offendingWord, suggestions, validLanguages))
         {
           foreach (var suggestionsForLanguage in suggestions)
           {
@@ -52,7 +59,7 @@
         if (!string.IsNullOrEmpty(offendingWord)
           && diagnostic.Properties.GetValueOrDefault("CategoryId", "n/a") != "TYPOGRAPHY")
         {
-          foreach (var language in SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id).Select(x => x.LocalDictionaryLanguage))
+          foreach (var language in validLanguages)
           {
             var ignoreSpellingAction = new NoPreviewCodeAction($"Add \"{offendingWord}\" to custom dictionary for {language}", x => this.AddToCustomDictionary(context.Document, offendingWord, language));
             context.RegisterCodeFix(ignoreSpellingAction, diagnostic);
