@@ -50,10 +50,10 @@ namespace YouShouldSpellcheck.Analyzer
 
     protected static bool Suggestions(string word, IEnumerable<string> languages, Dictionary<string, List<string>> allSuggestions)
     {
-      List<string> suggestionsForLanguage = null;
       foreach (var language in languages)
       {
         List<string> suggestions;
+        List<string> suggestionsForLanguage = null;
         if (DictionaryManager.Suggest(word, out suggestions, language))
         {
           if (suggestionsForLanguage == null)
