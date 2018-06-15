@@ -7,7 +7,7 @@ namespace YouShouldSpellcheck.Analyzer
   using Microsoft.CodeAnalysis.CSharp.Syntax;
 
   [ExportCodeFixProvider(LanguageNames.CSharp, "", Name = nameof(PropertyNameCodeFixProvider)), Shared]
-  public class PropertyNameCodeFixProvider : IdentifierCodeFixProvider<PropertyDeclarationSyntax>
+  public class PropertyNameCodeFixProvider : MemberIdentifierCodeFixProvider<PropertyDeclarationSyntax>
   {
     public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(PropertyNameSpellcheckAnalyzer.PropertyNameDiagnosticId);
 

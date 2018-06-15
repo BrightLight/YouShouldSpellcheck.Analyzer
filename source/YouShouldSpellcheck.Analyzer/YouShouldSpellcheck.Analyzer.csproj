@@ -120,6 +120,7 @@
     <Compile Include="LanguageTool\Match.cs" />
     <Compile Include="LanguageTool\Rule.cs" />
     <Compile Include="LanguageTool\Software.cs" />
+    <Compile Include="MemberIdentifierCodeFixProvider.cs" />
     <Compile Include="MethodNameCodeFixProvider.cs" />
     <Compile Include="PropertyNameCodeFixProvider.cs" />
     <Compile Include="TextCodeFixProvider.cs" />
@@ -142,6 +143,7 @@
     </Compile>
     <Compile Include="SpellcheckSettingsWrapper.cs" />
     <Compile Include="StringLiteralSpellcheckAnalyzer.cs" />
+    <Compile Include="VariableNameCodeFixProvider.cs" />
     <Compile Include="VariableNameSpellcheckAnalyzer.cs" />
     <Compile Include="XmlTextSpellcheckAnalyzer.cs" />
     <Compile Include="SpellcheckAnalyzerBase.cs" />

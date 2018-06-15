@@ -7,7 +7,7 @@ namespace YouShouldSpellcheck.Analyzer
   using Microsoft.CodeAnalysis.CSharp.Syntax;
 
   [ExportCodeFixProvider(LanguageNames.CSharp, "", Name = nameof(EnumNameCodeFixProvider)), Shared]
-  public class EnumNameCodeFixProvider : IdentifierCodeFixProvider<EnumDeclarationSyntax>
+  public class EnumNameCodeFixProvider : MemberIdentifierCodeFixProvider<EnumDeclarationSyntax>
   {
     public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(EnumNameSpellcheckAnalyzer.EnumNameDiagnosticId);
 

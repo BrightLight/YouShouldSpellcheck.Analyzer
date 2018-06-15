@@ -11,22 +11,9 @@ namespace YouShouldSpellcheck.Analyzer
   using Microsoft.CodeAnalysis.CodeActions;
   using Microsoft.CodeAnalysis.CodeFixes;
   using Microsoft.CodeAnalysis.CSharp;
-  using Microsoft.CodeAnalysis.CSharp.Syntax;
   using Microsoft.CodeAnalysis.Rename;
 
-  ////[ExportCodeFixProvider(LanguageNames.CSharp, "", Name = nameof(VariableNameCodeFixProvider)), Shared]
-  ////public class VariableNameCodeFixProvider : IdentifierCodeFixProvider<VariableDeclaratorSyntax>
-  ////{
-  ////  public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(VariableNameSpellcheckAnalyzer.VariableNameDiagnosticId);
-
-  ////  protected override SyntaxToken GetIdentifierToken(VariableDeclaratorSyntax declarationToken)
-  ////  {
-  ////    return declarationToken.Identifier;
-  ////  }
-  ////}
-
   public abstract class IdentifierCodeFixProvider<T> : YouShouldSpellcheckAnalyzerCodeFixProvider
-    where T : MemberDeclarationSyntax
   {
     public sealed override FixAllProvider GetFixAllProvider()
     {
@@ -126,12 +113,7 @@ namespace YouShouldSpellcheck.Analyzer
 
     protected abstract SyntaxToken GetIdentifierToken(T declarationToken);
 
-    protected async Task<ISymbol> GetDeclaredSymbolAsync(Document document, MemberDeclarationSyntax typeDecl, CancellationToken cancellationToken)
-    {
-      // Get the symbol representing the type to be renamed.
-      var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
-      return semanticModel.GetDeclaredSymbol(typeDecl, cancellationToken);
-    }
+    protected abstract Task<ISymbol> GetDeclaredSymbolAsync(Document document, T typeDecl, CancellationToken cancellationToken);
 
     private async Task<Solution> RenameSymbol(Document document, ISymbol identifieSymbol, string suggestedWord, CancellationToken cancellationToken)
     {
