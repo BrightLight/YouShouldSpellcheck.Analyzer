@@ -149,7 +149,7 @@ namespace YouShouldSpellcheck.Analyzer
     /// like "upper class" or "upper-class", which would not be valid identifier names,
     /// in which case we remove the extra " " or "-" and let every word start with an uppercase character.
     /// </summary>
-    /// <param name="identifierName">An identifier name as suggested by the spellchecker engine.</param>
+    /// <param name="suggestedIdentifierName">An identifier name as suggested by the spellchecker engine.</param>
     /// <returns>The <paramref name="suggestedIdentifierName"/> without any "-" or " ".</returns>
     /// <remarks>
     /// This method currently supports one space (" ") and one dash ("-") as a separation character.
