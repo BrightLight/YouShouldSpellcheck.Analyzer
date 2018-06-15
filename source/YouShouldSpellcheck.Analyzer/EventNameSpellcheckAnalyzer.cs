@@ -11,8 +11,8 @@
   public class EventNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string EventNameDiagnosticId = "YS109";
-    private const string EventNameRuleTitle = "Name of Event should be spelled correctly.";
-    private const string EventNameRuleDescription = "The name of an Event should be spelled correctly.";
+    private const string EventNameRuleTitle = "Event name should be spelled correctly.";
+    private const string EventNameRuleDescription = "Event name should be spelled correctly.";
     private static readonly DiagnosticDescriptor EventNameRule = new DiagnosticDescriptor(EventNameDiagnosticId, EventNameRuleTitle, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: EventNameRuleDescription);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(EventNameRule);

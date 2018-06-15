@@ -11,8 +11,8 @@
   public class EnumNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string EnumNameDiagnosticId = "YS107";
-    private const string EnumNameRuleTitle = "Name of enumeration should be spelled correctly.";
-    private const string EnumNameRuleDescription = "The name of an enumeration should be spelled correctly.";
+    private const string EnumNameRuleTitle = "Enumeration name should be spelled correctly.";
+    private const string EnumNameRuleDescription = "Enumeration name should be spelled correctly.";
     private static readonly DiagnosticDescriptor EnumNameRule = new DiagnosticDescriptor(EnumNameDiagnosticId, EnumNameRuleTitle, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: EnumNameRuleDescription);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(EnumNameRule);
