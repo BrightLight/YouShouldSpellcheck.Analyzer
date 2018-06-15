@@ -17,7 +17,25 @@
     public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
       XmlTextSpellcheckAnalyzer.CommentDiagnosticId,
       StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId,
-      StringLiteralSpellcheckAnalyzer.AttributeArgumentStringDiagnosticId);
+      StringLiteralSpellcheckAnalyzer.AttributeArgumentStringDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolCasingDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolColloquialismsDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolCompoundingDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolConfusedWordsDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolFalseFriendsDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolGenderNeutralityDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolGrammarDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolMiscDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolPunctuationDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolRedundancyDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolRegionalismsDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolRepetitionsDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolSemanticsDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolStyleDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolTypographyDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolTyposDiagnosticId,
+      SpellcheckAnalyzerBase.LanguageToolWikipediaDiagnosticId
+    );
 
     public sealed override FixAllProvider GetFixAllProvider()
     {

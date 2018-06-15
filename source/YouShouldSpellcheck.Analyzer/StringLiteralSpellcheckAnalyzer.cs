@@ -23,7 +23,27 @@
     private static readonly DiagnosticDescriptor StringLiteralRule = new DiagnosticDescriptor(StringLiteralDiagnosticId, StringLiteralRuleTitle, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: StringLiteralRuleDescription);
     private static readonly DiagnosticDescriptor AttributeArgumentStringRule = new DiagnosticDescriptor(AttributeArgumentStringDiagnosticId, AttributeArgumentRuleTitle, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: AttributeArgumentRuleDescription);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(StringLiteralRule, AttributeArgumentStringRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+      StringLiteralRule,
+      AttributeArgumentStringRule,
+      LanguageToolCasingRule,
+      LanguageToolColloquialismsRule,
+      LanguageToolCompoundingRule,
+      LanguageToolConfusedWordsRule,
+      LanguageToolFalseFriendsRule,
+      LanguageToolGenderNeutralityRule,
+      LanguageToolGrammarRule,
+      LanguageToolMiscRule,
+      LanguageToolPunctuationRule,
+      LanguageToolRedundancyRule,
+      LanguageToolRegionalismsRule,
+      LanguageToolRepetitionsRule,
+      LanguageToolSemanticsRule,
+      LanguageToolStyleRule,
+      LanguageToolTypographyRule,
+      LanguageToolTyposRule,
+      LanguageToolWikipediaRule
+    );
 
     public override void Initialize(AnalysisContext context)
     {
