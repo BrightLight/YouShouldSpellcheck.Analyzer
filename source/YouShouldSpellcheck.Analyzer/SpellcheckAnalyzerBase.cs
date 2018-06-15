@@ -98,7 +98,7 @@ namespace YouShouldSpellcheck.Analyzer
         propertyBagForFixProvider = propertyBagForFixProvider.Add("validLanguages", languages.Select(x => x.LocalDictionaryLanguage).Aggregate(string.Empty, (allSupportedLanguages, supportedLanguage) => allSupportedLanguages + supportedLanguage + ";"));
       }
 
-      var diagnostic = Diagnostic.Create(rule, location, propertyBagForFixProvider, "Spelling error: " + word);
+      var diagnostic = Diagnostic.Create(rule, location, propertyBagForFixProvider, "Possible spelling mistake: " + word);
       context.ReportDiagnostic(diagnostic);
     }
 
