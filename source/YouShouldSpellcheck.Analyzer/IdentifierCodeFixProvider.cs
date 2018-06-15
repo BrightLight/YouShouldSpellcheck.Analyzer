@@ -68,7 +68,7 @@ namespace YouShouldSpellcheck.Analyzer
               {
                 try
                 {
-                  var sanitizedSuggestion = SyntaxFacts.IsValidIdentifier(suggestion) ? suggestion : MakeCamelCase(suggestion);
+                  var sanitizedSuggestion = SyntaxFacts.IsValidIdentifier(suggestion) ? suggestion : this.MakeCamelCase(suggestion);
                   if (SyntaxFacts.IsValidIdentifier(sanitizedSuggestion))
                   { 
                     // we might only replacing part of the identifier, in which case we need to supply the complete new identifier
@@ -79,7 +79,7 @@ namespace YouShouldSpellcheck.Analyzer
                     {
                       var originalIdentifier = identifierToken.Text;
                       newIdentifier = originalIdentifier.Substring(0, diagnosticSpan.Start - originalIdentifierSpan.Start)
-                        + suggestion
+                        + sanitizedSuggestion
                         + originalIdentifier.Substring(diagnosticSpan.Start - originalIdentifierSpan.Start + diagnosticSpan.Length);
                     }
 
