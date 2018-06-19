@@ -24,7 +24,7 @@ namespace YouShouldSpellcheck.Analyzer
 
     public const string ContentCategory = "Content";
 
-    public const string LanguageToolCasingDiagnosticId = "YS100";
+    public const string LanguageToolCasingDiagnosticId = "YS201";
     public const string LanguageToolColloquialismsDiagnosticId = "YS202";
     public const string LanguageToolCompoundingDiagnosticId = "YS203";
     public const string LanguageToolConfusedWordsDiagnosticId = "YS204";
