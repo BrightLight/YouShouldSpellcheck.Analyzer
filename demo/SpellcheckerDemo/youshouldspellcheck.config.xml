@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SpellcheckSettings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <DefaultLanguages>
+    <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
+  </DefaultLanguages>
+  <ClassNameLanguages>
+    <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
+  </ClassNameLanguages>
+  <MethodNameLanguages>
+    <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
+  </MethodNameLanguages>
+  <VariableNameLanguages>
+    <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
+  </VariableNameLanguages>
+  <PropertyNameLanguages>
+    <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
+  </PropertyNameLanguages>
+  <CommentLanguages>
+    <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
+    <Language LocalDictionaryLanguage="de_DE_frami" LanguageToolLanguage="de-DE" />
+  </CommentLanguages>
+  <StringLiteralLanguages>
+    <Language LocalDictionaryLanguage="de_DE_frami" LanguageToolLanguage="de-DE" />
+  </StringLiteralLanguages>
+  <Attributes>
+    <AttributeProperty>
+      <AttributeName>Display</AttributeName>
+      <PropertyName>Name</PropertyName>
+      <Languages>
+        <Language LocalDictionaryLanguage="de_DE_frami" LanguageToolLanguage="de-DE" />
+      </Languages>
+    </AttributeProperty>
+    <AttributeProperty>
+      <AttributeName>Display</AttributeName>
+      <PropertyName>Description</PropertyName>
+      <Languages>
+        <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
+        <Language LocalDictionaryLanguage="de_DE_frami" LanguageToolLanguage="de-DE" />
+      </Languages>
+    </AttributeProperty>
+    <AttributeProperty>
+      <AttributeName>RegularExpression</AttributeName>
+      <PropertyName>ErrorMessage</PropertyName>
+      <Languages>
+        <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
+      </Languages>
+    </AttributeProperty>
+  </Attributes>
+  <CustomDictionariesFolder>c:\projects\GitHub\YouShouldSpellcheck.Analyzer\dic\</CustomDictionariesFolder>
+  <LanguageToolUrl>http://localhost:8081/v2/</LanguageToolUrl>
+</SpellcheckSettings>
