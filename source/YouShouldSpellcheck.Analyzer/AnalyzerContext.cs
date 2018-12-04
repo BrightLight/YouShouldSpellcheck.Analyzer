@@ -53,7 +53,7 @@
       return GetSpellcheckSettings(options?.AdditionalFiles ?? ImmutableArray.Create<AdditionalText>(), cancellationToken);
     }
 
-    private static ISpellcheckSettings GetSpellcheckSettingsFromTextFile(SourceText settingsXml)
+    private static ISpellcheckSettings GetSpellcheckSettingsFromTextFile(SourceText settingsXml, string settingsPath)
     {
       using (var spellcheckSettingsAsTemporaryMemoryStream = new MemoryStream())
       using (var temporaryStreamWriter = new StreamWriter(spellcheckSettingsAsTemporaryMemoryStream))
@@ -61,11 +61,11 @@
         settingsXml.Write(temporaryStreamWriter);
         temporaryStreamWriter.Flush();
         spellcheckSettingsAsTemporaryMemoryStream.Position = 0;
-        return GetSpellcheckSettings(spellcheckSettingsAsTemporaryMemoryStream);
+        return GetSpellcheckSettings(spellcheckSettingsAsTemporaryMemoryStream, settingsPath);
       }
     }
 
-    private static ISpellcheckSettings GetSpellcheckSettings(Stream settingsXml)
+    private static ISpellcheckSettings GetSpellcheckSettings(Stream settingsXml, string settingsPath)
     {
       try
       {
@@ -73,7 +73,7 @@
         var deserializedSpellcheckSettings = spellcheckSettingsSerializer.Deserialize(settingsXml) as SpellcheckSettings;
         if (deserializedSpellcheckSettings != null)
         {
-          spellcheckSettings = new SpellcheckSettingsWrapper(deserializedSpellcheckSettings);
+          spellcheckSettings = new SpellcheckSettingsWrapper(deserializedSpellcheckSettings, settingsPath);
           return spellcheckSettings;
         }
 
@@ -94,7 +94,7 @@
           var additionalTextContent = additionalFile.GetText(cancellationToken);
           additionalTextContent.Container.TextChanged += SpellcheckSettingsChanged;
 
-          return GetSpellcheckSettingsFromTextFile(additionalTextContent);
+          return GetSpellcheckSettingsFromTextFile(additionalTextContent, additionalFile.Path);
         }
       }
 
