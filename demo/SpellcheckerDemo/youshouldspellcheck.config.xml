@@ -20,12 +20,20 @@
     <Language LocalDictionaryLanguage="de_DE_frami" LanguageToolLanguage="de-DE" />
   </CommentLanguages>
   <StringLiteralLanguages>
+    <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
     <Language LocalDictionaryLanguage="de_DE_frami" LanguageToolLanguage="de-DE" />
   </StringLiteralLanguages>
   <Attributes>
     <AttributeProperty>
       <AttributeName>Display</AttributeName>
       <PropertyName>Name</PropertyName>
+      <Languages>
+        <Language LocalDictionaryLanguage="de_DE_frami" LanguageToolLanguage="de-DE" />
+      </Languages>
+    </AttributeProperty>
+    <AttributeProperty>
+      <AttributeName>DisplayName</AttributeName>
+      <PropertyName>displayName</PropertyName>
       <Languages>
         <Language LocalDictionaryLanguage="de_DE_frami" LanguageToolLanguage="de-DE" />
       </Languages>

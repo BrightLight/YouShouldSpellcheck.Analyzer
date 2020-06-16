@@ -115,9 +115,51 @@ namespace YouShouldSpellcheck.Analyzer
       Logger.Log($"{this.GetType().Name} - CheckLine: [{line}]");
       foreach (var wordMatch in this.splitLineIntoWords.Matches(line).OfType<Match>())
       {
-        var wordLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(location.SourceSpan.Start + wordMatch.Index, location.SourceSpan.Start + wordMatch.Index + wordMatch.Length));
+        var adjustedStartLocation = location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index);
+        var adjustedEndLocation = location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index + wordMatch.Length);
+        var wordLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(adjustedStartLocation, adjustedEndLocation));
         this.CheckWord(rule, wordMatch.Value, wordLocation, context, languages);
       }
+    }
+
+    /// <summary>
+    /// Adjust the <paramref name="location"/> where a word was found within the <paramref name="line"/>
+    /// by extra characters that have to be applied in the source code for characters that need to be escaped.
+    /// </summary>
+    /// <param name="line"></param>
+    /// <param name="location"></param>
+    /// <returns></returns>
+    /// <remarks>
+    /// <para>
+    /// Example: "this line contains a \"quote\" anduses\nspans lines"
+    /// The string that will be handed into the analyzer will not contain the escape characters and consequently
+    /// we would report underline findings at the wrong location. Characters that need escaping which appear withing
+    /// the <paramref name="line"/> until this <paramref name="location"/> (and not further!) must
+    /// be accounted for. For every such charater, the actual location is one extra character to the right.
+    /// </para>
+    /// <para>
+    /// This currently works for regular strings. It still needs testing, how much of this also works for verbatim strings
+    /// and how we can determine whether a string is a verbatim string in source code.
+    /// This also does not yet account for other string features, like unicode escape sequences (\uxxxx).
+    /// </para>
+    /// <para>
+    /// List found here: https://csharpindepth.com/articles/Strings
+    /// </para>
+    /// </remarks>
+    protected int AdjustLocationForEscapedCharacters(string line, int location)
+    {
+      return location
+        + line.Substring(0, location).Count(x => x == '\"')
+        + line.Substring(0, location).Count(x => x == '\'')
+        + line.Substring(0, location).Count(x => x == '\\')
+        + line.Substring(0, location).Count(x => x == '\0')
+        + line.Substring(0, location).Count(x => x == '\a')
+        + line.Substring(0, location).Count(x => x == '\b')
+        + line.Substring(0, location).Count(x => x == '\f')
+        + line.Substring(0, location).Count(x => x == '\n')
+        + line.Substring(0, location).Count(x => x == '\r')
+        + line.Substring(0, location).Count(x => x == '\t')
+        + line.Substring(0, location).Count(x => x == '\v');
     }
 
     protected virtual bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
