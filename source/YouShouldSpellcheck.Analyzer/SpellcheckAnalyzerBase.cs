@@ -89,6 +89,8 @@ namespace YouShouldSpellcheck.Analyzer
       { "WIKIPEDIA", LanguageToolWikipediaRule },
     };
 
+    protected abstract bool ConsiderEscapedCharacters { get; }
+
     protected void CheckToken(DiagnosticDescriptor rule, SyntaxNodeAnalysisContext context, SyntaxToken syntaxToken)
     {
       var text = syntaxToken.ValueText;
@@ -112,11 +114,18 @@ namespace YouShouldSpellcheck.Analyzer
         return;
       }
 
+      var verbatimLocationAdjustment = 0;
+      if ((context.Node is Microsoft.CodeAnalysis.CSharp.Syntax.LiteralExpressionSyntax literalExpressionSyntax)
+        && literalExpressionSyntax.Token.Text.StartsWith("@"))
+      {
+        verbatimLocationAdjustment = 1;
+      }
+
       Logger.Log($"{this.GetType().Name} - CheckLine: [{line}]");
       foreach (var wordMatch in this.splitLineIntoWords.Matches(line).OfType<Match>())
       {
-        var adjustedStartLocation = location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index);
-        var adjustedEndLocation = location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index + wordMatch.Length);
+        var adjustedStartLocation = location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index) + verbatimLocationAdjustment;
+        var adjustedEndLocation = location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index + wordMatch.Length) + verbatimLocationAdjustment;
         var wordLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(adjustedStartLocation, adjustedEndLocation));
         this.CheckWord(rule, wordMatch.Value, wordLocation, context, languages);
       }
@@ -148,6 +157,11 @@ namespace YouShouldSpellcheck.Analyzer
     /// </remarks>
     protected int AdjustLocationForEscapedCharacters(string line, int location)
     {
+      if (!this.ConsiderEscapedCharacters)
+      {
+        return location;
+      }
+
       return location
         + line.Substring(0, location).Count(x => x == '\"')
         + line.Substring(0, location).Count(x => x == '\'')

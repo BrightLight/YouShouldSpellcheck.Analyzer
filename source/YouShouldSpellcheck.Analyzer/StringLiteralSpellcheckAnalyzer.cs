@@ -45,6 +45,8 @@
       LanguageToolWikipediaRule
     );
 
+    protected override bool ConsiderEscapedCharacters => true;
+
     public override void Initialize(AnalysisContext context)
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);

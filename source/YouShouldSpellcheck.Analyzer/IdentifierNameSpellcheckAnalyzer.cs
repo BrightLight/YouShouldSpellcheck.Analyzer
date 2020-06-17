@@ -11,6 +11,8 @@ namespace YouShouldSpellcheck.Analyzer
     ////private Regex splitWordsByCasing = new Regex(@"([A-Z]+|[a-z])[a-z]*", RegexOptions.Compiled);
     private readonly Regex splitWordsByCasing = new Regex(@"(\p{Lu}+|\p{Ll})\p{Ll}*", RegexOptions.Compiled);
 
+    protected override bool ConsiderEscapedCharacters => false;
+
     protected override void CheckText(DiagnosticDescriptor rule, string text, Location location, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
     {
       this.CheckWord(rule, text, location, context, languages);
