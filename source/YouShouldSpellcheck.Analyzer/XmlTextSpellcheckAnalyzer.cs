@@ -52,8 +52,7 @@
       try
       {
         AnalyzerContext.InitializeSettings(context);
-        var xmlTextSyntax = context.Node as XmlTextSyntax;
-        if (xmlTextSyntax != null)
+        if (context.Node is XmlTextSyntax xmlTextSyntax)
         {
           this.CheckAllTokensOfType(context, xmlTextSyntax, SyntaxKind.XmlTextLiteralToken);
         }

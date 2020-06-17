@@ -70,8 +70,7 @@
       try
       {
         var spellcheckSettingsSerializer = new XmlSerializer(typeof(SpellcheckSettings));
-        var deserializedSpellcheckSettings = spellcheckSettingsSerializer.Deserialize(settingsXml) as SpellcheckSettings;
-        if (deserializedSpellcheckSettings != null)
+        if (spellcheckSettingsSerializer.Deserialize(settingsXml) is SpellcheckSettings deserializedSpellcheckSettings)
         {
           spellcheckSettings = new SpellcheckSettingsWrapper(deserializedSpellcheckSettings, settingsPath);
           return spellcheckSettings;

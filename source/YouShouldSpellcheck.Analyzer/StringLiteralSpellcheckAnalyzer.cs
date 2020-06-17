@@ -70,16 +70,14 @@
       try
       {
         AnalyzerContext.InitializeSettings(context);
-        var attributeArgumentSyntax = context.Node?.Parent as AttributeArgumentSyntax;
-        if (attributeArgumentSyntax != null)
+        if (context.Node?.Parent is AttributeArgumentSyntax attributeArgumentSyntax)
         {
           this.AnalyzeAttributeArgument(context, attributeArgumentSyntax);
         }
         else
         {
           // TODO: use "context.Node.SyntaxTree.FilePath" to find the "custom dictionary"
-          var literalExpressionSyntax = context.Node as LiteralExpressionSyntax;
-          if (literalExpressionSyntax != null)
+          if (context.Node is LiteralExpressionSyntax literalExpressionSyntax)
           {
             var foo = literalExpressionSyntax.Token;
             var text = foo.ValueText;
@@ -99,8 +97,7 @@
 
     private void AnalyzeAttributeArgument(SyntaxNodeAnalysisContext context, AttributeArgumentSyntax attributeArgumentSyntax)
     {
-      var attributeSyntax = attributeArgumentSyntax.Parent?.Parent as AttributeSyntax;
-      if (attributeSyntax != null)
+      if (attributeArgumentSyntax.Parent?.Parent is AttributeSyntax attributeSyntax)
       {
         var attributeName = attributeSyntax.Name.ToFullString();
         var spellcheckSettings = AnalyzerContext.SpellcheckSettings;
@@ -122,8 +119,7 @@
           // next lines are identical to the ones in AnalyzeStringLiteralToken.
           // this will be resolved once we have one class per analyzer and can use inheritance to override stuff
           // TODO: use "context.Node.SyntaxTree.FilePath" to find the "custom dictionary"
-          var literalExpressionSyntax = context.Node as LiteralExpressionSyntax;
-          if (literalExpressionSyntax != null)
+          if (context.Node is LiteralExpressionSyntax literalExpressionSyntax)
           {
             var foo = literalExpressionSyntax.Token;
             var text = foo.ValueText;
@@ -155,12 +151,10 @@
       // ToDo this is a very, very simplified "constructor resolution" approach
       // I guess it should be possible, somehow, to ask Roslyn to which compiled the current attribute-argument belongs
       // but I don't know how to do that, hence this "has-to-do-for-now" approach
-      var attributeSyntax = attributeArgumentSyntax.Parent?.Parent as AttributeSyntax;
-      if (attributeSyntax != null)
+      if (attributeArgumentSyntax.Parent?.Parent is AttributeSyntax attributeSyntax)
       {
         var attributeTypeInfo = semanticModel.GetTypeInfo(attributeSyntax);
-        var namedTypeSymbol = attributeTypeInfo.Type as INamedTypeSymbol;
-        if (namedTypeSymbol != null)
+        if (attributeTypeInfo.Type is INamedTypeSymbol namedTypeSymbol)
         {
           var nonNamedArguments = attributeSyntax.ArgumentList.Arguments.Where(x => x.NameEquals == null).ToList();
           var attributeArgumentIndex = nonNamedArguments.FindIndex(x => x == attributeArgumentSyntax);
