@@ -52,9 +52,8 @@ namespace YouShouldSpellcheck.Analyzer
     {
       foreach (var language in languages)
       {
-        List<string> suggestions;
         List<string> suggestionsForLanguage = null;
-        if (DictionaryManager.Suggest(word, out suggestions, language))
+        if (DictionaryManager.Suggest(word, out var suggestions, language))
         {
           if (suggestionsForLanguage == null)
           {

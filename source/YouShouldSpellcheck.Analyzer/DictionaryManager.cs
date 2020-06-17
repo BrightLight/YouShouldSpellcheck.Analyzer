@@ -23,9 +23,8 @@
         return true;
       }
 
-      bool wordIsOkay;
       var key = new Tuple<string, string>(language, word);
-      if (cache.TryGetValue(key, out wordIsOkay))
+      if (cache.TryGetValue(key, out var wordIsOkay))
       {
         return wordIsOkay;
       }
@@ -63,8 +62,7 @@
 
     private static List<string> GetInMemoryCustomDictionary(string language)
     {
-      List<string> customDictionary;
-      if (!customWordsByLanguage.TryGetValue(language, out customDictionary))
+      if (!customWordsByLanguage.TryGetValue(language, out var customDictionary))
       {
         customDictionary = new List<string>();
         var customDictionaryPath = GetCustomDictionaryFileName(language);
@@ -127,8 +125,7 @@
 
     private static WordList GetDictionaryForLanguage(string language)
     {
-      WordList dictionary;
-      if (!dictionaries.TryGetValue(language, out dictionary))
+      if (!dictionaries.TryGetValue(language, out var dictionary))
       {
         dictionary = CreateDictionary(language);
         dictionaries.TryAdd(language, dictionary);
