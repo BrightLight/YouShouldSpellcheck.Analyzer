@@ -27,5 +27,6 @@ Uses WeCantSpell.Hunspell: https://github.com/aarondandy/WeCantSpell.Hunspell</d
     <file src="bin\release\WeCantSpell.Hunspell.dll" target="analyzers\dotnet\cs" />
     <file src="bin\release\YouShouldSpellcheck.Analyzer.dll" target="analyzers\dotnet\cs" />
     <file src="tools\*.ps1" target="tools\" />
+    <file src="..\..\dic\*" target="analyzers\dotnet\cs\dic\" />
   </files>
 </package>
