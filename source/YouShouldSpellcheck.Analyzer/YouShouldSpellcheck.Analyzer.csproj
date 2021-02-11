@@ -1,35 +1,37 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{4144CA13-81AF-46B2-A90B-765344FB35BE}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>YouShouldSpellcheck.Analyzer</RootNamespace>
-    <AssemblyName>YouShouldSpellcheck.Analyzer</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <TargetFrameworks>net472</TargetFrameworks>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="3.8.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers">
+      <Version>3.3.2</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Composition" Version="1.0.31" />
+    <PackageReference Include="RestSharp" Version="106.11.7" />
+    <PackageReference Include="System.IO" Version="4.3.0" />
+    <PackageReference Include="System.Reflection" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Extensions" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Primitives" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+    <PackageReference Include="System.Text.Encoding" Version="4.3.0" />
+    <PackageReference Include="System.Text.Encoding.Extensions" Version="4.3.0" />
+    <PackageReference Include="WeCantSpell.Hunspell" Version="3.0.1" />
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -42,110 +44,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AnalyzerContext.cs" />
-    <Compile Include="ClassNameCodeFixProvider.cs" />
-    <Compile Include="ClassNameSpellcheckAnalyzer.cs" />
-    <Compile Include="DefaultSpellcheckSettings.cs" />
-    <Compile Include="EnumMemberNameCodeFixProvider.cs" />
-    <Compile Include="EnumNameCodeFixProvider.cs" />
-    <Compile Include="EventNameCodeFixProvider.cs" />
-    <Compile Include="LanguageTool\Category.cs" />
-    <Compile Include="LanguageTool\Context.cs" />
-    <Compile Include="LanguageTool\Language.cs" />
-    <Compile Include="LanguageTool\LanguageToolClient.cs" />
-    <Compile Include="LanguageTool\LanguageToolResponse.cs" />
-    <Compile Include="LanguageTool\Match.cs" />
-    <Compile Include="LanguageTool\Rule.cs" />
-    <Compile Include="LanguageTool\Software.cs" />
-    <Compile Include="MemberIdentifierCodeFixProvider.cs" />
-    <Compile Include="MethodNameCodeFixProvider.cs" />
-    <Compile Include="PropertyNameCodeFixProvider.cs" />
-    <Compile Include="TextCodeFixProvider.cs" />
-    <Compile Include="DictionaryManager.cs" />
-    <Compile Include="EnumMemberNameSpellcheckAnalyzer.cs" />
-    <Compile Include="EnumNameSpellcheckAnalyzer.cs" />
-    <Compile Include="EventNameSpellcheckAnalyzer.cs" />
-    <Compile Include="IdentifierCodeFixProvider.cs" />
-    <Compile Include="IdentifierNameSpellcheckAnalyzer.cs" />
-    <Compile Include="ISpellcheckSettings.cs" />
-    <Compile Include="Logger.cs" />
-    <Compile Include="MethodNameSpellcheckAnalyzer.cs" />
-    <Compile Include="PropertyNameSpellcheckAnalyzer.cs" />
-    <Compile Include="SpellcheckSettings.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Resources.Designer.cs">
+    <Compile Update="Resources.Designer.cs">
       <DependentUpon>Resources.resx</DependentUpon>
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
-    <Compile Include="SpellcheckSettingsWrapper.cs" />
-    <Compile Include="StringLiteralSpellcheckAnalyzer.cs" />
-    <Compile Include="VariableNameCodeFixProvider.cs" />
-    <Compile Include="VariableNameSpellcheckAnalyzer.cs" />
-    <Compile Include="XmlTextSpellcheckAnalyzer.cs" />
-    <Compile Include="SpellcheckAnalyzerBase.cs" />
-    <Compile Include="YouShouldSpellcheckAnalyzerCodeFixProvider.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
     <None Include="YouShouldSpellcheck.Analyzer.nuspec">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Resources.resx">
+    <EmbeddedResource Update="Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis">
-      <Version>1.2.1</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers">
-      <Version>1.1.0</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Composition">
-      <Version>1.0.30</Version>
-    </PackageReference>
-    <PackageReference Include="RestSharp">
-      <Version>106.2.2</Version>
-    </PackageReference>
-    <PackageReference Include="System.IO">
-      <Version>4.0.0</Version>
-    </PackageReference>
-    <PackageReference Include="System.Reflection">
-      <Version>4.0.0</Version>
-    </PackageReference>
-    <PackageReference Include="System.Reflection.Extensions">
-      <Version>4.0.0</Version>
-    </PackageReference>
-    <PackageReference Include="System.Reflection.Primitives">
-      <Version>4.0.0</Version>
-    </PackageReference>
-    <PackageReference Include="System.Runtime.InteropServices">
-      <Version>4.0.0</Version>
-    </PackageReference>
-    <PackageReference Include="System.Text.Encoding">
-      <Version>4.0.0</Version>
-    </PackageReference>
-    <PackageReference Include="System.Text.Encoding.Extensions">
-      <Version>4.0.0</Version>
-    </PackageReference>
-    <PackageReference Include="WeCantSpell.Hunspell">
-      <Version>2.0.0</Version>
-    </PackageReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
