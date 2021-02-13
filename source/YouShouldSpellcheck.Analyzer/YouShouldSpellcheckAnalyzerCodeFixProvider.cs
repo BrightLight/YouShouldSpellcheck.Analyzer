@@ -21,9 +21,9 @@ namespace YouShouldSpellcheck.Analyzer
     {
       if (diagnostic.Properties.TryGetValue("offendingWord", out offendingWord))
       {
-        int i = 1;
+        var i = 1;
         List<string> languageToolSuggestions = null;
-        while (diagnostic.Properties.TryGetValue($"suggestion_{i}", out string suggestion))
+        while (diagnostic.Properties.TryGetValue($"suggestion_{i}", out var suggestion))
         {
           if (languageToolSuggestions == null)
           {
@@ -50,22 +50,24 @@ namespace YouShouldSpellcheck.Analyzer
 
     protected static bool Suggestions(string word, IEnumerable<string> languages, Dictionary<string, List<string>> allSuggestions)
     {
+      if ((languages == null)
+       || (allSuggestions == null))
+      {
+        return false;
+      }
+
       foreach (var language in languages)
       {
-        List<string> suggestionsForLanguage = null;
         if (DictionaryManager.Suggest(word, out var suggestions, language))
         {
-          if (suggestionsForLanguage == null)
-          {
-            suggestionsForLanguage = new List<string>();
-            allSuggestions.Add(language, suggestionsForLanguage);
-          }
+          var suggestionsForLanguage = new List<string>();
+          allSuggestions.Add(language, suggestionsForLanguage);
 
           suggestionsForLanguage.AddRange(suggestions);
         }
       }
 
-      return allSuggestions != null;
+      return true;
     }
 
     protected class NoPreviewCodeAction : CodeAction
