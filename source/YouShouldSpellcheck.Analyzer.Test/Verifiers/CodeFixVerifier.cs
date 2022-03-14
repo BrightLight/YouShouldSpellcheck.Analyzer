@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Formatting;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -122,7 +122,7 @@ namespace TestHelper
 
       //after applying all of the code fixes, compare the resulting string to the inputted one
       var actual = GetStringFromDocument(document);
-      Assert.AreEqual(newSource, actual);
+      Assert.That(actual, Is.EqualTo(newSource));
     }
   }
 }

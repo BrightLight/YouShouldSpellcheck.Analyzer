@@ -1,12 +1,12 @@
 ﻿
 namespace YouShouldSpellcheck.Analyzer.Test
 {
-  using Microsoft.VisualStudio.TestTools.UnitTesting;
+  using NUnit.Framework;
 
-  [TestClass]
+  [TestFixture]
   public class SpellcheckSettingsTests
   {
-    [TestMethod]
+    [Test]
     public void TestCustomDictionariesFolder()
     {
       var relativePath = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"..\test\dic" }, @"C:\config-folder\config.xml");
@@ -14,10 +14,10 @@ namespace YouShouldSpellcheck.Analyzer.Test
       var envPath = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"%SystemRoot%\dic" }, @"C:\config.xml");
       var envPath2 = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"%SystemRoot%\..\test\dic" }, @"C:\config.xml");
 
-      Assert.AreEqual(@"c:\test\dic", relativePath.CustomDictionariesFolder.ToLower());
-      Assert.AreEqual(@"c:\my-custom\dic", absolutePath.CustomDictionariesFolder.ToLower());
-      Assert.AreEqual(@"c:\windows\dic", envPath.CustomDictionariesFolder.ToLower());
-      Assert.AreEqual(@"c:\test\dic", envPath2.CustomDictionariesFolder.ToLower());
+      Assert.That(relativePath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\test\dic"));
+      Assert.That(absolutePath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\my-custom\dic"));
+      Assert.That(envPath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\windows\dic"));
+      Assert.That(envPath2.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\test\dic"));
     }
   }
 }
