@@ -97,7 +97,7 @@
       }
     }
 
-    private void AnalyzeAttributeArgument(SyntaxNodeAnalysisContext context, AttributeArgumentSyntax attributeArgumentSyntax)
+    private async void AnalyzeAttributeArgument(SyntaxNodeAnalysisContext context, AttributeArgumentSyntax attributeArgumentSyntax)
     {
       if (attributeArgumentSyntax.Parent?.Parent is AttributeSyntax attributeSyntax)
       {
@@ -130,7 +130,7 @@
 
             // try to do a languagetool check
             // if languagetool is not configured, use local dictionary
-            if (!CheckTextWithLanguageTool(AttributeArgumentStringRule, stringLocation, text, attributePropertyLanguages.Languages, context))
+            if (!await CheckTextWithLanguageTool(AttributeArgumentStringRule, stringLocation, text, attributePropertyLanguages.Languages, context))
             {
               this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages);
             }
