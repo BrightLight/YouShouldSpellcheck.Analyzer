@@ -6,7 +6,13 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <TargetFrameworks>net472</TargetFrameworks>
+    <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://github.com/BrightLight/YouShouldSpellcheck.Analyzer</PackageProjectUrl>
+    <Copyright>Copyright 2018,2019,2020,2021,2022 Markus Hastreiter</Copyright>
+    <Description>A Roslyn based spellchecker. Supports multiple simultaneous dictionaries (e.g. for multiple languages in one project).
+Uses WeCantSpell.Hunspell: https://github.com/aarondandy/WeCantSpell.Hunspell</Description>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>TRACE;DEBUG</DefineConstants>
@@ -16,11 +22,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis" Version="4.1.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers">
-      <Version>3.3.3</Version>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="Microsoft.Composition" Version="1.0.31" />
     <PackageReference Include="RestSharp" Version="107.3.0" />
     <PackageReference Include="System.IO" Version="4.3.0" />
