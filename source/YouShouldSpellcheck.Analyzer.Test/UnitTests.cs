@@ -36,18 +36,18 @@
     namespace ConsoleApplication1
     {
         // 'TypeName' spelled wrong
-        class TypeNam
+        class TypName
         {   
         }
     }";
       var expected = new DiagnosticResult
       {
-        Id = "YouShouldSpellcheck.Analyzer",
-        Message = String.Format("Type name '{0}' contains lowercase letters", "TypeName"),
+        Id = "YS103",
+        Message = "Possible spelling mistake: Typ",
         Severity = DiagnosticSeverity.Warning,
         Locations =
               new[] {
-                            new DiagnosticResultLocation("Test0.cs", 11, 15)
+                            new DiagnosticResultLocation("Test0.cs", 12, 15)
                   }
       };
 
@@ -63,11 +63,12 @@
 
     namespace ConsoleApplication1
     {
+        // 'TypeName' spelled wrong
         class TypeName
         {   
         }
     }";
-      VerifyCSharpFix(test, fixtest);
+      VerifyCSharpFix(test, fixtest, 5);
     }
 
     protected override CodeFixProvider GetCSharpCodeFixProvider()
@@ -77,6 +78,16 @@
 
     protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()
     {
+      var spellcheckerSettings = new SpellcheckSettings()
+      {
+        MethodNameLanguages = new Language[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" } },
+        ClassNameLanguages = new Language[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" } },
+        StringLiteralLanguages = new Language[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" } },
+        CustomDictionariesFolder = @"c:\projects\YouShouldSpellcheck.Analyzer\dic\",
+      };
+
+      AnalyzerContext.SpellcheckSettings = new SpellcheckSettingsWrapper(spellcheckerSettings, null);
+
       return new ClassNameSpellcheckAnalyzer();
     }
   }

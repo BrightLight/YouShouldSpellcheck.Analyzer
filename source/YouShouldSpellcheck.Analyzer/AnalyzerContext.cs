@@ -28,6 +28,11 @@
 
         return defaultSettings;
       }
+
+      set
+      {
+        spellcheckSettings = value;
+      }
     }
 
     /// <summary>
