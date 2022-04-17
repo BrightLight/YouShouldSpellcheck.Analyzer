@@ -78,16 +78,7 @@
 
     protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()
     {
-      var spellcheckerSettings = new SpellcheckSettings()
-      {
-        MethodNameLanguages = new Language[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" } },
-        ClassNameLanguages = new Language[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" } },
-        StringLiteralLanguages = new Language[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" } },
-        CustomDictionariesFolder = @"c:\projects\YouShouldSpellcheck.Analyzer\dic\",
-      };
-
-      AnalyzerContext.SpellcheckSettings = new SpellcheckSettingsWrapper(spellcheckerSettings, null);
-
+      this.SetupSpellcheckerSettings();
       return new ClassNameSpellcheckAnalyzer();
     }
   }

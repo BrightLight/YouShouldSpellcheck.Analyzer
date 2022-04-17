@@ -7,6 +7,7 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using YouShouldSpellcheck.Analyzer.Test;
 
 namespace TestHelper
 {
@@ -14,7 +15,7 @@ namespace TestHelper
   /// Superclass of all Unit tests made for diagnostics with codefixes.
   /// Contains methods used to verify correctness of codefixes
   /// </summary>
-  public abstract partial class CodeFixVerifier : DiagnosticVerifier
+  public abstract partial class CodeFixVerifier : SpellcheckAnalyzerDiagnosticVerifier
   {
     /// <summary>
     /// Returns the codefix being tested (C#) - to be implemented in non-abstract class

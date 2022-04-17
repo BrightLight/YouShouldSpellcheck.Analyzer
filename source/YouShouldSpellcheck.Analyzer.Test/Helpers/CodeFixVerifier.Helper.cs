@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.Simplification;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using YouShouldSpellcheck.Analyzer.Test;
 
 namespace TestHelper
 {
@@ -12,7 +13,7 @@ namespace TestHelper
   /// Diagnostic Producer class with extra methods dealing with applying codefixes
   /// All methods are static
   /// </summary>
-  public abstract partial class CodeFixVerifier : DiagnosticVerifier
+  public abstract partial class CodeFixVerifier : SpellcheckAnalyzerDiagnosticVerifier
   {
     /// <summary>
     /// Apply the inputted CodeAction to the inputted document.
