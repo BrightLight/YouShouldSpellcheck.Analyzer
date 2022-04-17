@@ -1,14 +1,16 @@
 ﻿namespace YouShouldSpellcheck.Analyzer.Test
 {
   using System;
+  using System.IO;
   using TestHelper;
 
   public class SpellcheckAnalyzerDiagnosticVerifier : DiagnosticVerifier
   {
     protected void SetupSpellcheckerSettings()
     {
-      var customDictionariesFolder = Environment.GetEnvironmentVariable("APPVEYOR_BUILD_FOLDER")
-                                     ?? @"c:\projects\YouShouldSpellcheck.Analyzer\dic\";
+      var customDictionariesRootFolder = Environment.GetEnvironmentVariable("APPVEYOR_BUILD_FOLDER")
+                                     ?? @"c:\projects\YouShouldSpellcheck.Analyzer";
+      var customDictionariesFolder = Path.Combine(customDictionariesRootFolder, "dic");
 
       var spellcheckerSettings = new SpellcheckSettings()
       {
