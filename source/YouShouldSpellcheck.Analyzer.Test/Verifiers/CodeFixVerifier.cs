@@ -89,13 +89,8 @@ namespace TestHelper
           break;
         }
 
-        if (codeFixIndex != null)
-        {
-          document = ApplyFix(document, actions.ElementAt((int)codeFixIndex));
-          break;
-        }
-
-        document = ApplyFix(document, actions.ElementAt(0));
+        var effectiveCodeFixIndex = codeFixIndex.GetValueOrDefault(0);
+        document = ApplyFix(document, actions.ElementAt(effectiveCodeFixIndex));
         analyzerDiagnostics = GetSortedDiagnosticsFromDocuments(analyzer, new[] { document });
 
         var newCompilerDiagnostics = GetNewDiagnostics(compilerDiagnostics, GetCompilerDiagnostics(document));
