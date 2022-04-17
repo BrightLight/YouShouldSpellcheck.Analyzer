@@ -12,7 +12,7 @@
   {
     public const string VariableNameDiagnosticId = "YS102";
 
-    private const string VariableNameRuleTitle = "Variable name should be spelled correctly.";
+    private const string VariableNameRuleTitle = "Variable name should be spelled correctly";
 
     private const string VariableNameRuleDescription = "Variable name should be spelled correctly.";
 

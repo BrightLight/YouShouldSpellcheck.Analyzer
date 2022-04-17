@@ -11,7 +11,7 @@
   public class ClassNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string ClassNameDiagnosticId = "YS103";
-    private const string ClassNameRuleTitle = "Class name should be spelled correctly.";
+    private const string ClassNameRuleTitle = "Class name should be spelled correctly";
     private const string ClassNameRuleDescription = "Class name should be spelled correctly.";
     private static readonly DiagnosticDescriptor ClassNameRule = new DiagnosticDescriptor(ClassNameDiagnosticId, ClassNameRuleTitle, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: ClassNameRuleDescription);
 

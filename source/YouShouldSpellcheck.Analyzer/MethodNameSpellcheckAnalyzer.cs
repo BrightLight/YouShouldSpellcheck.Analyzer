@@ -11,7 +11,7 @@
   public class MethodNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string MethodNameDiagnosticId = "YS104";
-    private const string MethodNameRuleTitle = "Method name should be spelled correctly.";
+    private const string MethodNameRuleTitle = "Method name should be spelled correctly";
     private const string MethodNameRuleDescription = "Method name should be spelled correctly.";
     private static readonly DiagnosticDescriptor MethodNameRule = new DiagnosticDescriptor(MethodNameDiagnosticId, MethodNameRuleTitle, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: MethodNameRuleDescription);
 

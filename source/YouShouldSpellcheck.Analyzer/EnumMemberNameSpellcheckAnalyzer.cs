@@ -11,7 +11,7 @@ namespace YouShouldSpellcheck.Analyzer
   public class EnumMemberNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string EnumMemberNameDiagnosticId = "YS108";
-    private const string EnumMemberNameRuleTitle = "Enumeration member name should be spelled correctly.";
+    private const string EnumMemberNameRuleTitle = "Enumeration member name should be spelled correctly";
     private const string EnumMemberNameRuleDescription = "Enumeration member name should be spelled correctly.";
     private static readonly DiagnosticDescriptor EnumMemberNameRule = new DiagnosticDescriptor(EnumMemberNameDiagnosticId, EnumMemberNameRuleTitle, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: EnumMemberNameRuleDescription);
 

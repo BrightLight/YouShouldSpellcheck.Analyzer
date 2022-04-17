@@ -13,7 +13,7 @@
   public class XmlTextSpellcheckAnalyzer : SpellcheckAnalyzerBase
   {
     public const string CommentDiagnosticId = "YS106";
-    private const string CommentRuleTitle = "Comment should be spelled correctly.";
+    private const string CommentRuleTitle = "Comment should be spelled correctly";
     private const string CommentRuleDescription = "Comment should be spelled correctly.";
     private static readonly DiagnosticDescriptor CommentRule = new DiagnosticDescriptor(CommentDiagnosticId, CommentRuleTitle, MessageFormat, CommentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: CommentRuleDescription);
 

@@ -16,9 +16,9 @@
     public const string AttributeArgumentStringDiagnosticId = "YS100";
     public const string StringLiteralDiagnosticId = "YS101";
 
-    private const string StringLiteralRuleTitle = "String literal should be spelled correctly.";
+    private const string StringLiteralRuleTitle = "String literal should be spelled correctly";
     private const string StringLiteralRuleDescription = "String literal should be spelled correctly.";
-    public const string AttributeArgumentRuleTitle = "Attribute argument should be spelled correctly.";
+    public const string AttributeArgumentRuleTitle = "Attribute argument should be spelled correctly";
     private const string AttributeArgumentRuleDescription = "Attribute argument should be spelled correctly.";
     private static readonly DiagnosticDescriptor StringLiteralRule = new DiagnosticDescriptor(StringLiteralDiagnosticId, StringLiteralRuleTitle, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: StringLiteralRuleDescription);
     private static readonly DiagnosticDescriptor AttributeArgumentStringRule = new DiagnosticDescriptor(AttributeArgumentStringDiagnosticId, AttributeArgumentRuleTitle, MessageFormat, ContentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: AttributeArgumentRuleDescription);

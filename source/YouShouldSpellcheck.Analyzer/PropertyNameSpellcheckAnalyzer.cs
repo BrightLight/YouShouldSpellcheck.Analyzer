@@ -12,7 +12,7 @@ namespace YouShouldSpellcheck.Analyzer
   public class PropertyNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string PropertyNameDiagnosticId = "YS105";
-    private const string PropertyNameRuleTitle = "Property name should be spelled correctly.";
+    private const string PropertyNameRuleTitle = "Property name should be spelled correctly";
     private const string PropertyNameRuleDescription = "Property name should be spelled correctly.";
     private static readonly DiagnosticDescriptor PropertyNameRule = new DiagnosticDescriptor(PropertyNameDiagnosticId, PropertyNameRuleTitle, MessageFormat, NamingCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: PropertyNameRuleDescription);
 
