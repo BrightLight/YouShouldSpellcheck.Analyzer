@@ -42,6 +42,42 @@
       this.VerifyCSharpDiagnostic(test, expected);
     }
 
+    // Diagnostic triggered and checked for
+    [Test]
+    public void ConsiderEscapeCharactersForLocation()
+    {
+      var test = @"
+    namespace ConsoleApplication1
+    {
+      using System.ComponentModel.DataAnnotations;
+
+      class TypeName
+      {   
+        [Display(Name = ""Special \""escapng\"" and \na new lines"")]
+        public string Name3 { get; }
+      }
+    }";
+
+      // make sure that the expected location is correct
+      var lineZeroBased= 7;
+      var startColumZeroBased = 35;
+      var foundLocation = test.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[lineZeroBased].Substring(startColumZeroBased);
+      Assert.That(foundLocation, Does.StartWith("escapng"));
+
+      var expected = new DiagnosticResult
+      {
+        Id = "YS100",
+        Message = "Possible spelling mistake: escapng",
+        Severity = DiagnosticSeverity.Warning,
+        Locations =
+          new[] {
+            new DiagnosticResultLocation("Test0.cs", lineZeroBased + 1, startColumZeroBased + 1)
+          }
+      };
+
+      this.VerifyCSharpDiagnostic(test, expected);
+    }
+
     protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()
     {
       this.SetupSpellcheckerSettings();

@@ -12,11 +12,13 @@
                                      ?? @"c:\projects\YouShouldSpellcheck.Analyzer";
       var customDictionariesFolder = Path.Combine(customDictionariesRootFolder, "dic");
 
+      var languageEnUs = new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" };
       var spellcheckerSettings = new SpellcheckSettings()
       {
-        MethodNameLanguages = new Language[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" } },
-        ClassNameLanguages = new Language[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" } },
-        StringLiteralLanguages = new Language[] { new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" } },
+        MethodNameLanguages = new[] { languageEnUs },
+        ClassNameLanguages = new[] { languageEnUs },
+        StringLiteralLanguages = new[] { languageEnUs },
+        Attributes = new AttributeProperty[] { new AttributeProperty { AttributeName = "DisplayAttribute", PropertyName = "Name", Languages = new[] { languageEnUs } } },
         CustomDictionariesFolder = customDictionariesFolder,
       };
 
