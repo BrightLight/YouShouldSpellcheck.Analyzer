@@ -1,5 +1,6 @@
 ﻿namespace YouShouldSpellcheck.Analyzer
 {
+  using System;
   using System.Collections.Generic;
   using System.Collections.Immutable;
   using System.Composition;
@@ -9,7 +10,6 @@
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.CodeFixes;
   using Microsoft.CodeAnalysis.CodeActions;
-  using System;
 
   [ExportCodeFixProvider(LanguageNames.CSharp, "", Name = nameof(TextCodeFixProvider)), Shared]
   public class TextCodeFixProvider : YouShouldSpellcheckAnalyzerCodeFixProvider

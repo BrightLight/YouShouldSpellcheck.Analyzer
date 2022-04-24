@@ -25,6 +25,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\YouShouldSpellcheck.Analyzer.CodeFixes\YouShouldSpellcheck.Analyzer.CodeFixes.csproj" />
     <ProjectReference Include="..\YouShouldSpellcheck.Analyzer\YouShouldSpellcheck.Analyzer.csproj">
       <Name>YouShouldSpellcheck.Analyzer</Name>
     </ProjectReference>
