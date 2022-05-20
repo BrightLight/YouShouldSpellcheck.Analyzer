@@ -1,17 +1,20 @@
 ﻿namespace YouShouldSpellcheck.Analyzer.Test
 {
   using System;
+  using System.Collections.Immutable;
+  using System.Threading.Tasks;
+  using AnalyzerFromTemplate2019.Test;
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.Diagnostics;
+  using Microsoft.CodeAnalysis.Testing;
   using NUnit.Framework;
-  using TestHelper;
 
   [TestFixture]
-  public class StringLiteralSpellcheckAnalyzerDiagnosticTests : SpellcheckAnalyzerDiagnosticVerifier
+  public class StringLiteralSpellcheckAnalyzerDiagnosticTests
   {
     // Diagnostic triggered and checked for
     [Test]
-    public void TestMethod2()
+    public async Task TestMethod2()
     {
       var test = @"
     using System;
@@ -28,23 +31,17 @@
             public string TemperatureMessage = ""Temprature"";
         }
     }";
-      var expected = new DiagnosticResult
-      {
-        Id = "YS101",
-        Message = "Possible spelling mistake: Temprature",
-        Severity = DiagnosticSeverity.Warning,
-        Locations =
-          new[] {
-            new DiagnosticResultLocation("Test0.cs", 13, 49)
-          }
-      };
+      var expected = new DiagnosticResult("YS101", DiagnosticSeverity.Warning)
+        .WithMessage("Possible spelling mistake: Temprature")
+        .WithLocation("/0/Test0.cs", 13, 49);
 
-      this.VerifyCSharpDiagnostic(test, expected);
+      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
+      await CSharpAnalyzerVerifier<StringLiteralSpellcheckAnalyzer>.VerifyAnalyzerAsync(test, expected);
     }
 
     // Diagnostic triggered and checked for
     [Test]
-    public void ConsiderEscapeCharactersForLocation()
+    public async Task ConsiderEscapeCharactersForLocation()
     {
       var test = @"
     namespace ConsoleApplication1
@@ -64,24 +61,20 @@
       var foundLocation = test.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[lineZeroBased].Substring(startColumZeroBased);
       Assert.That(foundLocation, Does.StartWith("escapng"));
 
-      var expected = new DiagnosticResult
+      var expected = new DiagnosticResult("YS100", DiagnosticSeverity.Warning)
+        .WithMessage("Possible spelling mistake: escapng")
+        .WithLocation("/0/Test0.cs", lineZeroBased + 1, startColumZeroBased + 1);
+
+      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
+      await new CSharpAnalyzerVerifier<StringLiteralSpellcheckAnalyzer>.Test()
       {
-        Id = "YS100",
-        Message = "Possible spelling mistake: escapng",
-        Severity = DiagnosticSeverity.Warning,
-        Locations =
-          new[] {
-            new DiagnosticResultLocation("Test0.cs", lineZeroBased + 1, startColumZeroBased + 1)
-          }
-      };
-
-      this.VerifyCSharpDiagnostic(test, expected);
-    }
-
-    protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()
-    {
-      this.SetupSpellcheckerSettings();
-      return new StringLiteralSpellcheckAnalyzer();
+        ReferenceAssemblies = ReferenceAssemblies.Default.AddAssemblies(ImmutableArray.Create("System.ComponentModel.DataAnnotations")),
+        TestState =
+        {
+           Sources = { test },
+           ExpectedDiagnostics = { expected },
+        }
+      }.RunAsync(); // VerifyAnalyzerAsync(test, expected);
     }
   }
 }

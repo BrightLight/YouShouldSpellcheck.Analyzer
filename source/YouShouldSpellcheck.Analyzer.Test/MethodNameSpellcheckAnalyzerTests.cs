@@ -1,16 +1,18 @@
 ﻿namespace YouShouldSpellcheck.Analyzer.Test
 {
+  using AnalyzerFromTemplate2019.Test;
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.Diagnostics;
+  using Microsoft.CodeAnalysis.Testing;
   using NUnit.Framework;
-  using TestHelper;
+  using System.Threading.Tasks;
 
   [TestFixture]
-  public class MethodNameSpellcheckAnalyzerTests : SpellcheckAnalyzerDiagnosticVerifier
+  public class MethodNameSpellcheckAnalyzerTests
   {
     // Diagnostic triggered and checked for
     [Test]
-    public void TestMethod2()
+    public async Task TestMethod2()
     {
       var test = @"
     using System;
@@ -31,24 +33,67 @@
         }
     }";
 
-      var expected = new DiagnosticResult
-      {
-        Id = "YS104",
-        Message = "Possible spelling mistake: Prnt",
-        Severity = DiagnosticSeverity.Warning,
-        Locations =
-          new[] {
-            new DiagnosticResultLocation("Test0.cs", 14, 24)
-          }
-      };
+      var expected = new DiagnosticResult("YS104", DiagnosticSeverity.Warning)
+        .WithMessage("Possible spelling mistake: Prnt")
+        .WithLocation("/0/Test0.cs", 14, 24);
 
-      this.VerifyCSharpDiagnostic(test, expected);
+      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
+      await CSharpAnalyzerVerifier<MethodNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test, expected);
     }
 
-    protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()
+    //No diagnostics expected to show up
+    [Test]
+    public async Task TestMethod1()
     {
-      this.SetupSpellcheckerSettings();
-      return new MethodNameSpellcheckAnalyzer();
+      var test = @"";
+
+      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
+      await CSharpAnalyzerVerifier<MethodNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test);
+    }
+
+    //Diagnostic and CodeFix both triggered and checked for
+    [Test]
+    public async Task TestMethod3()
+    {
+      var source = @"
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Diagnostics;
+
+    namespace ConsoleApplication1
+    {
+        class TypeName
+        {   
+          public void {|YS104:Metod|}Name()
+          {
+          }
+        }
+    }";
+
+
+    var fixedSource = @"
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Diagnostics;
+
+    namespace ConsoleApplication1
+    {
+        class TypeName
+        {   
+          public void MethodName()
+          {
+          }
+        }
+    }";
+
+      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
+      await CSharpCodeFixVerifier<MethodNameSpellcheckAnalyzer, MethodNameCodeFixProvider>.VerifyCodeFixAsync(source, fixedSource);
     }
   }
 }

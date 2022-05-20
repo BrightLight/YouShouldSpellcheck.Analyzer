@@ -2,11 +2,10 @@
 {
   using System;
   using System.IO;
-  using TestHelper;
 
-  public class SpellcheckAnalyzerDiagnosticVerifier : DiagnosticVerifier
+  public static class SpellcheckAnalyzerDiagnosticVerifier
   {
-    protected void SetupSpellcheckerSettings()
+    public static void SetupSpellcheckerSettings()
     {
       var customDictionariesRootFolder = Environment.GetEnvironmentVariable("APPVEYOR_BUILD_FOLDER")
                                      ?? @"c:\projects\YouShouldSpellcheck.Analyzer";

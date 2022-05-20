@@ -1,16 +1,18 @@
 ﻿namespace YouShouldSpellcheck.Analyzer.Test
 {
+  using AnalyzerFromTemplate2019.Test;
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.Diagnostics;
+  using Microsoft.CodeAnalysis.Testing;
   using NUnit.Framework;
-  using TestHelper;
+  using System.Threading.Tasks;
 
   [TestFixture]
-  public class ClassNameSpellcheckAnalyzerTests : SpellcheckAnalyzerDiagnosticVerifier
+  public class ClassNameSpellcheckAnalyzerTests
   {
     // Diagnostic triggered and checked for
     [Test]
-    public void TestMethod2()
+    public async Task TestMethod2()
     {
       var test = @"
     using System;
@@ -31,24 +33,12 @@
         }
     }";
 
-      var expected = new DiagnosticResult
-      {
-        Id = "YS103",
-        Message = "Possible spelling mistake: Typ",
-        Severity = DiagnosticSeverity.Warning,
-        Locations =
-          new[] {
-            new DiagnosticResultLocation("Test0.cs", 12, 15)
-          }
-      };
+      var expected = new DiagnosticResult("YS103", DiagnosticSeverity.Warning)
+        .WithMessage("Possible spelling mistake: Typ")
+        .WithLocation("/0/Test0.cs", 12, 15);
 
-      this.VerifyCSharpDiagnostic(test, expected);
-    }
-
-    protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()
-    {
-      this.SetupSpellcheckerSettings();
-      return new ClassNameSpellcheckAnalyzer();
+      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
+      await CSharpAnalyzerVerifier<ClassNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test, expected);
     }
   }
 }

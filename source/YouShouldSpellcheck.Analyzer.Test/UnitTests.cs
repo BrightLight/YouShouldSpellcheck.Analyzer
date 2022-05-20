@@ -1,15 +1,15 @@
 ﻿namespace YouShouldSpellcheck.Analyzer.Test
 {
+  using AnalyzerFromTemplate2019.Test;
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.CodeFixes;
   using Microsoft.CodeAnalysis.Diagnostics;
+  using Microsoft.CodeAnalysis.Testing;
   using NUnit.Framework;
-  using System;
-  using TestHelper;
   using YouShouldSpellcheck.Analyzer;
 
   [TestFixture]
-  public class UnitTest : CodeFixVerifier
+  public class UnitTest
   {
 
     //No diagnostics expected to show up
@@ -18,7 +18,7 @@
     {
       var test = @"";
 
-      VerifyCSharpDiagnostic(test);
+      CSharpAnalyzerVerifier<ClassNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test);
     }
 
     //Diagnostic and CodeFix both triggered and checked for
@@ -40,18 +40,11 @@
         {   
         }
     }";
-      var expected = new DiagnosticResult
-      {
-        Id = "YS103",
-        Message = "Possible spelling mistake: Typ",
-        Severity = DiagnosticSeverity.Warning,
-        Locations =
-              new[] {
-                            new DiagnosticResultLocation("Test0.cs", 12, 15)
-                  }
-      };
+      var expected = new DiagnosticResult("YS103", DiagnosticSeverity.Warning)
+      .WithMessage("Possible spelling mistake: Typ")
+      .WithLocation("Test0.cs", 12, 15);
 
-      VerifyCSharpDiagnostic(test, expected);
+      CSharpAnalyzerVerifier<ClassNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test, expected);
 
       var fixtest = @"
     using System;
@@ -68,18 +61,9 @@
         {   
         }
     }";
-      VerifyCSharpFix(test, fixtest, 5);
-    }
 
-    protected override CodeFixProvider GetCSharpCodeFixProvider()
-    {
-      return new ClassNameCodeFixProvider();
-    }
-
-    protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()
-    {
-      this.SetupSpellcheckerSettings();
-      return new ClassNameSpellcheckAnalyzer();
+      ////this.SetupSpellcheckerSettings();
+      CSharpCodeFixVerifier<ClassNameSpellcheckAnalyzer, ClassNameCodeFixProvider>.VerifyCodeFixAsync(test, fixtest);
     }
   }
 }
