@@ -12,9 +12,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="2.9.8" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.3.1" />
-    <PackageReference Include="RestSharp" Version="107.3.0" />
+    <PackageReference Include="RestSharp" Version="107.3.0" GeneratePathProperty="true" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
-    <PackageReference Include="WeCantSpell.Hunspell" Version="3.1.1" />
+    <PackageReference Include="WeCantSpell.Hunspell" Version="3.1.1" GeneratePathProperty="true" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Resources.Designer.cs" DesignTime="True" AutoGen="True" DependentUpon="Resources.resx" />
@@ -25,4 +25,10 @@
     </None>
     <None Include="ReadMe.txt" />
   </ItemGroup>
+  
+  <Target Name="CopyNugetAssembliesToOutDir" BeforeTargets="Build">
+    <Message Text="PackagePath = $(PkgWeCantSpell_Hunspell)" Importance="high" />
+    <Copy SourceFiles="$(PkgWeCantSpell_Hunspell)\lib\netstandard2.0\WeCantSpell.Hunspell.dll" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="$(PkgRestSharp)\lib\netstandard2.0\RestSharp.dll" DestinationFolder="$(OutDir)" />
+  </Target>
 </Project>
