@@ -2,6 +2,7 @@
 {
   using System;
   using System.Collections.Immutable;
+  using System.Threading;
   using System.Threading.Tasks;
   using AnalyzerFromTemplate2019.Test;
   using Microsoft.CodeAnalysis;
@@ -43,7 +44,7 @@
     [Test]
     public async Task ConsiderEscapeCharactersForLocation()
     {
-      var test = @"
+      var source = @"
     namespace ConsoleApplication1
     {
       using System.ComponentModel.DataAnnotations;
@@ -56,9 +57,9 @@
     }";
 
       // make sure that the expected location is correct
-      var lineZeroBased= 7;
+      var lineZeroBased = 7;
       var startColumZeroBased = 35;
-      var foundLocation = test.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[lineZeroBased].Substring(startColumZeroBased);
+      var foundLocation = source.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[lineZeroBased].Substring(startColumZeroBased);
       Assert.That(foundLocation, Does.StartWith("escapng"));
 
       var expected = new DiagnosticResult("YS100", DiagnosticSeverity.Warning)
@@ -66,15 +67,17 @@
         .WithLocation("/0/Test0.cs", lineZeroBased + 1, startColumZeroBased + 1);
 
       SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
-      await new CSharpAnalyzerVerifier<StringLiteralSpellcheckAnalyzer>.Test()
+
+      // next lines are basically whare VerifyAnalyzerAsync(test, expected) does
+      // but we need to add a ReferenceAssemblies
+      var test = new CSharpAnalyzerVerifier<StringLiteralSpellcheckAnalyzer>.Test()
       {
         ReferenceAssemblies = ReferenceAssemblies.Default.AddAssemblies(ImmutableArray.Create("System.ComponentModel.DataAnnotations")),
-        TestState =
-        {
-           Sources = { test },
-           ExpectedDiagnostics = { expected },
-        }
-      }.RunAsync(); // VerifyAnalyzerAsync(test, expected);
+        TestCode = source,
+      };
+
+      test.ExpectedDiagnostics.Add(expected);
+      await test.RunAsync(CancellationToken.None);
     }
   }
 }
