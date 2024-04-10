@@ -17,9 +17,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
     [OneTimeSetUp]
     public void SetupSpellcheckerSettings()
     {
-      var customDictionariesRootFolder = Environment.GetEnvironmentVariable("APPVEYOR_BUILD_FOLDER")
-                                     ?? @"d:\projects\YouShouldSpellcheck.Analyzer_cleanup\";
-      var customDictionariesFolder = Path.Combine(customDictionariesRootFolder, "dic");
+      var customDictionariesFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dic");
 
       var languageEnUs = new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" };
       var spellcheckerSettings = new SpellcheckSettings()

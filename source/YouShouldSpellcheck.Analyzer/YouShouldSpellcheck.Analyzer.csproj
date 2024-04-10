@@ -28,6 +28,13 @@
     </None>
     <None Include="ReadMe.txt" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\dic\**\*">
+      <Link>dic\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   
   <Target Name="CopyNugetAssembliesToOutDir" BeforeTargets="Build">
     <Message Text="PackagePath = $(PkgWeCantSpell_Hunspell)" Importance="high" />
