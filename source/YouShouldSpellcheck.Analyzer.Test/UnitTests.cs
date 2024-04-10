@@ -1,4 +1,5 @@
 ﻿using System.Threading;
+using YouShouldSpellcheck.Analyzer.CodeFixes;
 
 namespace YouShouldSpellcheck.Analyzer.Test
 {

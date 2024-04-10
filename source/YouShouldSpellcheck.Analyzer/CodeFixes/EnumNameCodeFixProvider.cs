@@ -1,4 +1,4 @@
-namespace YouShouldSpellcheck.Analyzer
+namespace YouShouldSpellcheck.Analyzer.CodeFixes
 {
   using System.Collections.Immutable;
   using System.Composition;

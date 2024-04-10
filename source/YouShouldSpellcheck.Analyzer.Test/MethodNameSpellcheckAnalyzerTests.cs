@@ -1,4 +1,6 @@
-﻿namespace YouShouldSpellcheck.Analyzer.Test
+﻿using YouShouldSpellcheck.Analyzer.CodeFixes;
+
+namespace YouShouldSpellcheck.Analyzer.Test
 {
   using AnalyzerFromTemplate2019.Test;
   using Microsoft.CodeAnalysis;
