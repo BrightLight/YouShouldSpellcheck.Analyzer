@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <RootNamespace>YouShouldSpellcheck.Analyzer</RootNamespace>
+    <!--EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules-->
   </PropertyGroup>
 
   <ItemGroup>

@@ -8,6 +8,8 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <!--EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules-->
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
