@@ -9,6 +9,9 @@
   using Microsoft.CodeAnalysis.CSharp.Syntax;
   using Microsoft.CodeAnalysis.Diagnostics;
 
+  /// <summary>
+  /// This analyzer is designed to detect potential spelling mistakes in XML comments.
+  /// </summary>
   [DiagnosticAnalyzer(LanguageNames.CSharp)]
   public class XmlTextSpellcheckAnalyzer : SpellcheckAnalyzerBase
   {
@@ -17,10 +20,17 @@
     private const string CommentRuleDescription = "Comment should be spelled correctly.";
     private static readonly DiagnosticDescriptor CommentRule = new DiagnosticDescriptor(CommentDiagnosticId, CommentRuleTitle, MessageFormat, CommentCategory, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: CommentRuleDescription);
 
+    /// <summary>
+    /// Gets the supported diagnostics for this analyzer.
+    /// </summary>
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(CommentRule);
 
     protected override bool ConsiderEscapedCharacters => false;
 
+    /// <summary>
+    /// Initializes the analyzer by registering the actions that it will perform.
+    /// </summary>
+    /// <param name="context">The context in which the analyzer is being run.</param>
     public override void Initialize(AnalysisContext context)
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
