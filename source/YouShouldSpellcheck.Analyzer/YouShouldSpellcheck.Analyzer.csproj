@@ -3,8 +3,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <ProjectGuid>{4144CA13-81AF-46B2-A90B-765344FB35BE}</ProjectGuid>
-    <!-- Avoid ID conflicts with the package project. -->
-    <PackageId>*$(MSBuildProjectFile)*</PackageId>
+    <PackageId>YouShouldSpellcheck.Analyzer</PackageId>
     <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -15,11 +14,22 @@
   </PropertyGroup>
   <PropertyGroup>
     <Title>YouShouldSpellcheck.Analyzer</Title>
+    <Description>Roslyn based spellchecker. Supports multiple simultaneous dictionaries (e.g. for multiple languages in one project).
+      Uses WeCantSpell.Hunspell: https://github.com/aarondandy/WeCantSpell.Hunspell</Description>
+    <Authors>Markus Hastreiter</Authors>
     <Company>Silverseed</Company>
     <Product>YouShouldSpellcheck.Analyzer</Product>
-    <Copyright>Copyright © Markus Hastreiter 2021</Copyright>
+    <Copyright>Copyright 2018-2024 Markus Hastreiter</Copyright>
+    <Version>1.2.0</Version>
     <AssemblyVersion>1.2.0</AssemblyVersion>
     <FileVersion>1.2.0.0</FileVersion>
+    <RepositoryType>git</RepositoryType>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <RepositoryUrl>https://github.com/BrightLight/YouShouldSpellcheck.Analyzer</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/BrightLight/YouShouldSpellcheck.Analyzer</PackageProjectUrl>
+    <PackageTags>spellcheck, spellchecker, language, YouShouldSpellcheck, analyzers</PackageTags>
+    <PackageReleaseNotes>Alpha release for experimental field tests.</PackageReleaseNotes>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
