@@ -8,7 +8,7 @@
     public static void SetupSpellcheckerSettings()
     {
       var customDictionariesRootFolder = Environment.GetEnvironmentVariable("APPVEYOR_BUILD_FOLDER")
-                                     ?? @"c:\projects\YouShouldSpellcheck.Analyzer";
+                                     ?? @"d:\projects\YouShouldSpellcheck.Analyzer_cleanup\";
       var customDictionariesFolder = Path.Combine(customDictionariesRootFolder, "dic");
 
       var languageEnUs = new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" };

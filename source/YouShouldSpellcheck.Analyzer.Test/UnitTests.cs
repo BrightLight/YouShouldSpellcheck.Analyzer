@@ -1,30 +1,31 @@
-﻿namespace YouShouldSpellcheck.Analyzer.Test
+﻿using System.Threading;
+
+namespace YouShouldSpellcheck.Analyzer.Test
 {
   using AnalyzerFromTemplate2019.Test;
   using Microsoft.CodeAnalysis;
-  using Microsoft.CodeAnalysis.CodeFixes;
-  using Microsoft.CodeAnalysis.Diagnostics;
   using Microsoft.CodeAnalysis.Testing;
   using NUnit.Framework;
   using YouShouldSpellcheck.Analyzer;
+  using System.Threading.Tasks;
 
   [TestFixture]
   public class UnitTest
   {
-
     //No diagnostics expected to show up
     [Test]
-    public void TestMethod1()
+    public async Task TestMethod1()
     {
       var test = @"";
 
-      CSharpAnalyzerVerifier<ClassNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test);
+      await CSharpAnalyzerVerifier<ClassNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test);
     }
 
     //Diagnostic and CodeFix both triggered and checked for
     [Test]
-    public void TestMethod2()
+    public async Task TestMethod2()
     {
+     
       var test = @"
     using System;
     using System.Collections.Generic;
@@ -41,10 +42,12 @@
         }
     }";
       var expected = new DiagnosticResult("YS103", DiagnosticSeverity.Warning)
-      .WithMessage("Possible spelling mistake: Typ")
-      .WithLocation("Test0.cs", 12, 15);
+        .WithMessage("Possible spelling mistake: Typ")
+        .WithSpan("/0/Test0.cs", 12, 15, 12, 18);
+      ////.WithLocation("Test0.cs", 12, 15);
 
-      CSharpAnalyzerVerifier<ClassNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test, expected);
+      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
+      await CSharpAnalyzerVerifier<ClassNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test, expected);
 
       var fixtest = @"
     using System;
@@ -62,8 +65,16 @@
         }
     }";
 
-      ////this.SetupSpellcheckerSettings();
-      CSharpCodeFixVerifier<ClassNameSpellcheckAnalyzer, ClassNameCodeFixProvider>.VerifyCodeFixAsync(test, fixtest);
+      var testIt = new CSharpCodeFixVerifier<ClassNameSpellcheckAnalyzer, ClassNameCodeFixProvider>.Test
+      {
+        TestCode = test,
+        FixedCode = fixtest,
+        CodeActionIndex = 6,
+      };
+
+      testIt.ExpectedDiagnostics.Add(expected);
+      await testIt.RunAsync(CancellationToken.None);
+      
     }
   }
 }

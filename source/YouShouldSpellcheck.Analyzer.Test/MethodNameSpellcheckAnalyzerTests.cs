@@ -5,6 +5,7 @@
   using Microsoft.CodeAnalysis.Diagnostics;
   using Microsoft.CodeAnalysis.Testing;
   using NUnit.Framework;
+  using System.Threading;
   using System.Threading.Tasks;
 
   [TestFixture]
@@ -93,7 +94,16 @@
     }";
 
       SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
-      await CSharpCodeFixVerifier<MethodNameSpellcheckAnalyzer, MethodNameCodeFixProvider>.VerifyCodeFixAsync(source, fixedSource);
+
+      var test = new CSharpCodeFixVerifier<MethodNameSpellcheckAnalyzer, MethodNameCodeFixProvider>.Test
+      {
+        TestCode = source,
+        FixedCode = fixedSource,
+        CodeActionIndex = 1,
+      };
+
+      test.ExpectedDiagnostics.AddRange(DiagnosticResult.EmptyDiagnosticResults);
+      await test.RunAsync(CancellationToken.None);
     }
   }
 }

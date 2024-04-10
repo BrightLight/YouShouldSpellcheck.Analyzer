@@ -14,7 +14,7 @@
 Uses WeCantSpell.Hunspell: https://github.com/aarondandy/WeCantSpell.Hunspell</description>
     <releaseNotes>Alpha release for experimental field tests.</releaseNotes>
     <summary>A Roslyn based spellcheck analyzer.</summary>
-    <copyright>Copyright 2018,2019,2020,2021 Markus Hastreiter</copyright>
+    <copyright>Copyright 2018-2024 Markus Hastreiter</copyright>
     <tags>spellcheck, spellchecker, language, YouShouldSpellcheck, analyzers</tags>
     <developmentDependency>true</developmentDependency>
     <frameworkAssemblies>
