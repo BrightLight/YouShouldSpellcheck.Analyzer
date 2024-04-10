@@ -1,15 +1,14 @@
-﻿using NUnit.Framework;
-
-namespace YouShouldSpellcheck.Analyzer.Test
+﻿namespace YouShouldSpellcheck.Analyzer.Test
 {
   using System;
   using System.IO;
+  using NUnit.Framework;
 
   /// <summary>
   /// This class is used to set up the spellchecker settings for all tests.
   /// </summary>
   [SetUpFixture]
-  public class SpellcheckAnalyzerDiagnosticVerifier
+  public class SetupTestEnvironment
   {
     /// <summary>
     /// Setup the spellchecker settings.
