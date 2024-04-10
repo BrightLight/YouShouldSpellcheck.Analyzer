@@ -24,7 +24,6 @@ Uses WeCantSpell.Hunspell: https://github.com/aarondandy/WeCantSpell.Hunspell</d
     <file src="bin\release\netstandard2.0\RestSharp.dll" target="analyzers\dotnet\cs" />
     <file src="bin\release\netstandard2.0\WeCantSpell.Hunspell.dll" target="analyzers\dotnet\cs" />
     <file src="bin\release\netstandard2.0\YouShouldSpellcheck.Analyzer.dll" target="analyzers\dotnet\cs" />
-    <file src="..\YouShouldSpellcheck.Analyzer.CodeFixes\bin\release\netstandard2.0\YouShouldSpellcheck.Analyzer.CodeFixes.dll" target="analyzers\dotnet\cs" />
     <file src="tools\*.ps1" target="tools\" />
     <file src="..\..\dic\*" target="analyzers\dotnet\cs\dic\" />
     <file src="../../images/icon_128x128.png" target="images/" />
