@@ -46,7 +46,6 @@ namespace YouShouldSpellcheck.Analyzer.Test
         .WithSpan("/0/Test0.cs", 12, 15, 12, 18);
       ////.WithLocation("Test0.cs", 12, 15);
 
-      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
       await CSharpAnalyzerVerifier<ClassNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test, expected);
 
       var fixtest = @"

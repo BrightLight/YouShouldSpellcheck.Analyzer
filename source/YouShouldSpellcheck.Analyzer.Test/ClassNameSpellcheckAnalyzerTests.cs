@@ -7,6 +7,9 @@
   using NUnit.Framework;
   using System.Threading.Tasks;
 
+  /// <summary>
+  /// Test class for the <see cref="ClassNameSpellcheckAnalyzer"/>.
+  /// </summary>
   [TestFixture]
   public class ClassNameSpellcheckAnalyzerTests
   {
@@ -37,7 +40,6 @@
         .WithMessage("Possible spelling mistake: Typ")
         .WithLocation("/0/Test0.cs", 12, 15);
 
-      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
       await CSharpAnalyzerVerifier<ClassNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test, expected);
     }
   }

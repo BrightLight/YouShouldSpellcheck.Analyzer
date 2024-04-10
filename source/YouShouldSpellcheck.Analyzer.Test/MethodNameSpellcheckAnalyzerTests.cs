@@ -2,12 +2,14 @@
 {
   using AnalyzerFromTemplate2019.Test;
   using Microsoft.CodeAnalysis;
-  using Microsoft.CodeAnalysis.Diagnostics;
   using Microsoft.CodeAnalysis.Testing;
   using NUnit.Framework;
   using System.Threading;
   using System.Threading.Tasks;
 
+  /// <summary>
+  /// Test class for the <see cref="MethodNameSpellcheckAnalyzer"/>.
+  /// </summary>
   [TestFixture]
   public class MethodNameSpellcheckAnalyzerTests
   {
@@ -38,7 +40,6 @@
         .WithMessage("Possible spelling mistake: Prnt")
         .WithLocation("/0/Test0.cs", 14, 24);
 
-      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
       await CSharpAnalyzerVerifier<MethodNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test, expected);
     }
 
@@ -48,7 +49,6 @@
     {
       var test = @"";
 
-      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
       await CSharpAnalyzerVerifier<MethodNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test);
     }
 
@@ -92,8 +92,6 @@
           }
         }
     }";
-
-      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
 
       var test = new CSharpCodeFixVerifier<MethodNameSpellcheckAnalyzer, MethodNameCodeFixProvider>.Test
       {

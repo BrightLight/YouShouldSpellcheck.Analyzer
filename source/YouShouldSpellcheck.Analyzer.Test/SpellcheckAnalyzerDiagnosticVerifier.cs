@@ -1,11 +1,21 @@
-﻿namespace YouShouldSpellcheck.Analyzer.Test
+﻿using NUnit.Framework;
+
+namespace YouShouldSpellcheck.Analyzer.Test
 {
   using System;
   using System.IO;
 
-  public static class SpellcheckAnalyzerDiagnosticVerifier
+  /// <summary>
+  /// This class is used to set up the spellchecker settings for all tests.
+  /// </summary>
+  [SetUpFixture]
+  public class SpellcheckAnalyzerDiagnosticVerifier
   {
-    public static void SetupSpellcheckerSettings()
+    /// <summary>
+    /// Setup the spellchecker settings.
+    /// </summary>
+    [OneTimeSetUp]
+    public void SetupSpellcheckerSettings()
     {
       var customDictionariesRootFolder = Environment.GetEnvironmentVariable("APPVEYOR_BUILD_FOLDER")
                                      ?? @"d:\projects\YouShouldSpellcheck.Analyzer_cleanup\";

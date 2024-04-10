@@ -10,6 +10,9 @@
   using Microsoft.CodeAnalysis.Testing;
   using NUnit.Framework;
 
+  /// <summary>
+  /// Test class for the <see cref="StringLiteralSpellcheckAnalyzer"/>.
+  /// </summary>
   [TestFixture]
   public class StringLiteralSpellcheckAnalyzerDiagnosticTests
   {
@@ -36,7 +39,6 @@
         .WithMessage("Possible spelling mistake: Temprature")
         .WithLocation("/0/Test0.cs", 13, 49);
 
-      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
       await CSharpAnalyzerVerifier<StringLiteralSpellcheckAnalyzer>.VerifyAnalyzerAsync(test, expected);
     }
 
@@ -66,9 +68,7 @@
         .WithMessage("Possible spelling mistake: escapng")
         .WithLocation("/0/Test0.cs", lineZeroBased + 1, startColumZeroBased + 1);
 
-      SpellcheckAnalyzerDiagnosticVerifier.SetupSpellcheckerSettings();
-
-      // next lines are basically whare VerifyAnalyzerAsync(test, expected) does
+      // next lines are basically where VerifyAnalyzerAsync(test, expected) does,
       // but we need to add a ReferenceAssemblies
       var test = new CSharpAnalyzerVerifier<StringLiteralSpellcheckAnalyzer>.Test()
       {
