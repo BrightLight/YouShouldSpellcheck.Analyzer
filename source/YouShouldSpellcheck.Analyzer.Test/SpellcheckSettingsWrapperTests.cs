@@ -1,10 +1,12 @@
-﻿
-namespace YouShouldSpellcheck.Analyzer.Test
+﻿namespace YouShouldSpellcheck.Analyzer.Test
 {
   using NUnit.Framework;
 
+  /// <summary>
+  /// Test class for the <see cref="SpellcheckSettingsWrapper"/>.
+  /// </summary>
   [TestFixture]
-  public class SpellcheckSettingsTests
+  public class SpellcheckSettingsWrapperTests
   {
     [Test]
     public void TestCustomDictionariesFolder()
