@@ -1,13 +1,12 @@
-﻿using System.Threading;
-using YouShouldSpellcheck.Analyzer.CodeFixes;
-
-namespace YouShouldSpellcheck.Analyzer.Test
+﻿namespace YouShouldSpellcheck.Analyzer.Test
 {
   using AnalyzerFromTemplate2019.Test;
   using Microsoft.CodeAnalysis;
   using Microsoft.CodeAnalysis.Testing;
   using NUnit.Framework;
   using YouShouldSpellcheck.Analyzer;
+  using YouShouldSpellcheck.Analyzer.CodeFixes;
+  using System.Threading;
   using System.Threading.Tasks;
 
   [TestFixture]
