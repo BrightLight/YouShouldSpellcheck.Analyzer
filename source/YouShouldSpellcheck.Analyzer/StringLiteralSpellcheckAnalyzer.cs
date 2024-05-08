@@ -130,7 +130,7 @@
 
             // try to do a languagetool check
             // if languagetool is not configured, use local dictionary
-            if (!await CheckTextWithLanguageTool(AttributeArgumentStringRule, stringLocation, text, attributePropertyLanguages.Languages, context))
+            if (!await CheckTextWithLanguageTool(stringLocation, text, attributePropertyLanguages.Languages, context))
             {
               this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages);
             }

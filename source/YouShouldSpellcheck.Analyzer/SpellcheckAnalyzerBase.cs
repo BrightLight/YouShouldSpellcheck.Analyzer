@@ -216,7 +216,7 @@ namespace YouShouldSpellcheck.Analyzer
     }
 
     // result: true is LanguageTool was configured, otherwise false
-    protected static async Task<bool> CheckTextWithLanguageTool(DiagnosticDescriptor rule, Location location, string text, IEnumerable<ILanguage> languages, SyntaxNodeAnalysisContext context)
+    protected static async Task<bool> CheckTextWithLanguageTool(Location location, string text, IEnumerable<ILanguage> languages, SyntaxNodeAnalysisContext context)
     {
       var languageToolUriString = AnalyzerContext.SpellcheckSettings.LanguageToolUrl;
       if (!languageToolIsOffline
