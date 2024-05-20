@@ -20,31 +20,31 @@ namespace YouShouldSpellcheck.Analyzer
 
     public IEnumerable<ILanguage> IdentifierLanguages => this.spellcheckSettings.IdentifierLanguages ?? this.spellcheckSettings.DefaultLanguages;
 
-    public IEnumerable<ILanguage> ClassNameLanguages => this.spellcheckSettings.ClassNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> ClassNameLanguages => this.spellcheckSettings.ClassNameLanguages ?? this.IdentifierLanguages;
 
-    public IEnumerable<ILanguage> MethodNameLanguages => this.spellcheckSettings.MethodNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> MethodNameLanguages => this.spellcheckSettings.MethodNameLanguages ?? this.IdentifierLanguages;
 
-    public IEnumerable<ILanguage> VariableNameLanguages => this.spellcheckSettings.VariableNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> VariableNameLanguages => this.spellcheckSettings.VariableNameLanguages ?? this.IdentifierLanguages;
 
-    public IEnumerable<ILanguage> PropertyNameLanguages => this.spellcheckSettings.PropertyNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> PropertyNameLanguages => this.spellcheckSettings.PropertyNameLanguages ?? this.IdentifierLanguages;
 
-    public IEnumerable<ILanguage> EnumNameLanguages => this.spellcheckSettings.EnumNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> EnumNameLanguages => this.spellcheckSettings.EnumNameLanguages ?? this.IdentifierLanguages;
 
-    public IEnumerable<ILanguage> EnumMemberNameLanguages => this.spellcheckSettings.EnumMemberNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> EnumMemberNameLanguages => this.spellcheckSettings.EnumMemberNameLanguages ?? this.IdentifierLanguages;
 
-    public IEnumerable<ILanguage> EventNameLanguages => this.spellcheckSettings.EventNameLanguages ?? this.spellcheckSettings.IdentifierLanguages;
+    public IEnumerable<ILanguage> EventNameLanguages => this.spellcheckSettings.EventNameLanguages ?? this.IdentifierLanguages;
 
-    public IEnumerable<ILanguage> CommentLanguages => this.spellcheckSettings.CommentLanguages;
+    public IEnumerable<ILanguage> CommentLanguages => this.spellcheckSettings.CommentLanguages ?? this.spellcheckSettings.DefaultLanguages;
 
-    public IEnumerable<ILanguage> StringLiteralLanguages => this.spellcheckSettings.StringLiteralLanguages;
+    public IEnumerable<ILanguage> StringLiteralLanguages => this.spellcheckSettings.StringLiteralLanguages ?? this.spellcheckSettings.DefaultLanguages;
 
     public IEnumerable<IAttributeProperty> Attributes => this.spellcheckSettings.Attributes.Select(x => new AttributePropertyWrapper(x));
 
-    public string CustomDictionariesFolder { get; }
+    public string? CustomDictionariesFolder { get; }
 
-    public string LanguageToolUrl => this.spellcheckSettings.LanguageToolUrl;
+    public string? LanguageToolUrl => this.spellcheckSettings.LanguageToolUrl;
 
-    private static string EvaluateCustomDirectoryFolder(string configFile, string rawPath)
+    private static string? EvaluateCustomDirectoryFolder(string? configFile, string? rawPath)
     {
       if (rawPath == null)
       {

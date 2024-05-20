@@ -10,11 +10,11 @@
 
   public static class DictionaryManager
   {
-    private static readonly ConcurrentDictionary<string, WordList> dictionaries = new ConcurrentDictionary<string, WordList>();
+    private static readonly ConcurrentDictionary<string, WordList?> dictionaries = new();
 
-    private static readonly ConcurrentDictionary<string, List<string>> customWordsByLanguage = new ConcurrentDictionary<string, List<string>>();
+    private static readonly ConcurrentDictionary<string, List<string>> customWordsByLanguage = new();
 
-    private static readonly ConcurrentDictionary<Tuple<string, string>, bool> cache = new ConcurrentDictionary<Tuple<string, string>, bool>();
+    private static readonly ConcurrentDictionary<Tuple<string, string>, bool> cache = new();
 
     public static bool IsWordCorrect(string word, string language)
     {
@@ -42,7 +42,7 @@
       return wordIsOkay;
     }
 
-    public static bool Suggest(string word, out List<string> suggestions, string language)
+    public static bool Suggest(string word, out List<string>? suggestions, string language)
     {
       var dictionary = GetDictionaryForLanguage(language);
       if (dictionary != null)
@@ -134,7 +134,7 @@
       return customDictionary != null && customDictionary.Contains(word);
     }
 
-    private static WordList GetDictionaryForLanguage(string language)
+    private static WordList? GetDictionaryForLanguage(string language)
     {
       if (!dictionaries.TryGetValue(language, out var dictionary))
       {
@@ -145,7 +145,7 @@
       return dictionary;
     }
 
-    private static WordList CreateDictionary(string language)
+    private static WordList? CreateDictionary(string language)
     {
       var dictionariesFolder = AnalyzerContext.SpellcheckSettings.CustomDictionariesFolder;
       if (dictionariesFolder == null)

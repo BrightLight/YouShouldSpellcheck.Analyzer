@@ -18,11 +18,11 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
       return declarationToken.Identifier;
     }
 
-    protected override async Task<ISymbol> GetDeclaredSymbolAsync(Document document, VariableDeclaratorSyntax typeDecl, CancellationToken cancellationToken)
+    protected override async Task<ISymbol?> GetDeclaredSymbolAsync(Document document, VariableDeclaratorSyntax typeDecl, CancellationToken cancellationToken)
     {
       // Get the symbol representing the type to be renamed.
       var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
-      return semanticModel.GetDeclaredSymbol(typeDecl, cancellationToken);
+      return semanticModel?.GetDeclaredSymbol(typeDecl, cancellationToken);
     }
   }
 }

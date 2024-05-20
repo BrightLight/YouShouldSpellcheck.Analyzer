@@ -22,7 +22,7 @@
     /// <param name="text">The text to check. </param>
     /// <param name="language">The language of the text.</param>
     /// <returns>The response from the LanguageTool server.</returns>
-    public static async Task<LanguageToolResponse> Check(Uri localLanguageToolUri, string text, string language)
+    public static async Task<LanguageToolResponse?> Check(Uri localLanguageToolUri, string text, string language)
     {
       // "https://languagetool.org/api/v2"
       var languageTool = new RestClient(localLanguageToolUri);
@@ -35,7 +35,7 @@
       // execute the request
       var response = await languageTool.ExecuteAsync<LanguageToolResponse>(request);
       //// var content = response.Content; // raw content as string
-      return response.Data;
+      return response?.Data;
     }
   }
 }

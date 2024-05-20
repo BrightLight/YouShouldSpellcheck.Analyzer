@@ -1,4 +1,5 @@
-﻿namespace YouShouldSpellcheck.Analyzer
+﻿
+namespace YouShouldSpellcheck.Analyzer
 {
   using System.IO;
   using System.Collections.Immutable;
@@ -10,9 +11,9 @@
 
   public static class AnalyzerContext
   {
-    internal const string SettingsFileName = "youshouldspellcheck.config.xml";
+    private const string SettingsFileName = "youshouldspellcheck.config.xml";
 
-    private static ISpellcheckSettings spellcheckSettings;
+    private static ISpellcheckSettings? spellcheckSettings;
 
     private static ISpellcheckSettings defaultSettings = new DefaultSpellcheckSettings();
 
@@ -41,10 +42,7 @@
     /// <param name="context">The context that will be used to retrieve the <see cref="spellcheckSettings"/>.</param>
     internal static void InitializeSettings(SyntaxNodeAnalysisContext context)
     {
-      if (spellcheckSettings == null)
-      {
-        spellcheckSettings = GetSpellcheckSettings(context.Options, context.CancellationToken) ?? defaultSettings;
-      }
+      spellcheckSettings ??= GetSpellcheckSettings(context.Options, context.CancellationToken) ?? defaultSettings;
     }
 
     /// <summary>
@@ -53,12 +51,12 @@
     /// <param name="options">The analyzer options that will be used to find the <see cref="SettingsFileName"/> file.</param>
     /// <param name="cancellationToken">The cancellation token that the operation will observe.</param>
     /// <returns>A <see cref="SpellcheckSettings"/> instance that represents the settings of the specified <paramref name="options"/>.</returns>
-    private static ISpellcheckSettings GetSpellcheckSettings(AnalyzerOptions options, CancellationToken cancellationToken)
+    private static ISpellcheckSettings? GetSpellcheckSettings(AnalyzerOptions options, CancellationToken cancellationToken)
     {
       return GetSpellcheckSettings(options?.AdditionalFiles ?? ImmutableArray.Create<AdditionalText>(), cancellationToken);
     }
 
-    private static ISpellcheckSettings GetSpellcheckSettingsFromTextFile(SourceText settingsXml, string settingsPath)
+    private static ISpellcheckSettings? GetSpellcheckSettingsFromTextFile(SourceText settingsXml, string settingsPath)
     {
       using (var spellcheckSettingsAsTemporaryMemoryStream = new MemoryStream())
       using (var temporaryStreamWriter = new StreamWriter(spellcheckSettingsAsTemporaryMemoryStream))
@@ -70,7 +68,7 @@
       }
     }
 
-    private static ISpellcheckSettings GetSpellcheckSettings(Stream settingsXml, string settingsPath)
+    private static ISpellcheckSettings? GetSpellcheckSettings(Stream settingsXml, string settingsPath)
     {
       try
       {
@@ -89,13 +87,18 @@
       }
     }
 
-    private static ISpellcheckSettings GetSpellcheckSettings(ImmutableArray<AdditionalText> additionalFiles, CancellationToken cancellationToken)
+    private static ISpellcheckSettings? GetSpellcheckSettings(ImmutableArray<AdditionalText> additionalFiles, CancellationToken cancellationToken)
     {
       foreach (var additionalFile in additionalFiles)
       {
         if (Path.GetFileName(additionalFile.Path).ToLowerInvariant() == SettingsFileName)
         {
           var additionalTextContent = additionalFile.GetText(cancellationToken);
+          if (additionalTextContent == null)
+          {
+            return null;
+          }
+          
           additionalTextContent.Container.TextChanged += SpellcheckSettingsChanged;
 
           return GetSpellcheckSettingsFromTextFile(additionalTextContent, additionalFile.Path);
@@ -110,7 +113,7 @@
       Logger.Log("Settings have changed.");
 
       // if new settings are invalid, use the previous settings fallback to the previous settings
-      defaultSettings = spellcheckSettings;
+      ////defaultSettings = spellcheckSettings;
       spellcheckSettings = null;
     }
 

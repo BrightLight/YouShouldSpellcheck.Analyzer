@@ -36,7 +36,7 @@
       var message = $"Rule [{match.Rule?.Id}] {match.Rule?.Description} (Category [{match.Rule?.Category?.Id}] {match.Rule?.Category?.Name}): {match.ShortMessage}\r\n{match.Message}";
       Log(message);
 
-      if (match.Rule.Urls != null)
+      if (match.Rule?.Urls != null)
       {
         foreach (var ruleUrl in match.Rule.Urls)
         {

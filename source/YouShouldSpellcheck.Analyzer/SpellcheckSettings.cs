@@ -16,50 +16,50 @@ namespace YouShouldSpellcheck.Analyzer
   [Serializable]
   public class SpellcheckSettings
   {
-    public Language[] DefaultLanguages { get; init; }
+    public Language[] DefaultLanguages { get; init; } = [];
 
-    public Language[] IdentifierLanguages { get; init; }
+    public Language[]? IdentifierLanguages { get; init; }
 
-    public Language[] ClassNameLanguages { get; init; }
+    public Language[]? ClassNameLanguages { get; init; }
 
-    public Language[] MethodNameLanguages { get; init; }
+    public Language[]? MethodNameLanguages { get; init; }
 
-    public Language[] VariableNameLanguages { get; init; }
+    public Language[]? VariableNameLanguages { get; init; }
 
-    public Language[] PropertyNameLanguages { get; init; }
+    public Language[]? PropertyNameLanguages { get; init; }
 
-    public Language[] EnumNameLanguages { get; init; }
+    public Language[]? EnumNameLanguages { get; init; }
 
-    public Language[] EnumMemberNameLanguages { get; init; }
+    public Language[]? EnumMemberNameLanguages { get; init; }
 
-    public Language[] EventNameLanguages { get; init; }
+    public Language[]? EventNameLanguages { get; init; }
 
-    public Language[] CommentLanguages { get; init; }
+    public Language[]? CommentLanguages { get; init; }
 
-    public Language[] StringLiteralLanguages { get; init; }
+    public Language[]? StringLiteralLanguages { get; init; }
 
-    public AttributeProperty[] Attributes { get; init; }
+    public AttributeProperty[]? Attributes { get; init; }
 
-    public string CustomDictionariesFolder { get; init; }
+    public string? CustomDictionariesFolder { get; init; }
 
-    public string LanguageToolUrl { get; init; }
+    public string? LanguageToolUrl { get; init; }
   }
 
   [Serializable]
   public class AttributeProperty
   {
-    public string AttributeName { get; init; }
-    public string PropertyName { get; init; }
-    public Language[] Languages { get; init; }
+    public required string AttributeName { get; init; }
+    public required string PropertyName { get; init; }
+    public required Language[] Languages { get; init; }
   }
 
   [Serializable]
   public class Language : ILanguage
   {
     [XmlAttribute]
-    public string LocalDictionaryLanguage { get; init; }
+    public required string LocalDictionaryLanguage { get; init; }
 
     [XmlAttribute]
-    public string LanguageToolLanguage { get; init; }
+    public required string LanguageToolLanguage { get; init; }
   }
 }

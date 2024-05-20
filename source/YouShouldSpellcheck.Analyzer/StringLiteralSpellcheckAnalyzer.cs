@@ -139,7 +139,7 @@
       }
     }
 
-    private string DetermineAttributeArgumentName(SemanticModel semanticModel, AttributeArgumentSyntax attributeArgumentSyntax)
+    private string? DetermineAttributeArgumentName(SemanticModel semanticModel, AttributeArgumentSyntax attributeArgumentSyntax)
     {
       // check if syntax represents a named argument
       // -> name is specified directly with the argument
@@ -158,18 +158,21 @@
         var attributeTypeInfo = semanticModel.GetTypeInfo(attributeSyntax);
         if (attributeTypeInfo.Type is INamedTypeSymbol namedTypeSymbol)
         {
-          var nonNamedArguments = attributeSyntax.ArgumentList.Arguments.Where(x => x.NameEquals == null).ToList();
-          var attributeArgumentIndex = nonNamedArguments.FindIndex(x => x == attributeArgumentSyntax);
-          foreach (var constructorDefinition in namedTypeSymbol.InstanceConstructors)
+          if (attributeSyntax.ArgumentList != null)
           {
-            var constructorArguments = constructorDefinition.Parameters.ToList();
-            if (constructorArguments.Count >= nonNamedArguments.Count)
+            var nonNamedArguments = attributeSyntax.ArgumentList.Arguments.Where(x => x.NameEquals == null).ToList();
+            var attributeArgumentIndex = nonNamedArguments.FindIndex(x => x == attributeArgumentSyntax);
+            foreach (var constructorDefinition in namedTypeSymbol.InstanceConstructors)
             {
-              return constructorArguments[attributeArgumentIndex].Name;
-              ////for (var i = 0; i < nonNamedArguments.Count; i++)
-              ////{
-              ////  //if (constructorArguments[i].Type == nonNamedArguments[i].
-              ////}
+              var constructorArguments = constructorDefinition.Parameters.ToList();
+              if (constructorArguments.Count >= nonNamedArguments.Count)
+              {
+                return constructorArguments[attributeArgumentIndex].Name;
+                ////for (var i = 0; i < nonNamedArguments.Count; i++)
+                ////{
+                ////  //if (constructorArguments[i].Type == nonNamedArguments[i].
+                ////}
+              }
             }
           }
         }

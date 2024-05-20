@@ -51,10 +51,15 @@
       // TODO: Replace the following code with your own analysis, generating a CodeAction for each fix to suggest
       foreach (var diagnostic in context.Diagnostics.Where(x => this.FixableDiagnosticIds.Contains(x.Id)))
       {
-        string[] validLanguages = SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id).Select(x => x.LocalDictionaryLanguage).ToArray();
-        if (diagnostic.Properties.TryGetValue("validLanguages", out string supportedLanguages))
+        var validLanguages = SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id).Select(x => x.LocalDictionaryLanguage).ToArray();
+        if (diagnostic.Properties.TryGetValue("validLanguages", out var supportedLanguages))
         {
-          validLanguages = supportedLanguages.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+          validLanguages = supportedLanguages?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        if (validLanguages == null)
+        {
+          continue;
         }
 
         // Register code actions that will invoke the fix.
@@ -79,7 +84,7 @@
         {
           foreach (var language in validLanguages)
           {
-            var ignoreSpellingAction = new NoPreviewCodeAction($"Add \"{offendingWord}\" to custom dictionary for {language}", x => this.AddToCustomDictionary(context.Document, offendingWord, language));
+            var ignoreSpellingAction = new NoPreviewCodeAction($"Add \"{offendingWord}\" to custom dictionary for {language}", x => this.AddToCustomDictionary(context.Document, offendingWord!, language));
             context.RegisterCodeFix(ignoreSpellingAction, diagnostic);
             codeFixCount++;
           }
@@ -87,7 +92,7 @@
 
         if (codeFixCount == 0)
         {
-          var noSuggestionsAction = new NoPreviewCodeAction("No suggestions found", x => null);
+          var noSuggestionsAction = new NoPreviewCodeAction("No suggestions found", x => Task.FromResult(context.Document));
           context.RegisterCodeFix(noSuggestionsAction, diagnostic);
         }
       }

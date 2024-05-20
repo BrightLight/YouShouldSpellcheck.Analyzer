@@ -4,6 +4,7 @@
     <IsPackable>false</IsPackable>
     <ProjectGuid>{4144CA13-81AF-46B2-A90B-765344FB35BE}</ProjectGuid>
     <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
     <PackageId>YouShouldSpellcheck.Analyzer</PackageId>
     <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -12,6 +13,7 @@
     <ComVisible>false</ComVisible>
     <AssemblyCulture>en-US</AssemblyCulture>
     <InternalsVisibleTo>YouShouldSpellcheck.Analyzer.Test</InternalsVisibleTo>
+    <WarningsAsErrors>$(WarningsAsErrors);Nullable</WarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
     <Title>YouShouldSpellcheck.Analyzer</Title>

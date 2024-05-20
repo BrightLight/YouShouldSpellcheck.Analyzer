@@ -202,9 +202,9 @@ namespace YouShouldSpellcheck.Analyzer
         || languages.Any(language => DictionaryManager.IsWordCorrect(word, language.LocalDictionaryLanguage));
     }
 
-    protected static void ReportWord(DiagnosticDescriptor rule, string word, Location location, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages = null)
+    protected static void ReportWord(DiagnosticDescriptor rule, string word, Location location, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage>? languages = null)
     {
-      var propertyBagForFixProvider = ImmutableDictionary.Create<string, string>();
+      var propertyBagForFixProvider = ImmutableDictionary.Create<string, string?>();
       propertyBagForFixProvider = propertyBagForFixProvider.Add("offendingWord", word);
       if (languages != null)
       {
@@ -242,19 +242,20 @@ namespace YouShouldSpellcheck.Analyzer
             {
               var issueLocation = CreateMatchLocation(location, text, match, context, out string textMatch);
 
-              var propertyBagForFixProvider = new Dictionary<string, string>
+              var categoryId = match.Rule?.Category?.Id ?? string.Empty;
+              var propertyBagForFixProvider = new Dictionary<string, string?>
               {
                 { "offendingWord", textMatch },
-                { "CategoryId", match.Rule.Category.Id },
-                { "LanguageToolRuleId", match.Rule.Id },
-                { "LanguageToolRuleIssueType", match.Rule.IssueType }
+                { "CategoryId", categoryId },
+                { "LanguageToolRuleId", match.Rule?.Id },
+                { "LanguageToolRuleIssueType", match.Rule?.IssueType }
               };
 
               var message = BuildLanguageToolDiagnosticMessage(match, propertyBagForFixProvider);
 
-              var properties = ImmutableDictionary.Create<string, string>();
+              var properties = ImmutableDictionary.Create<string, string?>();
               properties = properties.AddRange(propertyBagForFixProvider);
-              if (!languageToolCategoryIdToDiagnosticDescriptors.TryGetValue(match.Rule.Category.Id, out var diagnosticDescriptor))
+              if (!languageToolCategoryIdToDiagnosticDescriptors.TryGetValue(categoryId, out var diagnosticDescriptor))
               {
                 diagnosticDescriptor = LanguageToolMiscRule;
               }
@@ -275,7 +276,7 @@ namespace YouShouldSpellcheck.Analyzer
       return false;
     }
 
-    private static string BuildLanguageToolDiagnosticMessage(LanguageTool.Match match, Dictionary<string, string> propertyBagForFixProvider)
+    private static string BuildLanguageToolDiagnosticMessage(LanguageTool.Match match, Dictionary<string, string?> propertyBagForFixProvider)
     {
       var suggestionsAsText = new StringBuilder();
       var i = 1;
@@ -288,7 +289,7 @@ namespace YouShouldSpellcheck.Analyzer
         i++;
       }
 
-      var header = $"{match.Rule.Category.Name}: {match.Rule.Description}";
+      var header = $"{match.Rule?.Category?.Name}: {match.Rule?.Description}";
       var optionalShortMessage = !string.IsNullOrEmpty(match.ShortMessage) ? $"\r\n{match.ShortMessage}" : string.Empty;
       return $"{header}{optionalShortMessage}\r\n{match.Message}{(!string.IsNullOrEmpty(suggestionsAsText.ToString()) ? "\r\nReplace with\r\n" + suggestionsAsText.ToString() : string.Empty)}";
     }

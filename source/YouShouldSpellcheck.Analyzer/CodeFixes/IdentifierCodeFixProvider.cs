@@ -26,6 +26,11 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
       try
       {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+        if (root == null)
+        {
+          return;
+        }
+
         var codeFixCount = 0;
         // TODO: Replace the following code with your own analysis, generating a CodeAction for each fix to suggest
         foreach (var diagnostic in context.Diagnostics.Where(x => this.FixableDiagnosticIds.Contains(x.Id)))
@@ -33,16 +38,22 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
           // Find the type declaration identified by the diagnostic.
           var diagnosticSpan = diagnostic.Location.SourceSpan;
           ////var declaration = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().FirstOrDefault();
-          var declaration = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<T>().FirstOrDefault();
+          var parent = root.FindToken(diagnosticSpan.Start).Parent;
+          if (parent == null)
+          {
+            continue;
+          }
+
+          var declaration = parent.AncestorsAndSelf().OfType<T>().FirstOrDefault();
           if (declaration == null)
           {
             continue;
           }
 
-          string[] validLanguages = SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id).Select(x => x.LocalDictionaryLanguage).ToArray();
-          if (diagnostic.Properties.TryGetValue("validLanguages", out string supportedLanguages))
+          var validLanguages = SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id).Select(x => x.LocalDictionaryLanguage).ToArray();
+          if (diagnostic.Properties.TryGetValue("validLanguages", out var supportedLanguages))
           {
-            validLanguages = supportedLanguages.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            validLanguages = supportedLanguages!.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
           }
 
           // Register code actions that will invoke the fix.
@@ -58,7 +69,7 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
                   var sanitizedSuggestion = SyntaxFacts.IsValidIdentifier(suggestion) ? suggestion : this.MakeCamelCase(suggestion);
                   if (SyntaxFacts.IsValidIdentifier(sanitizedSuggestion))
                   { 
-                    // we might only replacing part of the identifier, in which case we need to supply the complete new identifier
+                    // we might only replace part of the identifier, in which case we need to supply the complete new identifier
                     var newIdentifier = sanitizedSuggestion;
                     var identifierToken = this.GetIdentifierToken(declaration);
                     var originalIdentifierSpan = identifierToken.Span;
@@ -72,11 +83,13 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
 
                     // Get the symbol representing the type to be renamed.
                     var typeSymbol = await this.GetDeclaredSymbolAsync(context.Document, declaration, context.CancellationToken);
-
-                    var title = $"Replace with ({suggestionsForLanguage.Key}): {newIdentifier}";
-                    var codeAction = CodeAction.Create(title, x => this.RenameSymbol(context.Document, typeSymbol, newIdentifier, x), title);
-                    context.RegisterCodeFix(codeAction, diagnostic);
-                    codeFixCount++;
+                    if (typeSymbol != null)
+                    {
+                      var title = $"Replace with ({suggestionsForLanguage.Key}): {newIdentifier}";
+                      var codeAction = CodeAction.Create(title, x => this.RenameSymbol(context.Document, typeSymbol, newIdentifier, x), title);
+                      context.RegisterCodeFix(codeAction, diagnostic);
+                      codeFixCount++;
+                    }
                   }
                 }
                 catch (Exception e)
@@ -92,7 +105,7 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
             // add "Add to custom dictionary" action
             foreach (var language in validLanguages)
             {
-              var ignoreSpellingAction = new NoPreviewCodeAction($"Add \"{offendingWord}\" to custom dictionary for {language}", x => this.AddToCustomDictionary(context.Document, offendingWord, language));
+              var ignoreSpellingAction = new NoPreviewCodeAction($"Add \"{offendingWord}\" to custom dictionary for {language}", x => this.AddToCustomDictionary(context.Document, offendingWord!, language));
               context.RegisterCodeFix(ignoreSpellingAction, diagnostic);
               codeFixCount++;
             }
@@ -100,7 +113,7 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
 
           if (codeFixCount == 0)
           {
-            var noSuggestionsAction = new NoPreviewCodeAction("No suggestions found", x => null);
+            var noSuggestionsAction = new NoPreviewCodeAction("No suggestions found", x => Task.FromResult(context.Document));
             context.RegisterCodeFix(noSuggestionsAction, diagnostic);
           }
         }
@@ -113,14 +126,14 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
 
     protected abstract SyntaxToken GetIdentifierToken(T declarationToken);
 
-    protected abstract Task<ISymbol> GetDeclaredSymbolAsync(Document document, T typeDecl, CancellationToken cancellationToken);
+    protected abstract Task<ISymbol?> GetDeclaredSymbolAsync(Document document, T typeDecl, CancellationToken cancellationToken);
 
-    private async Task<Solution> RenameSymbol(Document document, ISymbol identifieSymbol, string suggestedWord, CancellationToken cancellationToken)
+    private async Task<Solution> RenameSymbol(Document document, ISymbol identifierSymbol, string suggestedWord, CancellationToken cancellationToken)
     {
       // Produce a new solution that has all references to that type renamed, including the declaration.
       var originalSolution = document.Project.Solution;
       var optionSet = originalSolution.Workspace.Options;
-      var newSolution = await Renamer.RenameSymbolAsync(document.Project.Solution, identifieSymbol, suggestedWord, optionSet, cancellationToken).ConfigureAwait(false);
+      var newSolution = await Renamer.RenameSymbolAsync(document.Project.Solution, identifierSymbol, suggestedWord, optionSet, cancellationToken).ConfigureAwait(false);
 
       // Return the new solution with the now-uppercase type name.
       return newSolution;

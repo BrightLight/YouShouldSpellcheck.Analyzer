@@ -52,8 +52,8 @@
     ////  ]
     ////}
   {
-    public Software Software { get; set; }
-    public Language Language { get; set; }
-    public List<Match> Matches { get; set; }
+    public Software? Software { get; set; }
+    public Language? Language { get; set; }
+    public List<Match> Matches { get; set; } = [];
   }
 }

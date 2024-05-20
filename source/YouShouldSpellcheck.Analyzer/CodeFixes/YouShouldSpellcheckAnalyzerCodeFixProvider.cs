@@ -17,17 +17,27 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
       return document;
     }
 
-    protected static bool Suggestions(Diagnostic diagnostic, out string offendingWord, Dictionary<string, List<string>> allSuggestions, IEnumerable<string> languages)
+    protected static bool Suggestions(Diagnostic diagnostic, out string? offendingWord, Dictionary<string, List<string>> allSuggestions, IEnumerable<string> languages)
     {
       if (diagnostic.Properties.TryGetValue("offendingWord", out offendingWord))
       {
+        if (offendingWord == null)
+        {
+          return false;
+        }
+
         var i = 1;
-        List<string> languageToolSuggestions = null;
+        List<string>? languageToolSuggestions = null;
         while (diagnostic.Properties.TryGetValue($"suggestion_{i}", out var suggestion))
         {
+          if (suggestion == null)
+          {
+            continue;
+          }
+
           if (languageToolSuggestions == null)
           {
-            languageToolSuggestions = new List<string>();
+            languageToolSuggestions = [];
             allSuggestions.Add("LanguageTool", languageToolSuggestions);
           }
 
@@ -48,7 +58,7 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
       return false;
     }
 
-    protected static bool Suggestions(string word, IEnumerable<string> languages, Dictionary<string, List<string>> allSuggestions)
+    protected static bool Suggestions(string word, IEnumerable<string> languages, Dictionary<string, List<string>>? allSuggestions)
     {
       if ((languages == null)
        || (allSuggestions == null))
@@ -76,9 +86,9 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
 
       public override string Title { get; }
 
-      public override string EquivalenceKey { get; }
+      public override string? EquivalenceKey { get; }
 
-      public NoPreviewCodeAction(string title, Func<CancellationToken, Task<Document>> createChangedSolution, string equivalenceKey = null)
+      public NoPreviewCodeAction(string title, Func<CancellationToken, Task<Document>> createChangedSolution, string? equivalenceKey = null)
       {
         this.createChangedSolution = createChangedSolution;
 

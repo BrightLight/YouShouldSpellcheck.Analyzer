@@ -9,11 +9,11 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
   public abstract class MemberIdentifierCodeFixProvider<T> : IdentifierCodeFixProvider<T>
     where T : MemberDeclarationSyntax
   {
-    protected override async Task<ISymbol> GetDeclaredSymbolAsync(Document document, T typeDecl, CancellationToken cancellationToken)
+    protected override async Task<ISymbol?> GetDeclaredSymbolAsync(Document document, T typeDecl, CancellationToken cancellationToken)
     {
       // Get the symbol representing the type to be renamed.
       var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
-      return semanticModel.GetDeclaredSymbol(typeDecl, cancellationToken);
+      return semanticModel?.GetDeclaredSymbol(typeDecl, cancellationToken);
     }
   }
 }
