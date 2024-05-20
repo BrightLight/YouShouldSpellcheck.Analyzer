@@ -37,7 +37,7 @@
 
       Logger.Log($"IsWordCorrect: [{word}] [{language}]");
       var dictionary = GetDictionaryForLanguage(language);
-      wordIsOkay = dictionary.Check(word);
+      wordIsOkay = dictionary?.Check(word) ?? false;
       cache.TryAdd(key, wordIsOkay);
       return wordIsOkay;
     }
@@ -45,12 +45,23 @@
     public static bool Suggest(string word, out List<string> suggestions, string language)
     {
       var dictionary = GetDictionaryForLanguage(language);
-      suggestions = dictionary.Suggest(word).ToList();
-      return true;
+      if (dictionary != null)
+      {
+        suggestions = dictionary.Suggest(word).ToList();
+        return true;
+      }
+
+      suggestions = null;
+      return false;
     }
 
     private static string GetCustomDictionaryFileName(string language)
     {
+      if (string.IsNullOrEmpty(AnalyzerContext.SpellcheckSettings.CustomDictionariesFolder))
+      {
+        return string.Empty;
+      }
+
       return Path.Combine(AnalyzerContext.SpellcheckSettings.CustomDictionariesFolder, $"CustomDictionary.{language}.txt");
     }
 
@@ -137,6 +148,11 @@
     private static WordList CreateDictionary(string language)
     {
       var dictionariesFolder = AnalyzerContext.SpellcheckSettings.CustomDictionariesFolder;
+      if (dictionariesFolder == null)
+      {
+        return null;
+      }
+
       var affixFile = Path.Combine(dictionariesFolder, language + ".aff");
       var dictionaryFile = Path.Combine(dictionariesFolder, language + ".dic");
       if (File.Exists(affixFile) && File.Exists(dictionaryFile))
