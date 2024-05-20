@@ -9,18 +9,21 @@
   {
     private const string logfile = @"c:\temp\YouShouldSpellcheck.log";
 
-    private static StreamWriter logWriter;
-
     [Conditional("DEBUG")]
     public static void Log(string message)
     {
-      if (logWriter == null)
+      try
       {
-        logWriter = new StreamWriter(logfile, true, Encoding.UTF8);
-        logWriter.AutoFlush = true;
+        using (var logWriter = new StreamWriter(logfile, true, Encoding.UTF8))
+        {
+          logWriter.AutoFlush = true;
+          logWriter.WriteLine($"{DateTime.Now} " + message);
+        }
       }
-
-      logWriter.WriteLine($"{DateTime.Now} " + message);
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
+      }
     }
 
     public static void Log(Exception exception)
