@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32210.308
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YouShouldSpellcheck.Analyzer.Test", "YouShouldSpellcheck.Analyzer.Test\YouShouldSpellcheck.Analyzer.Test.csproj", "{6DC16588-ED52-4556-9648-91093CD330A6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YouShouldSpellcheck.Analyzer.Tests", "YouShouldSpellcheck.Analyzer.Tests\YouShouldSpellcheck.Analyzer.Tests.csproj", "{6DC16588-ED52-4556-9648-91093CD330A6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YouShouldSpellcheck.Analyzer", "YouShouldSpellcheck.Analyzer\YouShouldSpellcheck.Analyzer.csproj", "{4144CA13-81AF-46B2-A90B-765344FB35BE}"
 EndProject
