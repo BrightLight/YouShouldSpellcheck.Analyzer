@@ -1,36 +1,53 @@
 namespace YouShouldSpellcheck.Analyzer
 {
   using System.Collections.Generic;
-  using System.Linq;
 
+  /// <summary>
+  /// Default implementation of the <see cref="ISpellcheckSettings"/> interface.
+  /// All properties return an empty collection or an empty string.
+  /// </summary>
   public class DefaultSpellcheckSettings : ISpellcheckSettings
   {
-    public IEnumerable<ILanguage> DefaultLanguages => Enumerable.Empty<ILanguage>();
+    /// <inheritdoc />
+    public IEnumerable<ILanguage> DefaultLanguages => [];
 
-    public IEnumerable<ILanguage> IdentifierLanguages => Enumerable.Empty<ILanguage>();
+    /// <inheritdoc />
+    public IEnumerable<ILanguage> IdentifierLanguages => [];
 
-    public IEnumerable<ILanguage> ClassNameLanguages => Enumerable.Empty<ILanguage>();
+    /// <inheritdoc />
+    public IEnumerable<ILanguage> ClassNameLanguages => [];
 
-    public IEnumerable<ILanguage> MethodNameLanguages => Enumerable.Empty<ILanguage>();
+    /// <inheritdoc />
+    public IEnumerable<ILanguage> MethodNameLanguages => [];
 
-    public IEnumerable<ILanguage> VariableNameLanguages => Enumerable.Empty<ILanguage>();
+    /// <inheritdoc />
+    public IEnumerable<ILanguage> VariableNameLanguages => [];
 
-    public IEnumerable<ILanguage> PropertyNameLanguages => Enumerable.Empty<ILanguage>();
+    /// <inheritdoc />
+    public IEnumerable<ILanguage> PropertyNameLanguages => [];
 
-    public IEnumerable<ILanguage> EnumNameLanguages => Enumerable.Empty<ILanguage>();
+    /// <inheritdoc />
+    public IEnumerable<ILanguage> EnumNameLanguages => [];
 
-    public IEnumerable<ILanguage> EnumMemberNameLanguages => Enumerable.Empty<ILanguage>();
+    /// <inheritdoc />
+    public IEnumerable<ILanguage> EnumMemberNameLanguages => [];
 
-    public IEnumerable<ILanguage> EventNameLanguages => Enumerable.Empty<ILanguage>();
+    /// <inheritdoc />
+    public IEnumerable<ILanguage> EventNameLanguages => [];
 
-    public IEnumerable<ILanguage> CommentLanguages => Enumerable.Empty<ILanguage>();
+    /// <inheritdoc />
+    public IEnumerable<ILanguage> CommentLanguages => [];
 
-    public IEnumerable<ILanguage> StringLiteralLanguages => Enumerable.Empty<ILanguage>();
+    /// <inheritdoc />
+    public IEnumerable<ILanguage> StringLiteralLanguages => [];
 
-    public IEnumerable<IAttributeProperty> Attributes => Enumerable.Empty<IAttributeProperty>();
+    /// <inheritdoc />
+    public IEnumerable<IAttributeProperty> Attributes => [];
 
+    /// <inheritdoc />
     public string CustomDictionariesFolder => string.Empty;
 
+    /// <inheritdoc />
     public string LanguageToolUrl => string.Empty;
   }
 }
