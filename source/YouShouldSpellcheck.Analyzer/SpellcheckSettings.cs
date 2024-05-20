@@ -16,50 +16,50 @@ namespace YouShouldSpellcheck.Analyzer
   [Serializable]
   public class SpellcheckSettings
   {
-    public Language[] DefaultLanguages { get; set; }
+    public Language[] DefaultLanguages { get; init; }
 
-    public Language[] IdentifierLanguages { get; set; }
+    public Language[] IdentifierLanguages { get; init; }
 
-    public Language[] ClassNameLanguages { get; set; }
+    public Language[] ClassNameLanguages { get; init; }
 
-    public Language[] MethodNameLanguages { get; set; }
+    public Language[] MethodNameLanguages { get; init; }
 
-    public Language[] VariableNameLanguages { get; set; }
+    public Language[] VariableNameLanguages { get; init; }
 
-    public Language[] PropertyNameLanguages { get; set; }
+    public Language[] PropertyNameLanguages { get; init; }
 
-    public Language[] EnumNameLanguages { get; set; }
+    public Language[] EnumNameLanguages { get; init; }
 
-    public Language[] EnumMemberNameLanguages { get; set; }
+    public Language[] EnumMemberNameLanguages { get; init; }
 
-    public Language[] EventNameLanguages { get; set; }
+    public Language[] EventNameLanguages { get; init; }
 
-    public Language[] CommentLanguages { get; set; }
+    public Language[] CommentLanguages { get; init; }
 
-    public Language[] StringLiteralLanguages { get; set; }
+    public Language[] StringLiteralLanguages { get; init; }
 
-    public AttributeProperty[] Attributes { get; set; }
+    public AttributeProperty[] Attributes { get; init; }
 
-    public string CustomDictionariesFolder { get; set; }
+    public string CustomDictionariesFolder { get; init; }
 
-    public string LanguageToolUrl { get; set; }
+    public string LanguageToolUrl { get; init; }
   }
 
   [Serializable]
   public class AttributeProperty
   {
-    public string AttributeName { get; set; }
-    public string PropertyName { get; set; }
-    public Language[] Languages { get; set; }
+    public string AttributeName { get; init; }
+    public string PropertyName { get; init; }
+    public Language[] Languages { get; init; }
   }
 
   [Serializable]
   public class Language : ILanguage
   {
     [XmlAttribute]
-    public string LocalDictionaryLanguage { get; set; }
+    public string LocalDictionaryLanguage { get; init; }
 
     [XmlAttribute]
-    public string LanguageToolLanguage { get; set; }
+    public string LanguageToolLanguage { get; init; }
   }
 }

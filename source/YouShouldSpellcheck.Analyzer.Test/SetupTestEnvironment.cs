@@ -19,12 +19,20 @@
       var customDictionariesFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dic");
 
       var languageEnUs = new Language { LocalDictionaryLanguage = "en_US", LanguageToolLanguage = "en-us" };
-      var spellcheckerSettings = new SpellcheckSettings()
+      var spellcheckerSettings = new SpellcheckSettings
       {
-        MethodNameLanguages = new[] { languageEnUs },
-        ClassNameLanguages = new[] { languageEnUs },
-        StringLiteralLanguages = new[] { languageEnUs },
-        Attributes = new AttributeProperty[] { new AttributeProperty { AttributeName = "DisplayAttribute", PropertyName = "Name", Languages = new[] { languageEnUs } } },
+        MethodNameLanguages = [languageEnUs],
+        ClassNameLanguages = [languageEnUs],
+        StringLiteralLanguages = [languageEnUs],
+        Attributes =
+        [
+          new AttributeProperty
+          {
+            AttributeName = "DisplayAttribute",
+            PropertyName = "Name",
+            Languages = [languageEnUs]
+          }
+        ],
         CustomDictionariesFolder = customDictionariesFolder,
       };
 

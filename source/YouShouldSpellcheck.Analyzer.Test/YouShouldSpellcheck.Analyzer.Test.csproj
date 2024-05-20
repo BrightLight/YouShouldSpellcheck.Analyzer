@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ProjectGuid>{6DC16588-ED52-4556-9648-91093CD330A6}</ProjectGuid>
+    <LangVersion>12.0</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -27,5 +28,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageReference Include="PolySharp" Version="1.14.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 </Project>

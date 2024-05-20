@@ -3,6 +3,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <ProjectGuid>{4144CA13-81AF-46B2-A90B-765344FB35BE}</ProjectGuid>
+    <LangVersion>12.0</LangVersion>
     <PackageId>YouShouldSpellcheck.Analyzer</PackageId>
     <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -38,6 +39,10 @@
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" />
+    <PackageReference Include="PolySharp" Version="1.14.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="RestSharp" Version="110.2.0" GeneratePathProperty="true" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <PackageReference Include="WeCantSpell.Hunspell" Version="5.0.0" GeneratePathProperty="true" />
