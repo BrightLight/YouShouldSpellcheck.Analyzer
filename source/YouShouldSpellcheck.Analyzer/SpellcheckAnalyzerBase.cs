@@ -216,7 +216,7 @@ namespace YouShouldSpellcheck.Analyzer
     }
 
     // result: true is LanguageTool was configured, otherwise false
-    protected static async Task<bool> CheckTextWithLanguageTool(Location location, string text, IEnumerable<ILanguage> languages, SyntaxNodeAnalysisContext context)
+    protected static async Task<bool> CheckTextWithLanguageToolAsync(Location location, string text, IEnumerable<ILanguage> languages, SyntaxNodeAnalysisContext context)
     {
       var languageToolUriString = AnalyzerContext.SpellcheckSettings.LanguageToolUrl;
       if (!languageToolIsOffline
@@ -225,7 +225,7 @@ namespace YouShouldSpellcheck.Analyzer
       {
         foreach (var language in languages)
         {
-          var response = await LanguageToolClient.Check(languageToolUri, text, language.LanguageToolLanguage);
+          var response = await LanguageToolClient.CheckAsync(languageToolUri, text, language.LanguageToolLanguage);
           if (response == null)
           {
             // seems like an error occured. Disable LanguageTool analysis

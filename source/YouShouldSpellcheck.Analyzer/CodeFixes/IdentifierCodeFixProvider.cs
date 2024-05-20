@@ -86,7 +86,7 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
                     if (typeSymbol != null)
                     {
                       var title = $"Replace with ({suggestionsForLanguage.Key}): {newIdentifier}";
-                      var codeAction = CodeAction.Create(title, x => this.RenameSymbol(context.Document, typeSymbol, newIdentifier, x), title);
+                      var codeAction = CodeAction.Create(title, x => this.RenameSymbolAsync(context.Document, typeSymbol, newIdentifier, x), title);
                       context.RegisterCodeFix(codeAction, diagnostic);
                       codeFixCount++;
                     }
@@ -128,7 +128,7 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
 
     protected abstract Task<ISymbol?> GetDeclaredSymbolAsync(Document document, T typeDecl, CancellationToken cancellationToken);
 
-    private async Task<Solution> RenameSymbol(Document document, ISymbol identifierSymbol, string suggestedWord, CancellationToken cancellationToken)
+    private async Task<Solution> RenameSymbolAsync(Document document, ISymbol identifierSymbol, string suggestedWord, CancellationToken cancellationToken)
     {
       // Produce a new solution that has all references to that type renamed, including the declaration.
       var renameOptions = new SymbolRenameOptions

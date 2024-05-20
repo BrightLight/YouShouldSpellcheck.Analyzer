@@ -71,7 +71,7 @@
             foreach (var suggestion in suggestionsForLanguage.Value)
             {
               var title = $"Replace with ({suggestionsForLanguage.Key}): {suggestion}";
-              var codeAction = CodeAction.Create(title, x => this.ReplaceText(context.Document, diagnostic.Location, suggestion, x), title);
+              var codeAction = CodeAction.Create(title, x => this.ReplaceTextAsync(context.Document, diagnostic.Location, suggestion, x), title);
               context.RegisterCodeFix(codeAction, diagnostic);
               codeFixCount++;
             }
@@ -98,7 +98,7 @@
       }
     }
 
-    protected async Task<Document> ReplaceText(Document document, Location location, string suggestedWord, CancellationToken cancellationToken)
+    protected async Task<Document> ReplaceTextAsync(Document document, Location location, string suggestedWord, CancellationToken cancellationToken)
     {
       var sourceText = await document.GetTextAsync(cancellationToken);
       var newSourceText = sourceText.Replace(location.SourceSpan, suggestedWord);
