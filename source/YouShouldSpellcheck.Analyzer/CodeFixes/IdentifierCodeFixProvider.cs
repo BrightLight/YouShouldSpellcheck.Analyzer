@@ -136,7 +136,7 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
         RenameOverloads = true,
         RenameInStrings = false,
         RenameInComments = true,
-        RenameFile = true,
+        RenameFile = false,
       };
       var newSolution = await Renamer.RenameSymbolAsync(document.Project.Solution, identifierSymbol, renameOptions, suggestedWord, cancellationToken).ConfigureAwait(false);
 
