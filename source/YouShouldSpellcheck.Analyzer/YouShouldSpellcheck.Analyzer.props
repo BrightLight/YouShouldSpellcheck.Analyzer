@@ -1,0 +1,6 @@
+<Project>
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\contentFiles\any\dic\**\*.dic" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\contentFiles\any\dic\**\*.aff" />
+  </ItemGroup>
+</Project>

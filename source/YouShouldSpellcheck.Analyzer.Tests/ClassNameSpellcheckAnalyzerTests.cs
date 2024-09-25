@@ -1,6 +1,7 @@
 ﻿namespace YouShouldSpellcheck.Analyzer.Test
 {
   using System.Diagnostics.CodeAnalysis;
+  using System.IO;
   using System.Threading;
   using System.Threading.Tasks;
   using AnalyzerFromTemplate2019.Test;
@@ -100,7 +101,28 @@
     [TestCase(TypoInNestedClassName)]
     public async Task DetectsSpellingMistake(string sourcecode)
     {
-      await CSharpAnalyzerVerifier<ClassNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(sourcecode);
+      CSharpAnalyzerVerifier<ClassNameSpellcheckAnalyzer>.Test test = new()
+      {
+        TestCode = sourcecode,
+      };
+
+      var testDirectory = TestContext.CurrentContext.TestDirectory;
+      var dictionaryFolder = Path.Combine(testDirectory, "dic");
+      foreach (var dicFile in Directory.EnumerateFiles(dictionaryFolder, "*.dic"))
+      {
+        var affFile = dicFile.Replace(".dic", ".aff");
+        if (File.Exists(dicFile) && File.Exists(affFile))
+        {
+          var dicContent = File.ReadAllText(dicFile);
+          var affContent = File.ReadAllText(affFile);
+          test.TestState.AdditionalFiles.Add((dicFile, dicContent));
+          test.TestState.AdditionalFiles.Add((affFile, affContent));
+        }
+      }
+      //test.ExpectedDiagnostics.AddRange(expected);
+      await test.RunAsync(CancellationToken.None);
+      
+      //await CSharpAnalyzerVerifier<ClassNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(sourcecode);
     }
 
     /// <summary>

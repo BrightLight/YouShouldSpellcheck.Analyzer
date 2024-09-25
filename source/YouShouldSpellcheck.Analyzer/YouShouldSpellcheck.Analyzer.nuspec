@@ -18,14 +18,15 @@ Uses WeCantSpell.Hunspell: https://github.com/aarondandy/WeCantSpell.Hunspell</d
     <copyright>Copyright 2018-2024 Markus Hastreiter</copyright>
     <tags>spellcheck, spellchecker, language, YouShouldSpellcheck, analyzers</tags>
     <developmentDependency>true</developmentDependency>
+    <dependencies>
+      <dependency id="WeCantSpell.Hunspell" version="5.0.0" />
+    </dependencies>
   </metadata>
-  <!-- The convention for analyzers is to put language agnostic dlls in analyzers\portable50 and language specific analyzers in either analyzers\portable50\cs or analyzers\portable50\vb -->
   <files>
-    <file src="bin\release\netstandard2.0\RestSharp.dll" target="analyzers\dotnet\cs" />
-    <file src="bin\release\netstandard2.0\WeCantSpell.Hunspell.dll" target="analyzers\dotnet\cs" />
+    <!-- The convention for analyzers is to put language agnostic dlls in analyzers\portable50 and language specific analyzers in either analyzers\portable50\cs or analyzers\portable50\vb -->
     <file src="bin\release\netstandard2.0\YouShouldSpellcheck.Analyzer.dll" target="analyzers\dotnet\cs" />
-    <file src="tools\*.ps1" target="tools\" />
-    <file src="..\..\dic\*" target="analyzers\dotnet\cs\dic\" />
+    <file src="YouShouldSpellcheck.Analyzer.props" target="build\YouShouldSpellcheck.Analyzer.props" />
+    <file src="..\..\dic\*" target="contentFiles\any\dic\" />
     <file src="../../images/icon_128x128.png" target="images/" />
   </files>
 </package>

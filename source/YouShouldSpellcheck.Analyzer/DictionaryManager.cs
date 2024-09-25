@@ -1,5 +1,8 @@
-﻿namespace YouShouldSpellcheck.Analyzer
+﻿using Microsoft.CodeAnalysis.Text;
+
+namespace YouShouldSpellcheck.Analyzer
 {
+  using Microsoft.CodeAnalysis;
   using System;
   using System.Collections.Concurrent;
   using System.Collections.Generic;
@@ -15,6 +18,15 @@
     private static readonly ConcurrentDictionary<string, List<string>> customWordsByLanguage = new();
 
     private static readonly ConcurrentDictionary<Tuple<string, string>, bool> cache = new();
+    
+    private static readonly ConcurrentDictionary<string, (SourceText DictionarySourceText, SourceText AffixSourceText)> dictionariesFilesPerLanguage = new();
+    
+    public static void RegisterDictionary(string language, SourceText dictionarySourceText, SourceText affixSourceText)
+    {
+      dictionariesFilesPerLanguage.TryAdd(language, (dictionarySourceText, affixSourceText));
+    }
+
+    public static bool IsInitialized => dictionariesFilesPerLanguage.Any();
 
     public static bool IsWordCorrect(string word, string language)
     {
@@ -147,23 +159,33 @@
 
     private static WordList? CreateDictionary(string language)
     {
-      var dictionariesFolder = AnalyzerContext.SpellcheckSettings.CustomDictionariesFolder;
-      if (dictionariesFolder == null)
+      if (dictionariesFilesPerLanguage.TryGetValue(language, out var files))
       {
-        return null;
+        var dictionarySourceText = files.DictionarySourceText;
+        var affixSourceText = files.AffixSourceText;
+        var dictionaryAsStream = GenerateStreamFromSourceText(dictionarySourceText);
+        var affixAsStream = GenerateStreamFromSourceText(affixSourceText);
+        ////Logger.Log($"Creating new dictionary instance with dictionary file [{dictionaryAdditionalFile.Path}] and affix file [{affixAdditionalFile.Path}]");
+        // TODO use async
+        return WordList.CreateFromStreams(dictionaryAsStream, affixAsStream);
       }
 
-      var affixFile = Path.Combine(dictionariesFolder, language + ".aff");
-      var dictionaryFile = Path.Combine(dictionariesFolder, language + ".dic");
-      if (File.Exists(affixFile) && File.Exists(dictionaryFile))
-      {
-        Logger.Log($"Creating new dictionary instance with dictionary file [{dictionaryFile}] and affix file [{affixFile}]");
-        return WordList.CreateFromFiles(dictionaryFile, affixFile);
-      }
-
-      Logger.Log($"Dictionary file not found: [{dictionaryFile}]");
-      Logger.Log($"Affix file not found: [{affixFile}]");
       return null;
+    }
+
+    /// <summary>
+    /// Generates a <see cref="Stream"/> from the specified <see cref="SourceText"/>.
+    /// </summary>
+    /// <param name="sourceText">The <see cref="SourceText"/> that will be used to generate the <see cref="Stream"/>.</param>
+    /// <returns>A <see cref="Stream"/> that represents the specified <see cref="SourceText"/>.</returns>
+    public static Stream GenerateStreamFromSourceText(SourceText sourceText)
+    {
+      var stream = new MemoryStream();
+      var writer = new StreamWriter(stream, Encoding.UTF8);
+      sourceText.Write(writer);
+      writer.Flush();
+      stream.Position = 0; // Reset the stream position to the beginning
+      return stream;
     }
   }
 }

@@ -9,7 +9,7 @@ namespace YouShouldSpellcheck.Analyzer
   {
     private readonly SpellcheckSettings spellcheckSettings;
 
-    public SpellcheckSettingsWrapper(SpellcheckSettings spellcheckSettings, string settingsPath)
+    public SpellcheckSettingsWrapper(SpellcheckSettings spellcheckSettings, string? settingsPath)
     {
       this.spellcheckSettings = spellcheckSettings ?? throw new ArgumentNullException(nameof(spellcheckSettings));
 

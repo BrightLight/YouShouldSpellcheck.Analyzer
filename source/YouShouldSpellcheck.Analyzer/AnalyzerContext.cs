@@ -1,4 +1,6 @@
 ﻿
+using System.Linq;
+
 namespace YouShouldSpellcheck.Analyzer
 {
   using System.IO;
@@ -42,7 +44,45 @@ namespace YouShouldSpellcheck.Analyzer
     /// <param name="context">The context that will be used to retrieve the <see cref="spellcheckSettings"/>.</param>
     internal static void InitializeSettings(SyntaxNodeAnalysisContext context)
     {
+      RegisterDictionaries(context.Options.AdditionalFiles);
+      
       spellcheckSettings ??= GetSpellcheckSettings(context.Options, context.CancellationToken) ?? defaultSettings;
+    }
+
+    /// <summary>
+    /// look at the additional files. This the ".dic" and ".aff" files with the same name
+    /// the filename without extension is the language name
+    /// register this language and its ".dic" and ".aff" file with the dictionary manager
+    /// using DictionaryManager.RegisterDictionary(language, dic, aff);
+    /// </summary>
+    /// <param name="additionalFiles"></param>
+    private static void RegisterDictionaries(ImmutableArray<AdditionalText> additionalFiles)
+    {
+      // we get called multiple times, but we only want to do this once
+      if (DictionaryManager.IsInitialized)
+      {
+        return;
+      }
+
+      // search dictionaty files (.dic) and their corresponding affix files (.aff)
+      // if both are found, register the dictionary
+      foreach (var dicFile in additionalFiles.Where(x => Path.GetExtension(x.Path) == ".dic"))
+      {
+        // try to find corresponding .aff file
+        var affFileName = Path.ChangeExtension(dicFile.Path, ".aff");
+        var affFile = additionalFiles.FirstOrDefault(x => x.Path == affFileName);
+
+        if (affFile != null)
+        {
+          var language = Path.GetFileNameWithoutExtension(dicFile.Path);
+          var dicSourceText = dicFile.GetText();
+          var affSourceText = affFile.GetText();
+          if (dicSourceText != null && affSourceText != null)
+          {
+            DictionaryManager.RegisterDictionary(language, dicSourceText, affSourceText);
+          }
+        }
+      }
     }
 
     /// <summary>
