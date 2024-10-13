@@ -209,7 +209,6 @@ namespace YouShouldSpellcheck.Analyzer
     {
        return string.IsNullOrWhiteSpace(word)
         || languages == null
-        || !languages.Any()
         || languages.Any(language => DictionaryManager.IsWordCorrect(word, language.LocalDictionaryLanguage));
     }
 
@@ -311,7 +310,7 @@ namespace YouShouldSpellcheck.Analyzer
       // Attention: we need to take into account special whitespace characters, for instance "\n" will be counted as 1 character
       // but it's represented in the source file as two characters. So the offset and length of the Location must
       // take this into account and correct
-      var textBeforeMatch = text.Substring(0, match.Offset);
+      var textBeforeMatch = text[..match.Offset];
       var whitespaceCharactersBeforeMatch = textBeforeMatch.Count(x => char.IsControl(x));
       textMatch = text.Substring(match.Offset, match.Length);
       var whitespaceCharactersInMatch = textMatch.Count(x => char.IsControl(x));
