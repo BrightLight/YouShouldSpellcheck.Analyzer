@@ -51,6 +51,24 @@ namespace YouShouldSpellcheck.Analyzer
 
     private readonly Regex isGuid = new Regex(@"[{(]?[0-9A-Fa-f]{8}[-]?([0-9A-Fa-f]{4}[-]?){3}[0-9A-Fa-f]{12}[)}]?", RegexOptions.Compiled);
 
+    /// <summary>
+    /// Defines escape characters that need special handling when calculating the location of a reported spelling issue.
+    /// </summary>
+    private readonly HashSet<char> escapeCharacters =
+    [
+      '\"',
+      '\'',
+      '\\',
+      '\0',
+      '\a',
+      '\b',
+      '\f',
+      '\n',
+      '\r',
+      '\t',
+      '\v'
+    ];
+
     // language tool categories (as found on https://languagetool.org/development/api/org/languagetool/rules/Categories.html)
     protected static readonly DiagnosticDescriptor LanguageToolCasingRule = new DiagnosticDescriptor(LanguageToolCasingDiagnosticId, "LanguageTool: Casing", MessageFormat, "LanguageTool:Casing", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Rules about detecting uppercase words where lowercase is required and vice versa.");
     protected static readonly DiagnosticDescriptor LanguageToolColloquialismsRule = new DiagnosticDescriptor(LanguageToolColloquialismsDiagnosticId, "LanguageTool: Colloquialisms", MessageFormat, "LanguageTool:Colloquialisms", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Colloquial style.");
@@ -163,18 +181,11 @@ namespace YouShouldSpellcheck.Analyzer
         return location;
       }
 
-      return location
-        + line.Substring(0, location).Count(x => x == '\"')
-        + line.Substring(0, location).Count(x => x == '\'')
-        + line.Substring(0, location).Count(x => x == '\\')
-        + line.Substring(0, location).Count(x => x == '\0')
-        + line.Substring(0, location).Count(x => x == '\a')
-        + line.Substring(0, location).Count(x => x == '\b')
-        + line.Substring(0, location).Count(x => x == '\f')
-        + line.Substring(0, location).Count(x => x == '\n')
-        + line.Substring(0, location).Count(x => x == '\r')
-        + line.Substring(0, location).Count(x => x == '\t')
-        + line.Substring(0, location).Count(x => x == '\v');
+      // Count the occurrences of escape characters in the substring up to the location
+      var count = line[..location].Count(c => escapeCharacters.Contains(c));
+      
+      // Return the updated location
+      return location + count;
     }
 
     protected virtual bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
