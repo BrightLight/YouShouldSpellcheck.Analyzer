@@ -16,4 +16,4 @@ after_build:
 - cmd: dotnet pack source\YouShouldSpellcheck.Analyzer\YouShouldSpellcheck.Analyzer.csproj --configuration %CONFIGURATION% --no-build --no-restore -p:PackageVersion=%APPVEYOR_BUILD_VERSION%
 artifacts:
 - path: artifacts\packages\*.nupkg
-  name: NuGet packages
+  type: NuGetPackage
