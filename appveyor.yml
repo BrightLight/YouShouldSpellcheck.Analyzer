@@ -1,0 +1,20 @@
+version: 1.0.{build}
+image: Visual Studio 2026
+configuration: Release
+assembly_info:
+  patch: true
+  file: '**\AssemblyInfo.*'
+  assembly_version: '{version}'
+  assembly_file_version: '{version}'
+  assembly_informational_version: '{version}'
+before_build:
+- cmd: >-
+    cd source
+
+    nuget restore
+build:
+  project: source\YouShouldSpellcheck.Analyzer.sln
+  publish_nuget: true
+  verbosity: minimal
+after_build:
+- cmd: ''
