@@ -36,12 +36,38 @@ namespace YouShouldSpellcheck.Analyzer.Test
       Assert.That(results[1].Select(diagnostic => diagnostic.Id), Is.EquivalentTo(new[] { ClassNameSpellcheckAnalyzer.ClassNameDiagnosticId }));
     }
 
+    [Test]
+    public async Task DiagnosticCarriesHunspellSuggestionsForSeparateCodeFixHost()
+    {
+      var diagnostics = await AnalyzeAsync(
+        new StringLiteralSpellcheckAnalyzer(),
+        "SuggestionProject",
+        string.Empty,
+        "public class TypeName { public const string Text = \"smple\"; }");
+
+      var diagnostic = diagnostics.Single(result => result.Id == StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId);
+      var suggestions = diagnostic.Properties
+        .Where(property => property.Key.StartsWith("localSuggestion_", System.StringComparison.Ordinal)
+          && !property.Key.StartsWith("localSuggestionLanguage_", System.StringComparison.Ordinal))
+        .Select(property => property.Value)
+        .ToArray();
+      var suggestionLanguages = diagnostic.Properties
+        .Where(property => property.Key.StartsWith("localSuggestionLanguage_", System.StringComparison.Ordinal))
+        .Select(property => property.Value)
+        .ToArray();
+
+      Assert.That(diagnostic.Properties["offendingWord"], Is.EqualTo("smple"));
+      Assert.That(suggestions, Does.Contain("simple"));
+      Assert.That(suggestionLanguages, Is.Not.Empty.And.All.EqualTo("en_US"));
+    }
+
     private static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(
       DiagnosticAnalyzer analyzer,
       string assemblyName,
-      string customWords)
+      string customWords,
+      string source = "public class Zorbax { }")
     {
-      var syntaxTree = CSharpSyntaxTree.ParseText("public class Zorbax { }");
+      var syntaxTree = CSharpSyntaxTree.ParseText(source);
       var compilation = CSharpCompilation.Create(
         assemblyName,
         new[] { syntaxTree },
