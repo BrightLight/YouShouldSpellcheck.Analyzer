@@ -59,10 +59,14 @@
     }";
 
       // make sure that the expected location is correct
-      var lineZeroBased = 7;
-      var startColumZeroBased = 35;
-      var foundLocation = source.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[lineZeroBased]
-        .Substring(startColumZeroBased);
+      var mistakeOffset = source.IndexOf("escapng", StringComparison.Ordinal);
+      Assert.That(mistakeOffset, Is.GreaterThanOrEqualTo(0));
+
+      var sourceBeforeMistake = source[..mistakeOffset];
+      var lineZeroBased = sourceBeforeMistake.Split('\n').Length - 1;
+      var lastLineBreak = sourceBeforeMistake.LastIndexOf('\n');
+      var startColumZeroBased = mistakeOffset - lastLineBreak - 1;
+      var foundLocation = source[mistakeOffset..];
       Assert.That(foundLocation, Does.StartWith("escapng"));
 
       var expected = new DiagnosticResult("YS100", DiagnosticSeverity.Warning)
