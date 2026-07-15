@@ -36,6 +36,7 @@ namespace YouShouldSpellcheck.Analyzer
     public const string LanguageToolTypographyDiagnosticId = "YS215";
     public const string LanguageToolTyposDiagnosticId = "YS216";
     public const string LanguageToolWikipediaDiagnosticId = "YS217";
+    public const string LanguageToolUnavailableDiagnosticId = "YS218";
 
     private readonly Regex splitLineIntoWords = new(@"((\b[^\s\/]+\b)((?<=\.\w).)?)", RegexOptions.Compiled);
     private readonly Regex isGuid = new(@"[{(]?[0-9A-Fa-f]{8}[-]?([0-9A-Fa-f]{4}[-]?){3}[0-9A-Fa-f]{12}[)}]?", RegexOptions.Compiled);
@@ -123,9 +124,14 @@ namespace YouShouldSpellcheck.Analyzer
 
     private static bool IsWordCorrect(string word, IEnumerable<ILanguage> languages, CompilationSpellcheckState state)
     {
-      return string.IsNullOrWhiteSpace(word)
-        || languages == null
-        || languages.Any(language => state.IsWordCorrect(word, language.LocalDictionaryLanguage));
+      if (string.IsNullOrWhiteSpace(word) || languages == null)
+      {
+        return true;
+      }
+
+      var languageArray = languages as ILanguage[] ?? languages.ToArray();
+      return languageArray.Length == 0
+        || languageArray.Any(language => state.IsWordCorrect(word, language.LocalDictionaryLanguage));
     }
 
     private protected static void ReportWord(

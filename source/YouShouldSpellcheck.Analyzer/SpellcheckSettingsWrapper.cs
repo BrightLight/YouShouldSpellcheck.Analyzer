@@ -45,6 +45,12 @@ namespace YouShouldSpellcheck.Analyzer
 
     public string? LanguageToolUrl => this.spellcheckSettings.LanguageToolUrl;
 
+    public LanguageToolExecutionMode LanguageToolMode => this.spellcheckSettings.LanguageToolMode;
+
+    public int LanguageToolTimeoutSeconds => Math.Max(1, this.spellcheckSettings.LanguageToolTimeoutSeconds);
+
+    public int LanguageToolMaxConcurrency => Math.Max(1, this.spellcheckSettings.LanguageToolMaxConcurrency);
+
     private static string? EvaluateCustomDirectoryFolder(string? configFile, string? rawPath)
     {
       if (rawPath == null)

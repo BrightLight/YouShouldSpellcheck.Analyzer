@@ -64,7 +64,11 @@
           var text = token.ValueText;
           var nodeLocation = literalExpressionSyntax.GetLocation();
           var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
-          this.CheckLine(StringLiteralRule, text, stringLocation, context, state.LanguagesByRule(StringLiteralRule.Id), state);
+          var languages = state.LanguagesByRule(StringLiteralRule.Id);
+          if (!state.QueueLanguageToolText(text, stringLocation, languages))
+          {
+            this.CheckLine(StringLiteralRule, text, stringLocation, context, languages, state);
+          }
         }
       }
     }
@@ -100,7 +104,10 @@
             var nodeLocation = literalExpressionSyntax.GetLocation();
             var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
 
-            this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages, state);
+            if (!state.QueueLanguageToolText(text, stringLocation, attributePropertyLanguages.Languages))
+            {
+              this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages, state);
+            }
           }
         }
       }

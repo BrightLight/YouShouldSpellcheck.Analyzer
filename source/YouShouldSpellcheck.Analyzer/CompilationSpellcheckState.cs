@@ -26,6 +26,7 @@ namespace YouShouldSpellcheck.Analyzer
     private readonly ImmutableDictionary<string, ImmutableHashSet<string>> customWords;
     private readonly ConcurrentDictionary<string, Lazy<WordList?>> dictionaries = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<Tuple<string, string>, bool> spellingCache = new();
+    private readonly ConcurrentQueue<LanguageToolCandidate> languageToolCandidates = new();
 
     private CompilationSpellcheckState(
       ISpellcheckSettings settings,
@@ -38,6 +39,10 @@ namespace YouShouldSpellcheck.Analyzer
     }
 
     public ISpellcheckSettings Settings { get; }
+
+    public bool LanguageToolEnabled =>
+      this.Settings.LanguageToolMode == LanguageToolExecutionMode.CompilationEnd
+      && !string.IsNullOrWhiteSpace(this.Settings.LanguageToolUrl);
 
     public static CompilationSpellcheckState Create(AnalyzerOptions options, CancellationToken cancellationToken)
     {
@@ -98,6 +103,30 @@ namespace YouShouldSpellcheck.Analyzer
         key => new Lazy<WordList?>(() => this.CreateDictionary(key), LazyThreadSafetyMode.ExecutionAndPublication));
       return dictionary.Value?.Suggest(word) ?? Enumerable.Empty<string>();
     }
+
+    public bool QueueLanguageToolText(string text, Location location, IEnumerable<ILanguage> languages)
+    {
+      if (!this.LanguageToolEnabled || string.IsNullOrWhiteSpace(text))
+      {
+        return false;
+      }
+
+      var languageCodes = languages
+        .Select(language => language.LanguageToolLanguage)
+        .Where(language => !string.IsNullOrWhiteSpace(language))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToImmutableArray();
+      if (languageCodes.IsDefaultOrEmpty)
+      {
+        return false;
+      }
+
+      this.languageToolCandidates.Enqueue(new LanguageToolCandidate(text, location, languageCodes));
+      return true;
+    }
+
+    public ImmutableArray<LanguageToolCandidate> GetLanguageToolCandidates() =>
+      this.languageToolCandidates.ToImmutableArray();
 
     private static ISpellcheckSettings? ReadSettings(ImmutableArray<AdditionalText> additionalFiles, CancellationToken cancellationToken)
     {
@@ -233,5 +262,21 @@ namespace YouShouldSpellcheck.Analyzer
 
       public SourceText Affix { get; }
     }
+  }
+
+  internal sealed class LanguageToolCandidate
+  {
+    public LanguageToolCandidate(string text, Location location, ImmutableArray<string> languages)
+    {
+      this.Text = text;
+      this.Location = location;
+      this.Languages = languages;
+    }
+
+    public string Text { get; }
+
+    public Location Location { get; }
+
+    public ImmutableArray<string> Languages { get; }
   }
 }

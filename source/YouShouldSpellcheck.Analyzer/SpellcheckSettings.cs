@@ -43,6 +43,18 @@ namespace YouShouldSpellcheck.Analyzer
     public string? CustomDictionariesFolder { get; init; }
 
     public string? LanguageToolUrl { get; init; }
+
+    public LanguageToolExecutionMode LanguageToolMode { get; init; } = LanguageToolExecutionMode.Off;
+
+    public int LanguageToolTimeoutSeconds { get; init; } = 30;
+
+    public int LanguageToolMaxConcurrency { get; init; } = 4;
+  }
+
+  public enum LanguageToolExecutionMode
+  {
+    Off,
+    CompilationEnd,
   }
 
   [Serializable]

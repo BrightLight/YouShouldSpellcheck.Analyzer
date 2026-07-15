@@ -25,7 +25,9 @@ namespace YouShouldSpellcheck.Analyzer
     ];
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-      this.analyzers.SelectMany(analyzer => analyzer.SupportedDiagnostics).ToImmutableArray();
+      this.analyzers.SelectMany(analyzer => analyzer.SupportedDiagnostics)
+        .Concat(LanguageToolCompilationRunner.SupportedDiagnostics)
+        .ToImmutableArray();
 
     public override void Initialize(AnalysisContext context)
     {
@@ -37,6 +39,12 @@ namespace YouShouldSpellcheck.Analyzer
         foreach (var analyzer in this.analyzers)
         {
           analyzer.RegisterActions(compilationContext, state);
+        }
+
+        if (state.LanguageToolEnabled)
+        {
+          compilationContext.RegisterCompilationEndAction(endContext =>
+            LanguageToolCompilationRunner.Run(endContext, state));
         }
       });
     }
