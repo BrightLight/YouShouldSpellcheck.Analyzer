@@ -1,4 +1,4 @@
-version: 1.0.{build}
+version: 1.2.{build}
 image: Visual Studio 2026
 configuration: Release
 assembly_info:
@@ -8,13 +8,12 @@ assembly_info:
   assembly_file_version: '{version}'
   assembly_informational_version: '{version}'
 before_build:
-- cmd: >-
-    cd source
-
-    nuget restore
+- cmd: dotnet restore source\YouShouldSpellcheck.Analyzer.sln
 build:
   project: source\YouShouldSpellcheck.Analyzer.sln
-  publish_nuget: true
   verbosity: minimal
 after_build:
-- cmd: ''
+- cmd: dotnet pack source\YouShouldSpellcheck.Analyzer\YouShouldSpellcheck.Analyzer.csproj --configuration %CONFIGURATION% --no-build --no-restore -p:PackageVersion=%APPVEYOR_BUILD_VERSION%
+artifacts:
+- path: artifacts\packages\*.nupkg
+  name: NuGet packages

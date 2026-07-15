@@ -19,6 +19,7 @@ At review time this verified ordinary project-reference compilation, but not the
 - [x] Kept host-owned Roslyn and Workspaces assemblies out of the package.
 - [x] Corrected bundled dictionaries and license files to `contentFiles/any/any/dic` and imported them through `buildTransitive` props.
 - [x] Added `eng/Test-Package.ps1`, which packs, restores into a clean temporary consumer using only the local package source, and verifies an expected `YS103` diagnostic with no analyzer load or execution failure.
+- [x] Updated AppVeyor to create SDK-style package artifacts with its unique `1.2.{build}` version instead of relying on nuspec-based automatic packaging.
 - [x] Updated the vulnerable transitive `System.Text.Json` 8.0.4 dependency to patched version 8.0.5.
 - [ ] Re-run the original SonarQube build job with the repaired package and retain its logs. The external failure has not yet been reproduced in this repository.
 
