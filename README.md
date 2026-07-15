@@ -20,13 +20,31 @@ The package smoke test creates the NuGet package, restores it into a clean tempo
 
 The compiler analyzer uses synchronous Roslyn callbacks. Settings, Hunspell dictionaries, custom words, parsed dictionaries, spelling caches, and optional LanguageTool work are scoped to each compilation. This allows projects with different language configurations to be analyzed concurrently in the same compiler or IDE process.
 
-Configuration, `.dic`/`.aff` pairs, and custom word lists are supplied as MSBuild `AdditionalFiles`. A custom word list is named `CustomDictionary.<language>.txt`; for example:
+Configuration, `.dic`/`.aff` pairs, and custom word lists are supplied as MSBuild `AdditionalFiles`.
+
+## Custom dictionaries
+
+Custom dictionaries remain supported as project-specific text files. Create one file per language, using the name `CustomDictionary.<language>.txt`. The language part must match the configured `LocalDictionaryLanguage`; for example, use `CustomDictionary.en_US.txt` for `en_US`.
+
+List one accepted word per line:
+
+```text
+OpenAI
+Silverseed
+Zorbax
+```
+
+Custom words are case-sensitive. Add the file to the consuming project as an MSBuild `AdditionalFile`:
 
 ```xml
 <ItemGroup>
   <AdditionalFiles Include="CustomDictionary.en_US.txt" />
 </ItemGroup>
 ```
+
+Edit and save this file normally when words need to be added or removed. The former “Add to custom dictionary” code action was removed because it changed a file outside the Roslyn workspace while returning an unchanged document, which did not participate correctly in preview, undo, or Fix All behavior.
+
+The legacy `<CustomDictionariesFolder>` configuration element is retained for configuration compatibility but is no longer used during analysis. Custom dictionary files must be supplied through `AdditionalFiles` as shown above.
 
 ## Optional LanguageTool checks
 
@@ -49,7 +67,5 @@ In `CompilationEnd` mode, the analyzer collects string literals, configured attr
 When this mode handles a text, LanguageTool replaces its local Hunspell check. Identifier checks continue to use Hunspell. Network availability and response time necessarily affect enabled builds, so keep the mode off for builds that must remain hermetic. In an IDE, diagnostics arrive at the end of an analysis pass rather than one string at a time.
 
 `LanguageToolMaxConcurrency` bounds simultaneous requests per compilation and is clamped to at least 1. `LanguageToolTimeoutSeconds` is the HTTP timeout and is also clamped to at least 1. The analyzer does not depend on `ThreadHelper`, `JoinableTaskFactory`, RestSharp, or a JSON package; those would either tie it to Visual Studio or add analyzer load-context dependencies without changing Roslyn's synchronous callback contract.
-
-The former “Add to custom dictionary” code action was removed because it changed a file outside the Roslyn workspace while returning an unchanged document. Custom dictionaries can still be edited as normal project files.
 
 The analyzer project uses AppVeyor's `APPVEYOR_BUILD_VERSION` as `PackageVersion`, and `appveyor.yml` sets the build version format to `1.2.{build}` and publishes the result directly as a NuGet-package artifact. This gives every CI package artifact a unique `.nupkg` filename while local packages continue to use the version declared in the analyzer project.
