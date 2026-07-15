@@ -7,7 +7,20 @@ Environment: .NET SDK 10.0.301, MSBuild 18.6.4
 
 After package restore, the Release solution build succeeded and all 11 NUnit tests passed. The build emitted Roslyn analyzer-authoring warnings, including missing extended analyzer rules and diagnostic release tracking.
 
-This verifies ordinary project-reference compilation, but it does not verify the produced NuGet package in a clean consumer project or reproduce the external SonarQube build job.
+At review time this verified ordinary project-reference compilation, but not the produced NuGet package in a clean consumer project or the external SonarQube build job. Package-consumer verification has since been added as recorded below; the external job remains outstanding.
+
+## Implementation progress
+
+### 2026-07-15: package stabilization
+
+- [x] Replaced the hand-maintained nuspec with SDK-style packing.
+- [x] Marked Roslyn and analyzer implementation packages as private package dependencies.
+- [x] Placed the analyzer's private runtime dependency closure beside the analyzer assembly.
+- [x] Kept host-owned Roslyn and Workspaces assemblies out of the package.
+- [x] Corrected bundled dictionaries and license files to `contentFiles/any/any/dic` and imported them through `buildTransitive` props.
+- [x] Added `eng/Test-Package.ps1`, which packs, restores into a clean temporary consumer using only the local package source, and verifies an expected `YS103` diagnostic with no analyzer load or execution failure.
+- [x] Updated the vulnerable transitive `System.Text.Json` 8.0.4 dependency to patched version 8.0.5.
+- [ ] Re-run the original SonarQube build job with the repaired package and retain its logs. The external failure has not yet been reproduced in this repository.
 
 ## Prioritized findings
 
@@ -60,28 +73,30 @@ Acceptance checks:
 - Analyzer results do not require network availability.
 - All analyzer operations observe Roslyn cancellation where applicable.
 
-### 3. Critical: the NuGet package does not include analyzer runtime dependencies
+### 3. Critical: the NuGet package did not include analyzer runtime dependencies
 
-Evidence:
+Status: addressed locally on 2026-07-15; verification in the original SonarQube job remains outstanding.
+
+Original evidence:
 
 - The build output contains `WeCantSpell.Hunspell.dll` and `RestSharp.dll`.
 - `YouShouldSpellcheck.Analyzer.nuspec` places only `YouShouldSpellcheck.Analyzer.dll` in `analyzers/dotnet/cs`.
 - The nuspec declares WeCantSpell.Hunspell as a package dependency but does not declare RestSharp.
-- No clean package-consumer test exists.
+- No clean package-consumer test existed.
 
 Impact:
 
 Roslyn analyzer load contexts generally need private runtime dependencies next to the analyzer assembly. A normal NuGet dependency available to the consumer project does not reliably make it available to the analyzer loader. Loader changes in a newer MSBuild/Roslyn version could expose this existing packaging defect and are a plausible cause of the external build failure.
 
-Recommended direction:
+Implemented direction:
 
-Move to SDK-style packing and deliberately place non-Roslyn runtime dependencies beside the analyzer. Mark compiler references as private and do not package host-owned Roslyn assemblies. Consider separating IDE-only code fixes from the build analyzer if that materially reduces the dependency surface.
+The package now uses SDK-style packing, places non-Roslyn runtime dependencies beside the analyzer, marks compiler references private, and excludes host-owned Roslyn and MEF assemblies. Separating IDE-only code fixes remains a possible later simplification.
 
 Acceptance checks:
 
-- A clean project can consume only the generated `.nupkg` and execute the analyzer from command-line MSBuild.
-- The package works with the oldest and newest supported Roslyn/MSBuild hosts.
-- Package contents are asserted by an automated test.
+- [x] A clean project can consume only the generated `.nupkg` and execute the analyzer from command-line MSBuild.
+- [ ] The package works with the oldest and newest supported Roslyn/MSBuild hosts.
+- [x] Package contents are asserted by an automated test.
 
 ### 4. High: analysis performs direct filesystem I/O
 

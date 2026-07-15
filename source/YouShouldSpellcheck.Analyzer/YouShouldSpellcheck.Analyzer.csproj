@@ -1,7 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\packages</PackageOutputPath>
+    <PackageIcon>icon_128x128.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <ProjectGuid>{4144CA13-81AF-46B2-A90B-765344FB35BE}</ProjectGuid>
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
@@ -39,36 +46,39 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" PrivateAssets="all" />
     <PackageReference Include="PolySharp" Version="1.14.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="RestSharp" Version="112.0.0" GeneratePathProperty="true" />
-    <PackageReference Include="System.Net.Http" Version="4.3.4" />
-    <PackageReference Include="WeCantSpell.Hunspell" Version="5.0.0" GeneratePathProperty="true" />
+    <PackageReference Include="RestSharp" Version="112.0.0" PrivateAssets="all" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" PrivateAssets="all" />
+    <PackageReference Include="WeCantSpell.Hunspell" Version="5.0.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Resources.Designer.cs" DesignTime="True" AutoGen="True" DependentUpon="Resources.resx" />
     <EmbeddedResource Update="Resources.resx" Generator="ResXFileCodeGenerator" LastGenOutput="Resources.Designer.cs" />
-    <None Include="YouShouldSpellcheck.Analyzer.nuspec">
-      <SubType>Designer</SubType>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="ReadMe.txt" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\images\icon_128x128.png" Pack="true" PackagePath="\" />
+    <None Include="YouShouldSpellcheck.Analyzer.props" Pack="true" PackagePath="buildTransitive\YouShouldSpellcheck.Analyzer.props" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\dic\**\*">
-      <Link>dic\%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <None Include="..\..\dic\**\*" Pack="true" PackagePath="contentFiles\any\any\dic\%(RecursiveDir)" />
   </ItemGroup>
-  
-  <Target Name="CopyNugetAssembliesToOutDir" BeforeTargets="Build">
-    <Message Text="PackagePath = $(PkgWeCantSpell_Hunspell)" Importance="high" />
-    <Copy SourceFiles="$(PkgWeCantSpell_Hunspell)\lib\netstandard2.0\WeCantSpell.Hunspell.dll" DestinationFolder="$(OutDir)" />
-    <Copy SourceFiles="$(PkgRestSharp)\lib\netstandard2.0\RestSharp.dll" DestinationFolder="$(OutDir)" />
-  </Target>
+
+  <ItemGroup>
+    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+    <None Include="$(OutputPath)WeCantSpell.Hunspell.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+    <None Include="$(OutputPath)RestSharp.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+    <None Include="$(OutputPath)Microsoft.Bcl.AsyncInterfaces.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+    <None Include="$(OutputPath)System.Buffers.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+    <None Include="$(OutputPath)System.Memory.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+    <None Include="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+    <None Include="$(OutputPath)System.Text.Encodings.Web.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+    <None Include="$(OutputPath)System.Text.Json.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+    <None Include="$(OutputPath)System.Threading.Tasks.Extensions.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+  </ItemGroup>
 </Project>
