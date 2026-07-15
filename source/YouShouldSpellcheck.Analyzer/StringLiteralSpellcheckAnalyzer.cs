@@ -97,7 +97,7 @@
       }
     }
 
-    private async void AnalyzeAttributeArgument(SyntaxNodeAnalysisContext context, AttributeArgumentSyntax attributeArgumentSyntax)
+    private void AnalyzeAttributeArgument(SyntaxNodeAnalysisContext context, AttributeArgumentSyntax attributeArgumentSyntax)
     {
       if (attributeArgumentSyntax.Parent?.Parent is AttributeSyntax attributeSyntax)
       {
@@ -128,12 +128,16 @@
             var nodeLocation = literalExpressionSyntax.GetLocation();
             var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
 
-            // try to do a languagetool check
-            // if languagetool is not configured, use local dictionary
-            if (!await CheckTextWithLanguageToolAsync(stringLocation, text, attributePropertyLanguages.Languages, context))
-            {
-              this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages);
-            }
+            ////// try to do a languagetool check
+            ////// if languagetool is not configured, use local dictionary
+            ////if (!await CheckTextWithLanguageToolAsync(stringLocation, text, attributePropertyLanguages.Languages, context))
+            ////{
+            ////  this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages);
+            ////}
+
+            // Analyzer callbacks must finish before returning because Roslyn analysis contexts
+            // contain pooled state. Remote LanguageTool requests cannot safely run here.
+            this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages);
           }
         }
       }
