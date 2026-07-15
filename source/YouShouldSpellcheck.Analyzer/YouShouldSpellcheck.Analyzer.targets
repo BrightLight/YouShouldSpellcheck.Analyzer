@@ -1,0 +1,7 @@
+<Project>
+  <ItemGroup>
+    <AdditionalFiles
+      Include="$(MSBuildProjectDirectory)/CustomDictionary.*.txt"
+      Exclude="@(AdditionalFiles)" />
+  </ItemGroup>
+</Project>

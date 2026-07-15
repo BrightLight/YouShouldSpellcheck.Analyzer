@@ -34,7 +34,9 @@ Silverseed
 Zorbax
 ```
 
-Custom words are case-sensitive. Add the file to the consuming project as an MSBuild `AdditionalFile`:
+Custom words are case-sensitive. Custom dictionaries in the project root are discovered automatically by the analyzer package, including files that Visual Studio or Rider persist using the ordinary `Content` item type. No manual project-file change is required for dictionaries created by the code fix.
+
+If a custom dictionary is stored in a subdirectory or outside the project directory, add it to the consuming project explicitly as an MSBuild `AdditionalFile`:
 
 ```xml
 <ItemGroup>
@@ -44,7 +46,7 @@ Custom words are case-sensitive. Add the file to the consuming project as an MSB
 
 Words can be managed directly in the text file or through the spelling diagnostic's code fixes. For each configured language, the analyzer offers an action to add the reported word to an existing custom dictionary. If the project does not yet contain a custom dictionary for that language, it instead offers to create `CustomDictionary.<language>.txt` and add the word in one step.
 
-These actions create or update a Roslyn `AdditionalDocument`, so the edit is represented as a solution change instead of an untracked filesystem side effect. This allows supporting IDE hosts to preview, apply, and undo the change through their normal project-system integration.
+These actions create or update a Roslyn `AdditionalDocument`, so the edit is represented as a solution change instead of an untracked filesystem side effect. This allows supporting IDE hosts to preview, apply, and undo the change through their normal project-system integration. An IDE may display a newly created `.txt` file with a `Content` build action; the package's imported build targets also pass matching project-root files to Roslyn as `AdditionalFiles` during evaluation.
 
 The legacy `<CustomDictionariesFolder>` configuration element is retained for configuration compatibility but is no longer used during analysis. Custom dictionary files must be supplied through `AdditionalFiles` as shown above.
 

@@ -51,6 +51,7 @@ try {
       'analyzers/dotnet/cs/YouShouldSpellcheck.Analyzer.dll',
       'analyzers/dotnet/cs/WeCantSpell.Hunspell.dll',
       'buildTransitive/YouShouldSpellcheck.Analyzer.props',
+      'buildTransitive/YouShouldSpellcheck.Analyzer.targets',
       'contentFiles/any/any/dic/en_US.aff',
       'contentFiles/any/any/dic/en_US.dic',
       'contentFiles/any/any/dic/LICENSE_en_US.txt'
@@ -84,6 +85,7 @@ try {
   <ItemGroup>
     <PackageReference Include="YouShouldSpellcheck.Analyzer" Version="$packageVersion" PrivateAssets="all" />
     <AdditionalFiles Include="youshouldspellcheck.config.xml" />
+    <Content Include="CustomDictionary.en_US.txt" />
   </ItemGroup>
 </Project>
 "@
@@ -122,6 +124,16 @@ public class TypName
 
   if ($buildOutput -match '\b(CS8032|AD0001)\b') {
     throw "The analyzer failed to load or execute in the package consumer.`n$buildOutput"
+  }
+
+  Set-Content -LiteralPath (Join-Path $testRoot 'CustomDictionary.en_US.txt') -Value 'Typ' -Encoding utf8
+  $customDictionaryBuildOutput = (& dotnet build (Join-Path $testRoot 'PackageConsumer.csproj') --no-restore --verbosity minimal 2>&1 | Out-String)
+  if ($LASTEXITCODE -ne 0) {
+    throw "The consumer build failed after adding 'Typ' through a Content custom dictionary.`n$customDictionaryBuildOutput"
+  }
+
+  if ($customDictionaryBuildOutput -match '\b(YS103|CS8032|AD0001)\b') {
+    throw "The Content custom dictionary was not imported as an AdditionalFile.`n$customDictionaryBuildOutput"
   }
 
   Write-Host "Package smoke test passed: $packagePath"

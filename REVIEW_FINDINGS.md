@@ -29,6 +29,7 @@ At review time this verified ordinary project-reference compilation, but not the
 - [x] Placed the analyzer's private runtime dependency closure beside the analyzer assembly.
 - [x] Kept host-owned Roslyn and Workspaces assemblies out of the package.
 - [x] Corrected bundled dictionaries and license files to `contentFiles/any/any/dic` and imported them through `buildTransitive` props.
+- [x] Imported project-root `CustomDictionary.*.txt` files through `buildTransitive` targets so IDE-created `Content` items still reach the analyzer as `AdditionalFiles`.
 - [x] Added `eng/Test-Package.ps1`, which packs, restores into a clean temporary consumer using only the local package source, and verifies an expected `YS103` diagnostic with no analyzer load or execution failure.
 - [x] Updated AppVeyor and the analyzer project to apply its unique `1.2.{build}` version to both explicit SDK-style packing and AppVeyor's legacy automatic packaging path, and publish the resulting `.nupkg` without ZIP wrapping.
 - [x] Updated the vulnerable transitive `System.Text.Json` 8.0.4 dependency to patched version 8.0.5.

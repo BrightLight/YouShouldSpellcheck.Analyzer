@@ -69,6 +69,7 @@
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\images\icon_128x128.png" Pack="true" PackagePath="\" />
     <None Include="YouShouldSpellcheck.Analyzer.props" Pack="true" PackagePath="buildTransitive\YouShouldSpellcheck.Analyzer.props" />
+    <None Include="YouShouldSpellcheck.Analyzer.targets" Pack="true" PackagePath="buildTransitive\YouShouldSpellcheck.Analyzer.targets" />
   </ItemGroup>
 
   <ItemGroup>

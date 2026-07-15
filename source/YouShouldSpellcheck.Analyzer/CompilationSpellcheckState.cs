@@ -157,7 +157,9 @@ namespace YouShouldSpellcheck.Analyzer
       ImmutableArray<AdditionalText> additionalFiles,
       CancellationToken cancellationToken)
     {
-      var filesByPath = additionalFiles.ToImmutableDictionary(file => file.Path, StringComparer.OrdinalIgnoreCase);
+      var filesByPath = additionalFiles
+        .GroupBy(file => file.Path, StringComparer.OrdinalIgnoreCase)
+        .ToImmutableDictionary(group => group.Key, group => group.Last(), StringComparer.OrdinalIgnoreCase);
       var builder = ImmutableDictionary.CreateBuilder<string, DictionarySources>(StringComparer.OrdinalIgnoreCase);
       foreach (var dictionaryFile in additionalFiles.Where(file => string.Equals(Path.GetExtension(file.Path), ".dic", StringComparison.OrdinalIgnoreCase)))
       {
