@@ -42,7 +42,9 @@ Custom words are case-sensitive. Add the file to the consuming project as an MSB
 </ItemGroup>
 ```
 
-Edit and save this file normally when words need to be added or removed. The former “Add to custom dictionary” code action was removed because it changed a file outside the Roslyn workspace while returning an unchanged document, which did not participate correctly in preview, undo, or Fix All behavior.
+Words can be managed directly in the text file or through the spelling diagnostic's code fixes. For each configured language, the analyzer offers an action to add the reported word to an existing custom dictionary. If the project does not yet contain a custom dictionary for that language, it instead offers to create `CustomDictionary.<language>.txt` and add the word in one step.
+
+These actions create or update a Roslyn `AdditionalDocument`, so the edit is represented as a solution change instead of an untracked filesystem side effect. This allows supporting IDE hosts to preview, apply, and undo the change through their normal project-system integration.
 
 The legacy `<CustomDictionariesFolder>` configuration element is retained for configuration compatibility but is no longer used during analysis. Custom dictionary files must be supplied through `AdditionalFiles` as shown above.
 

@@ -45,12 +45,12 @@
 
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-      var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-      var codeFixCount = 0;
+      await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
       // TODO: Replace the following code with your own analysis, generating a CodeAction for each fix to suggest
       foreach (var diagnostic in context.Diagnostics.Where(x => this.FixableDiagnosticIds.Contains(x.Id)))
       {
+        var codeFixCount = 0;
         var validLanguages = Array.Empty<string>();
         if (diagnostic.Properties.TryGetValue("validLanguages", out var supportedLanguages))
         {
@@ -77,6 +77,8 @@
             }
           }
         }
+
+        codeFixCount += RegisterCustomDictionaryCodeFixes(context, diagnostic, offendingWord, validLanguages);
 
         if (codeFixCount == 0)
         {

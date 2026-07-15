@@ -100,6 +100,8 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
             }
           }
 
+          codeFixCount += RegisterCustomDictionaryCodeFixes(context, diagnostic, offendingWord, validLanguages);
+
           if (codeFixCount == 0)
           {
             var noSuggestionsAction = new NoPreviewCodeAction("No suggestions found", x => Task.FromResult(context.Document));

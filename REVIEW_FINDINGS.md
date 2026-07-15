@@ -16,7 +16,7 @@ At review time this verified ordinary project-reference compilation, but not the
 - [x] Replaced process-wide analyzer settings, dictionary registrations, parsed dictionaries, custom words, and spelling caches with state created and captured by compilation-start actions.
 - [x] Made custom word lists tracked `AdditionalFiles` named `CustomDictionary.<language>.txt`.
 - [x] Replaced per-syntax-callback LanguageTool calls with explicit opt-in, compilation-scoped batching at compilation end; removed the RestSharp/JSON runtime dependency closure.
-- [x] Removed the direct-filesystem custom-dictionary code action; custom dictionaries remain editable project inputs.
+- [x] Replaced the direct-filesystem custom-dictionary code action with workspace-aware actions that create or update tracked `AdditionalDocuments`.
 - [x] Removed the fixed-path debug logger and environment-variable expansion from analyzer configuration.
 - [x] Made analyzer diagnostics carry Hunspell suggestions so code fixes do not depend on process-wide dictionary state.
 - [x] Removed the global test setup and added concurrent two-compilation isolation coverage.
@@ -116,7 +116,7 @@ Acceptance checks:
 
 ### 4. High: analysis performs direct filesystem I/O
 
-Status: addressed for analyzer execution locally on 2026-07-15. Custom word lists are `AdditionalFiles`; the side-effecting custom-dictionary code action and fixed-path logger were removed.
+Status: addressed for analyzer execution locally on 2026-07-15. Custom word lists are `AdditionalFiles`; custom-dictionary code actions return tracked Roslyn solution changes, and the fixed-path logger was removed.
 
 Evidence:
 
@@ -281,6 +281,6 @@ Enable extended analyzer rules, add release tracking, explicitly define Fix All 
 
 - Whether complex configuration remains XML or moves to a combination of `.editorconfig`/MSBuild properties and an additional structured file.
 - Whether package dictionaries are opt-in by language or a smaller default set is included automatically.
-- Whether custom dictionary updates remain an IDE feature and, if so, how they participate in workspace edits and undo.
+- Custom dictionary updates remain an IDE feature and are represented as `AdditionalDocument` solution changes for project-system persistence, preview, and undo.
 - Whether LanguageTool support belongs in a separate command-line/CI tool, an IDE-only component, or is removed.
 - Which Roslyn/MSBuild host versions and operating systems the package officially supports.
