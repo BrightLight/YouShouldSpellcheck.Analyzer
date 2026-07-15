@@ -7,8 +7,7 @@
   using Microsoft.CodeAnalysis.CSharp.Syntax;
   using Microsoft.CodeAnalysis.Diagnostics;
 
-  [DiagnosticAnalyzer(LanguageNames.CSharp)]
-  public class EnumNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
+  public sealed class EnumNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string EnumNameDiagnosticId = "YS107";
     private const string EnumNameRuleTitle = "Enumeration name should be spelled correctly";
@@ -21,28 +20,18 @@
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
       context.EnableConcurrentExecution();
-
-      // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
-      // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
-      context.RegisterSyntaxNodeAction(this.AnalyzeEnumDeclaration, SyntaxKind.EnumDeclaration);
-
-      ////string x;
-      ////context.RegisterSyntaxTreeAction(analysisContext => x = analysisContext.Tree.FilePath);
+      this.InitializeAnalyzer(context);
     }
 
-    private void AnalyzeEnumDeclaration(SyntaxNodeAnalysisContext context)
+    internal override void RegisterActions(CompilationStartAnalysisContext context, CompilationSpellcheckState state)
     {
-      try
-      {
-        AnalyzerContext.InitializeSettings(context);
-        var enumDeclarationSyntax = context.Node as EnumDeclarationSyntax;
-        this.CheckToken(EnumNameRule, context, enumDeclarationSyntax?.Identifier);
-      }
-      catch (Exception e)
-      {
-        Logger.Log(e);
-        Console.WriteLine(e);
-      }
+      context.RegisterSyntaxNodeAction(nodeContext => this.AnalyzeEnumDeclaration(nodeContext, state), SyntaxKind.EnumDeclaration);
+    }
+
+    private void AnalyzeEnumDeclaration(SyntaxNodeAnalysisContext context, CompilationSpellcheckState state)
+    {
+      var enumDeclarationSyntax = context.Node as EnumDeclarationSyntax;
+      this.CheckToken(EnumNameRule, context, enumDeclarationSyntax?.Identifier, state);
     }
   }
 }

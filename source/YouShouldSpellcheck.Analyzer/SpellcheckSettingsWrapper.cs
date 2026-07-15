@@ -38,7 +38,8 @@ namespace YouShouldSpellcheck.Analyzer
 
     public IEnumerable<ILanguage> StringLiteralLanguages => this.spellcheckSettings.StringLiteralLanguages ?? this.spellcheckSettings.DefaultLanguages;
 
-    public IEnumerable<IAttributeProperty> Attributes => this.spellcheckSettings.Attributes.Select(x => new AttributePropertyWrapper(x));
+    public IEnumerable<IAttributeProperty> Attributes =>
+      this.spellcheckSettings.Attributes?.Select(x => new AttributePropertyWrapper(x)) ?? Enumerable.Empty<IAttributeProperty>();
 
     public string? CustomDictionariesFolder { get; }
 
@@ -51,7 +52,9 @@ namespace YouShouldSpellcheck.Analyzer
         return null;
       }
 
-      var path = Environment.ExpandEnvironmentVariables(rawPath);
+      // Analyzer configuration must be determined entirely by tracked project inputs.
+      // Environment variable expansion would make identical compilations behave differently.
+      var path = rawPath;
       var basePath = configFile == null ? Path.GetFullPath(".") : Path.GetDirectoryName(configFile);
 
       string finalPath;

@@ -4,27 +4,21 @@ namespace YouShouldSpellcheck.Analyzer
   using System.Collections.Generic;
   using System.Collections.Immutable;
   using System.Linq;
-  using System.Text;
   using System.Text.RegularExpressions;
-  using System.Threading.Tasks;
   using Microsoft.CodeAnalysis;
+  using Microsoft.CodeAnalysis.CSharp;
   using Microsoft.CodeAnalysis.Diagnostics;
   using Microsoft.CodeAnalysis.Text;
-  using YouShouldSpellcheck.Analyzer.LanguageTool;
   using Match = System.Text.RegularExpressions.Match;
 
   public abstract class SpellcheckAnalyzerBase : DiagnosticAnalyzer
   {
-    // You can change these strings in the Resources.resx file. If you do not want your analyzer to be localize-able, you can use regular strings for Title and MessageFormat.
-    // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Localizing%20Analyzers.md for more on localization
     public const string MessageFormat = "{0}";
-
     public const string NamingCategory = "Naming";
-
     public const string CommentCategory = "Comment";
-
     public const string ContentCategory = "Content";
 
+    // Retained for diagnostic ID compatibility. LanguageTool runs outside the compiler analyzer.
     public const string LanguageToolCasingDiagnosticId = "YS201";
     public const string LanguageToolColloquialismsDiagnosticId = "YS202";
     public const string LanguageToolCompoundingDiagnosticId = "YS203";
@@ -43,314 +37,125 @@ namespace YouShouldSpellcheck.Analyzer
     public const string LanguageToolTyposDiagnosticId = "YS216";
     public const string LanguageToolWikipediaDiagnosticId = "YS217";
 
-    private static bool languageToolIsOffline;
-
-    // See http://stackoverflow.com/questions/7311734/split-sentence-into-words-but-having-trouble-with-the-punctuations-in-c-sharp
-    // private readonly Regex splitLineIntoWords = new Regex(@"((\b[^\s.]+\b)((?<=\.\w).)?)", RegexOptions.Compiled); // original with additional "." (for reasons I no longer no) 
-    private readonly Regex splitLineIntoWords = new Regex(@"((\b[^\s\/]+\b)((?<=\.\w).)?)", RegexOptions.Compiled); // version from StackOverflow modified to split forwared dash as well (e.g. "sender/receiver").
-
-    private readonly Regex isGuid = new Regex(@"[{(]?[0-9A-Fa-f]{8}[-]?([0-9A-Fa-f]{4}[-]?){3}[0-9A-Fa-f]{12}[)}]?", RegexOptions.Compiled);
-
-    /// <summary>
-    /// Defines escape characters that need special handling when calculating the location of a reported spelling issue.
-    /// </summary>
-    private readonly HashSet<char> escapeCharacters =
-    [
-      '\"',
-      '\'',
-      '\\',
-      '\0',
-      '\a',
-      '\b',
-      '\f',
-      '\n',
-      '\r',
-      '\t',
-      '\v'
-    ];
-
-    // language tool categories (as found on https://languagetool.org/development/api/org/languagetool/rules/Categories.html)
-    protected static readonly DiagnosticDescriptor LanguageToolCasingRule = new DiagnosticDescriptor(LanguageToolCasingDiagnosticId, "LanguageTool: Casing", MessageFormat, "LanguageTool:Casing", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Rules about detecting uppercase words where lowercase is required and vice versa.");
-    protected static readonly DiagnosticDescriptor LanguageToolColloquialismsRule = new DiagnosticDescriptor(LanguageToolColloquialismsDiagnosticId, "LanguageTool: Colloquialisms", MessageFormat, "LanguageTool:Colloquialisms", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Colloquial style.");
-    protected static readonly DiagnosticDescriptor LanguageToolCompoundingRule = new DiagnosticDescriptor(LanguageToolCompoundingDiagnosticId, "LanguageTool: Compounding", MessageFormat, "LanguageTool:Compounding", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Rules about spelling terms as one word or as as separate words.");
-    protected static readonly DiagnosticDescriptor LanguageToolConfusedWordsRule = new DiagnosticDescriptor(LanguageToolConfusedWordsDiagnosticId, "LanguageTool: Confused words", MessageFormat, "LanguageTool:ConfusedWords", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Words that are easily confused, like 'there' and 'their' in English.");
-    protected static readonly DiagnosticDescriptor LanguageToolFalseFriendsRule = new DiagnosticDescriptor(LanguageToolFalseFriendsDiagnosticId, "LanguageTool: False friends", MessageFormat, "LanguageTool:FalseFriends", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "False friends: words easily confused by language learners because a similar word exists in their native language.");
-    protected static readonly DiagnosticDescriptor LanguageToolGenderNeutralityRule = new DiagnosticDescriptor(LanguageToolGenderNeutralityDiagnosticId, "LanguageTool: Gender neutrality", MessageFormat, "LanguageTool:GenderNeutrality", DiagnosticSeverity.Warning, isEnabledByDefault: true);
-    protected static readonly DiagnosticDescriptor LanguageToolGrammarRule = new DiagnosticDescriptor(LanguageToolGrammarDiagnosticId, "LanguageTool: Grammar", MessageFormat, "LanguageTool:Grammer", DiagnosticSeverity.Warning, isEnabledByDefault: true);
-    protected static readonly DiagnosticDescriptor LanguageToolMiscRule = new DiagnosticDescriptor(LanguageToolMiscDiagnosticId, "LanguageTool: Misc", MessageFormat, "LanguageTool:Misc", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Miscellaneous rules that don't fit elsewhere.");
-    protected static readonly DiagnosticDescriptor LanguageToolPunctuationRule = new DiagnosticDescriptor(LanguageToolPunctuationDiagnosticId, "LanguageTool: Punctuation", MessageFormat, "LanguageTool:Punctuation", DiagnosticSeverity.Warning, isEnabledByDefault: true);
-    protected static readonly DiagnosticDescriptor LanguageToolRedundancyRule = new DiagnosticDescriptor(LanguageToolRedundancyDiagnosticId, "LanguageTool: Redundancy", MessageFormat, "LanguageTool:Redundancy", DiagnosticSeverity.Warning, isEnabledByDefault: true);
-    protected static readonly DiagnosticDescriptor LanguageToolRegionalismsRule = new DiagnosticDescriptor(LanguageToolRegionalismsDiagnosticId, "LanguageTool: Regionalisms", MessageFormat, "LanguageTool:Regionalisms", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Regionalisms: words used only in another language variant or used with different meanings.");
-    protected static readonly DiagnosticDescriptor LanguageToolRepetitionsRule = new DiagnosticDescriptor(LanguageToolRepetitionsDiagnosticId, "LanguageTool: Repetitions", MessageFormat, "LanguageTool:Repetitions", DiagnosticSeverity.Warning, isEnabledByDefault: true);
-    protected static readonly DiagnosticDescriptor LanguageToolSemanticsRule = new DiagnosticDescriptor(LanguageToolSemanticsDiagnosticId, "LanguageTool: Semantics", MessageFormat, "LanguageTool:Semantics", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Logic, content, and consistency problems.");
-    protected static readonly DiagnosticDescriptor LanguageToolStyleRule = new DiagnosticDescriptor(LanguageToolStyleDiagnosticId, "LanguageTool: Style", MessageFormat, "LanguageTool:Style", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "General style issues not covered by other categories, like overly verbose wording.");
-    protected static readonly DiagnosticDescriptor LanguageToolTypographyRule = new DiagnosticDescriptor(LanguageToolTypographyDiagnosticId, "LanguageTool: Typography", MessageFormat, "LanguageTool:Typography", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Problems like incorrectly used dash or quote characters.");
-    protected static readonly DiagnosticDescriptor LanguageToolTyposRule = new DiagnosticDescriptor(LanguageToolTyposDiagnosticId, "LanguageTool: Typos", MessageFormat, "LanguageTool:Typos", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Spelling issues.");
-    protected static readonly DiagnosticDescriptor LanguageToolWikipediaRule = new DiagnosticDescriptor(LanguageToolWikipediaDiagnosticId, "LanguageTool: Wikipedia", MessageFormat, "LanguageTool:Wikipedia", DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Rules that only make sense when editing Wikipedia (typically turned off by default in LanguageTool).");
-
-    private static readonly Dictionary<string, DiagnosticDescriptor> languageToolCategoryIdToDiagnosticDescriptors = new Dictionary<string, DiagnosticDescriptor>()
-    {
-      { "CASING", LanguageToolCasingRule },
-      { "COLLOQUIALISMS", LanguageToolColloquialismsRule },
-      { "COMPOUNDING", LanguageToolCompoundingRule },
-      { "CONFUSED_WORDS", LanguageToolConfusedWordsRule },
-      { "FALSE_FRIENDS", LanguageToolFalseFriendsRule },
-      { "GENDER_NEUTRALITY", LanguageToolGenderNeutralityRule },
-      { "GRAMMAR", LanguageToolGrammarRule },
-      { "PUNCTUATION", LanguageToolPunctuationRule },
-      { "REDUNDANCY", LanguageToolRedundancyRule },
-      { "REGIONALISMS", LanguageToolRegionalismsRule },
-      { "REPETITIONS", LanguageToolRepetitionsRule },
-      { "SEMANTICS", LanguageToolSemanticsRule },
-      { "STYLE", LanguageToolStyleRule },
-      { "TYPOGRAPHY", LanguageToolTypographyRule },
-      { "TYPOS", LanguageToolTyposRule },
-      { "WIKIPEDIA", LanguageToolWikipediaRule },
-    };
+    private readonly Regex splitLineIntoWords = new(@"((\b[^\s\/]+\b)((?<=\.\w).)?)", RegexOptions.Compiled);
+    private readonly Regex isGuid = new(@"[{(]?[0-9A-Fa-f]{8}[-]?([0-9A-Fa-f]{4}[-]?){3}[0-9A-Fa-f]{12}[)}]?", RegexOptions.Compiled);
+    private readonly HashSet<char> escapeCharacters = ['\"', '\'', '\\', '\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v'];
 
     protected abstract bool ConsiderEscapedCharacters { get; }
 
-    protected void CheckToken(DiagnosticDescriptor rule, SyntaxNodeAnalysisContext context, SyntaxToken syntaxToken)
+    internal abstract void RegisterActions(CompilationStartAnalysisContext context, CompilationSpellcheckState state);
+
+    private protected void InitializeAnalyzer(AnalysisContext context)
+    {
+      context.RegisterCompilationStartAction(compilationContext =>
+      {
+        var state = CompilationSpellcheckState.Create(compilationContext.Options, compilationContext.CancellationToken);
+        this.RegisterActions(compilationContext, state);
+      });
+    }
+
+    private protected void CheckToken(
+      DiagnosticDescriptor rule,
+      SyntaxNodeAnalysisContext context,
+      SyntaxToken syntaxToken,
+      CompilationSpellcheckState state)
     {
       var text = syntaxToken.ValueText;
-      if (string.IsNullOrWhiteSpace(text))
+      if (!string.IsNullOrWhiteSpace(text))
       {
-        return;
+        this.CheckText(rule, text, syntaxToken.GetLocation(), context, state.LanguagesByRule(rule.Id), state);
       }
-
-      this.CheckText(rule, text, syntaxToken.GetLocation(), context, LanguagesByRule(rule.Id));
     }
 
-    protected virtual void CheckText(DiagnosticDescriptor rule, string text, Location location, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
+    private protected virtual void CheckText(
+      DiagnosticDescriptor rule,
+      string text,
+      Location location,
+      SyntaxNodeAnalysisContext context,
+      IEnumerable<ILanguage> languages,
+      CompilationSpellcheckState state)
     {
-      this.CheckLine(rule, text, location, context, languages);
+      this.CheckLine(rule, text, location, context, languages, state);
     }
 
-    protected void CheckLine(DiagnosticDescriptor rule, string line, Location location, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
+    private protected void CheckLine(
+      DiagnosticDescriptor rule,
+      string line,
+      Location location,
+      SyntaxNodeAnalysisContext context,
+      IEnumerable<ILanguage> languages,
+      CompilationSpellcheckState state)
     {
       if (string.IsNullOrWhiteSpace(line))
       {
         return;
       }
 
-      var verbatimLocationAdjustment = 0;
-      if ((context.Node is Microsoft.CodeAnalysis.CSharp.Syntax.LiteralExpressionSyntax literalExpressionSyntax)
-        && literalExpressionSyntax.Token.Text.StartsWith("@"))
-      {
-        verbatimLocationAdjustment = 1;
-      }
-
-      Logger.Log($"{this.GetType().Name} - CheckLine: [{line}]");
+      var verbatimLocationAdjustment = context.Node is Microsoft.CodeAnalysis.CSharp.Syntax.LiteralExpressionSyntax literal
+        && literal.Token.Text.StartsWith("@", StringComparison.Ordinal) ? 1 : 0;
       foreach (var wordMatch in this.splitLineIntoWords.Matches(line).OfType<Match>())
       {
-        var adjustedStartLocation = location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index) + verbatimLocationAdjustment;
-        var adjustedEndLocation = location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index + wordMatch.Length) + verbatimLocationAdjustment;
-        var wordLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(adjustedStartLocation, adjustedEndLocation));
-        this.CheckWord(rule, wordMatch.Value, wordLocation, context, languages);
+        context.CancellationToken.ThrowIfCancellationRequested();
+        var start = location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index) + verbatimLocationAdjustment;
+        var end = location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index + wordMatch.Length) + verbatimLocationAdjustment;
+        var wordLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(start, end));
+        this.CheckWord(rule, wordMatch.Value, wordLocation, context, languages, state);
       }
     }
 
-    /// <summary>
-    /// Adjust the <paramref name="location"/> where a word was found within the <paramref name="line"/>
-    /// by extra characters that have to be applied in the source code for characters that need to be escaped.
-    /// </summary>
-    /// <param name="line"></param>
-    /// <param name="location"></param>
-    /// <returns></returns>
-    /// <remarks>
-    /// <para>
-    /// Example: "this line contains a \"quote\" anduses\nspans lines"
-    /// The string that will be handed into the analyzer will not contain the escape characters and consequently
-    /// we would report underline findings at the wrong location. Characters that need escaping which appear withing
-    /// the <paramref name="line"/> until this <paramref name="location"/> (and not further!) must
-    /// be accounted for. For every such charater, the actual location is one extra character to the right.
-    /// </para>
-    /// <para>
-    /// This currently works for regular strings. It still needs testing, how much of this also works for verbatim strings
-    /// and how we can determine whether a string is a verbatim string in source code.
-    /// This also does not yet account for other string features, like unicode escape sequences (\uxxxx).
-    /// </para>
-    /// <para>
-    /// List found here: https://csharpindepth.com/articles/Strings
-    /// </para>
-    /// </remarks>
     protected int AdjustLocationForEscapedCharacters(string line, int location)
     {
-      if (!this.ConsiderEscapedCharacters)
-      {
-        return location;
-      }
-
-      // Count the occurrences of escape characters in the substring up to the location
-      var count = line[..location].Count(c => escapeCharacters.Contains(c));
-      
-      // Return the updated location
-      return location + count;
+      return !this.ConsiderEscapedCharacters
+        ? location
+        : location + line[..location].Count(character => this.escapeCharacters.Contains(character));
     }
 
-    protected virtual bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
+    private protected virtual bool CheckWord(
+      DiagnosticDescriptor rule,
+      string word,
+      Location wordLocation,
+      SyntaxNodeAnalysisContext context,
+      IEnumerable<ILanguage> languages,
+      CompilationSpellcheckState state)
     {
-      // check if the "word" actually represents a GUID which should not further be parsed
-      if (this.isGuid.IsMatch(word))
-      {
-        return true;
-      }
-
-      // check if the word is correct
-      if (IsWordCorrect(word, languages))
-      {
-        return true;
-      }
-
-      return false;
+      return this.isGuid.IsMatch(word) || IsWordCorrect(word, languages, state);
     }
 
-    protected static bool IsWordCorrect(string word, IEnumerable<ILanguage> languages)
+    private static bool IsWordCorrect(string word, IEnumerable<ILanguage> languages, CompilationSpellcheckState state)
     {
-       return string.IsNullOrWhiteSpace(word)
+      return string.IsNullOrWhiteSpace(word)
         || languages == null
-        || languages.Any(language => DictionaryManager.IsWordCorrect(word, language.LocalDictionaryLanguage));
+        || languages.Any(language => state.IsWordCorrect(word, language.LocalDictionaryLanguage));
     }
 
-    protected static void ReportWord(DiagnosticDescriptor rule, string word, Location location, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage>? languages = null)
+    private protected static void ReportWord(
+      DiagnosticDescriptor rule,
+      string word,
+      Location location,
+      SyntaxNodeAnalysisContext context,
+      IEnumerable<ILanguage>? languages,
+      CompilationSpellcheckState state)
     {
-      var propertyBagForFixProvider = ImmutableDictionary.Create<string, string?>();
-      propertyBagForFixProvider = propertyBagForFixProvider.Add("offendingWord", word);
+      var properties = ImmutableDictionary<string, string?>.Empty.Add("offendingWord", word);
       if (languages != null)
       {
-        propertyBagForFixProvider = propertyBagForFixProvider.Add("validLanguages", languages.Select(x => x.LocalDictionaryLanguage).Aggregate(string.Empty, (allSupportedLanguages, supportedLanguage) => allSupportedLanguages + supportedLanguage + ";"));
-      }
-
-      var diagnostic = Diagnostic.Create(rule, location, propertyBagForFixProvider, "Possible spelling mistake: " + word);
-      context.ReportDiagnostic(diagnostic);
-    }
-
-    // Roslyn analyzer callbacks are synchronous. Keep the callback alive while the configured
-    // LanguageTool request completes so its pooled analysis context remains valid.
-    protected static bool CheckTextWithLanguageTool(Location location, string text, IEnumerable<ILanguage> languages, SyntaxNodeAnalysisContext context)
-    {
-      return CheckTextWithLanguageToolAsync(location, text, languages, context).GetAwaiter().GetResult();
-    }
-
-    // result: true if LanguageTool was configured and handled the text, otherwise false
-    protected static async Task<bool> CheckTextWithLanguageToolAsync(Location location, string text, IEnumerable<ILanguage> languages, SyntaxNodeAnalysisContext context)
-    {
-      var languageToolUriString = AnalyzerContext.SpellcheckSettings.LanguageToolUrl;
-      if (!languageToolIsOffline
-          && !string.IsNullOrEmpty(languageToolUriString) 
-          && Uri.TryCreate(languageToolUriString, UriKind.Absolute, out var languageToolUri))
-      {
-        foreach (var language in languages)
+        var languageArray = languages.ToArray();
+        properties = properties.Add("validLanguages", string.Join(";", languageArray.Select(language => language.LocalDictionaryLanguage)) + ";");
+        var suggestionIndex = 1;
+        foreach (var language in languageArray)
         {
-          var response = await LanguageToolClient.CheckAsync(languageToolUri, text, language.LanguageToolLanguage, context.CancellationToken).ConfigureAwait(false);
-          if (response == null)
+          foreach (var suggestion in state.Suggest(word, language.LocalDictionaryLanguage))
           {
-            // seems like an error occured. Disable LanguageTool analysis
-            // maybe later just do a timeout and retry after 10 seconds or so
-            languageToolIsOffline = true;
-            return false;
-          }
-
-          Logger.Log($"Ask LanguageTool: [{text}] => {response.Matches.Count} issues found");
-          foreach (var match in response.Matches)
-          {
-            Logger.Log(match);
-            try
-            {
-              var issueLocation = CreateMatchLocation(location, text, match, context, out string textMatch);
-
-              var categoryId = match.Rule?.Category?.Id ?? string.Empty;
-              var propertyBagForFixProvider = new Dictionary<string, string?>
-              {
-                { "offendingWord", textMatch },
-                { "CategoryId", categoryId },
-                { "LanguageToolRuleId", match.Rule?.Id },
-                { "LanguageToolRuleIssueType", match.Rule?.IssueType }
-              };
-
-              var message = BuildLanguageToolDiagnosticMessage(match, propertyBagForFixProvider);
-
-              var properties = ImmutableDictionary.Create<string, string?>();
-              properties = properties.AddRange(propertyBagForFixProvider);
-              if (!languageToolCategoryIdToDiagnosticDescriptors.TryGetValue(categoryId, out var diagnosticDescriptor))
-              {
-                diagnosticDescriptor = LanguageToolMiscRule;
-              }
-
-              var diagnostic = Diagnostic.Create(diagnosticDescriptor, issueLocation, properties, message);
-              context.ReportDiagnostic(diagnostic);
-            }
-            catch (Exception exception)
-            {
-              Logger.Log(exception);
-            }
+            properties = properties
+              .Add($"localSuggestion_{suggestionIndex}", suggestion)
+              .Add($"localSuggestionLanguage_{suggestionIndex}", language.LocalDictionaryLanguage);
+            suggestionIndex++;
           }
         }
-
-        return true;
       }
 
-      return false;
+      context.ReportDiagnostic(Diagnostic.Create(rule, location, properties, "Possible spelling mistake: " + word));
     }
 
-    private static string BuildLanguageToolDiagnosticMessage(LanguageTool.Match match, Dictionary<string, string?> propertyBagForFixProvider)
-    {
-      var suggestionsAsText = new StringBuilder();
-      var i = 1;
-      foreach (var replacement in match.Replacements)
-      {
-        ////var suggestion = match.Sentence.Substring(0, match.Offset) + replacement.Value + match.Sentence.Substring(match.Offset + match.Length);
-        var suggestion = replacement.Value;
-        suggestionsAsText.AppendLine(suggestion);
-        propertyBagForFixProvider.Add($"suggestion_{i}", suggestion);
-        i++;
-      }
-
-      var header = $"{match.Rule?.Category?.Name}: {match.Rule?.Description}";
-      var optionalShortMessage = !string.IsNullOrEmpty(match.ShortMessage) ? $"\r\n{match.ShortMessage}" : string.Empty;
-      return $"{header}{optionalShortMessage}\r\n{match.Message}{(!string.IsNullOrEmpty(suggestionsAsText.ToString()) ? "\r\nReplace with\r\n" + suggestionsAsText.ToString() : string.Empty)}";
-    }
-
-    private static Location CreateMatchLocation(Location location, string text, LanguageTool.Match match, SyntaxNodeAnalysisContext context, out string textMatch)
-    {
-      // next lines generate the issue location (as an offset from the first character of the first line of the document)
-      // Attention: we need to take into account special whitespace characters, for instance "\n" will be counted as 1 character
-      // but it's represented in the source file as two characters. So the offset and length of the Location must
-      // take this into account and correct
-      var textBeforeMatch = text[..match.Offset];
-      var whitespaceCharactersBeforeMatch = textBeforeMatch.Count(x => char.IsControl(x));
-      textMatch = text.Substring(match.Offset, match.Length);
-      var whitespaceCharactersInMatch = textMatch.Count(x => char.IsControl(x));
-      var startOfMatch = location.SourceSpan.Start + match.Offset + whitespaceCharactersBeforeMatch;
-      var matchLength = match.Length + whitespaceCharactersInMatch;
-      return Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(startOfMatch, startOfMatch + matchLength));
-    }
-
-    public static IEnumerable<ILanguage> LanguagesByRule(string ruleId)
-    {
-      switch (ruleId)
-      {
-        case ClassNameSpellcheckAnalyzer.ClassNameDiagnosticId:
-          return AnalyzerContext.SpellcheckSettings.ClassNameLanguages;
-        case MethodNameSpellcheckAnalyzer.MethodNameDiagnosticId:
-          return AnalyzerContext.SpellcheckSettings.MethodNameLanguages;
-        case VariableNameSpellcheckAnalyzer.VariableNameDiagnosticId:
-          return AnalyzerContext.SpellcheckSettings.VariableNameLanguages;
-        case PropertyNameSpellcheckAnalyzer.PropertyNameDiagnosticId:
-          return AnalyzerContext.SpellcheckSettings.PropertyNameLanguages;
-        case XmlTextSpellcheckAnalyzer.CommentDiagnosticId:
-          return AnalyzerContext.SpellcheckSettings.CommentLanguages;
-        case StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId:
-          return AnalyzerContext.SpellcheckSettings.StringLiteralLanguages;
-        case EnumNameSpellcheckAnalyzer.EnumNameDiagnosticId:
-          return AnalyzerContext.SpellcheckSettings.EnumNameLanguages;
-        case EnumMemberNameSpellcheckAnalyzer.EnumMemberNameDiagnosticId:
-          return AnalyzerContext.SpellcheckSettings.EnumMemberNameLanguages;
-        case EventNameSpellcheckAnalyzer.EventNameDiagnosticId:
-          return AnalyzerContext.SpellcheckSettings.EventNameLanguages;
-        default:
-          return AnalyzerContext.SpellcheckSettings.DefaultLanguages;
-      }
-    }
   }
 }

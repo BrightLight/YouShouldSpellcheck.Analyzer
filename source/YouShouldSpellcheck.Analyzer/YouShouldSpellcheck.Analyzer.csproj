@@ -16,9 +16,11 @@
     <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <!--EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules-->
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <ComVisible>false</ComVisible>
-    <InternalsVisibleTo>YouShouldSpellcheck.Analyzer.Test</InternalsVisibleTo>
+    <!-- Rule components intentionally derive from DiagnosticAnalyzer for focused testing,
+         but only YouShouldSpellcheckDiagnosticAnalyzer is exported to hosts. -->
+    <NoWarn>$(NoWarn);RS1001</NoWarn>
     <WarningsAsErrors>$(WarningsAsErrors);Nullable</WarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
@@ -56,11 +58,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="RestSharp" Version="112.0.0" PrivateAssets="all" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" PrivateAssets="all" />
     <PackageReference Include="WeCantSpell.Hunspell" Version="5.0.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
     <Compile Update="Resources.Designer.cs" DesignTime="True" AutoGen="True" DependentUpon="Resources.resx" />
     <EmbeddedResource Update="Resources.resx" Generator="ResXFileCodeGenerator" LastGenOutput="Resources.Designer.cs" />
     <None Include="ReadMe.txt" />
@@ -76,13 +78,8 @@
   <ItemGroup>
     <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
     <None Include="$(OutputPath)WeCantSpell.Hunspell.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
-    <None Include="$(OutputPath)RestSharp.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
-    <None Include="$(OutputPath)Microsoft.Bcl.AsyncInterfaces.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
     <None Include="$(OutputPath)System.Buffers.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
     <None Include="$(OutputPath)System.Memory.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
     <None Include="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
-    <None Include="$(OutputPath)System.Text.Encodings.Web.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
-    <None Include="$(OutputPath)System.Text.Json.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
-    <None Include="$(OutputPath)System.Threading.Tasks.Extensions.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
   </ItemGroup>
 </Project>

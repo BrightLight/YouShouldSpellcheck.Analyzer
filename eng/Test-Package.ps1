@@ -42,8 +42,6 @@ try {
     $requiredEntries = @(
       'analyzers/dotnet/cs/YouShouldSpellcheck.Analyzer.dll',
       'analyzers/dotnet/cs/WeCantSpell.Hunspell.dll',
-      'analyzers/dotnet/cs/RestSharp.dll',
-      'analyzers/dotnet/cs/System.Text.Json.dll',
       'buildTransitive/YouShouldSpellcheck.Analyzer.props',
       'contentFiles/any/any/dic/en_US.aff',
       'contentFiles/any/any/dic/en_US.dic',

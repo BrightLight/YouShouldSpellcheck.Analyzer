@@ -10,8 +10,7 @@
   /// <summary>
   /// This analyzer is designed to detect potential spelling mistakes in method names.
   /// </summary>
-  [DiagnosticAnalyzer(LanguageNames.CSharp)]
-  public class MethodNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
+  public sealed class MethodNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string MethodNameDiagnosticId = "YS104";
     private const string MethodNameRuleTitle = "Method name should be spelled correctly";
@@ -31,25 +30,18 @@
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
       context.EnableConcurrentExecution();
-
-      // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
-      // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
-      context.RegisterSyntaxNodeAction(this.AnalyzeMethodDeclaration, SyntaxKind.MethodDeclaration);
+      this.InitializeAnalyzer(context);
     }
 
-    private void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
+    internal override void RegisterActions(CompilationStartAnalysisContext context, CompilationSpellcheckState state)
     {
-      try
-      {
-        AnalyzerContext.InitializeSettings(context);
-        var methodDeclarationSyntax = context.Node as MethodDeclarationSyntax;
-        this.CheckToken(MethodNameRule, context, methodDeclarationSyntax?.Identifier);
-      }
-      catch (Exception e)
-      {
-        Logger.Log(e);
-        Console.WriteLine(e);
-      }
+      context.RegisterSyntaxNodeAction(nodeContext => this.AnalyzeMethodDeclaration(nodeContext, state), SyntaxKind.MethodDeclaration);
+    }
+
+    private void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context, CompilationSpellcheckState state)
+    {
+      var methodDeclarationSyntax = context.Node as MethodDeclarationSyntax;
+      this.CheckToken(MethodNameRule, context, methodDeclarationSyntax?.Identifier, state);
     }
   }
 }

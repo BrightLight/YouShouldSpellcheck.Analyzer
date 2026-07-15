@@ -10,8 +10,7 @@
   /// <summary>
   /// This analyzer is designed to detect potential spelling mistakes in class names.
   /// </summary>
-  [DiagnosticAnalyzer(LanguageNames.CSharp)]
-  public class ClassNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
+  public sealed class ClassNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string ClassNameDiagnosticId = "YS103";
     private const string ClassNameRuleTitle = "Class name should be spelled correctly";
@@ -31,33 +30,22 @@
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
       context.EnableConcurrentExecution();
+      this.InitializeAnalyzer(context);
+    }
 
-      // Register an action to analyze class declarations
-      // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
-      // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
-      context.RegisterSyntaxNodeAction(this.AnalyzeClassDeclaration, SyntaxKind.ClassDeclaration);
-
-      ////string x;
-      ////context.RegisterSyntaxTreeAction(analysisContext => x = analysisContext.Tree.FilePath);
+    internal override void RegisterActions(CompilationStartAnalysisContext context, CompilationSpellcheckState state)
+    {
+      context.RegisterSyntaxNodeAction(nodeContext => this.AnalyzeClassDeclaration(nodeContext, state), SyntaxKind.ClassDeclaration);
     }
 
     /// <summary>
     /// Analyzes class declarations to check for spelling mistakes in the class name.
     /// </summary>
     /// <param name="context">The context in which the syntax node is being analyzed.</param>
-    private void AnalyzeClassDeclaration(SyntaxNodeAnalysisContext context)
+    private void AnalyzeClassDeclaration(SyntaxNodeAnalysisContext context, CompilationSpellcheckState state)
     {
-      try
-      {
-        AnalyzerContext.InitializeSettings(context);
-        var classDeclarationSyntax = context.Node as ClassDeclarationSyntax;
-        this.CheckToken(ClassNameRule, context, classDeclarationSyntax?.Identifier);
-      }
-      catch (Exception e)
-      {
-        Logger.Log(e);
-        Console.WriteLine(e);
-      }
+      var classDeclarationSyntax = context.Node as ClassDeclarationSyntax;
+      this.CheckToken(ClassNameRule, context, classDeclarationSyntax?.Identifier, state);
     }
   }
 }

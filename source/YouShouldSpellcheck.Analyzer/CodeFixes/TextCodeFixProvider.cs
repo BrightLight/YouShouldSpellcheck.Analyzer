@@ -51,7 +51,7 @@
       // TODO: Replace the following code with your own analysis, generating a CodeAction for each fix to suggest
       foreach (var diagnostic in context.Diagnostics.Where(x => this.FixableDiagnosticIds.Contains(x.Id)))
       {
-        var validLanguages = SpellcheckAnalyzerBase.LanguagesByRule(diagnostic.Id).Select(x => x.LocalDictionaryLanguage).ToArray();
+        var validLanguages = Array.Empty<string>();
         if (diagnostic.Properties.TryGetValue("validLanguages", out var supportedLanguages))
         {
           validLanguages = supportedLanguages?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
@@ -75,18 +75,6 @@
               context.RegisterCodeFix(codeAction, diagnostic);
               codeFixCount++;
             }
-          }
-        }
-
-        // add "Add to custom dictionary" action
-        if (!string.IsNullOrEmpty(offendingWord)
-          && diagnostic.Properties.GetValueOrDefault("CategoryId", "n/a") != "TYPOGRAPHY")
-        {
-          foreach (var language in validLanguages)
-          {
-            var ignoreSpellingAction = new NoPreviewCodeAction($"Add \"{offendingWord}\" to custom dictionary for {language}", x => this.AddToCustomDictionary(context.Document, offendingWord!, language));
-            context.RegisterCodeFix(ignoreSpellingAction, diagnostic);
-            codeFixCount++;
           }
         }
 

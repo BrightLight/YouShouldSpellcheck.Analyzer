@@ -12,8 +12,7 @@
   /// <summary>
   /// This analyzer is designed to detect potential spelling mistakes in XML comments.
   /// </summary>
-  [DiagnosticAnalyzer(LanguageNames.CSharp)]
-  public class XmlTextSpellcheckAnalyzer : SpellcheckAnalyzerBase
+  public sealed class XmlTextSpellcheckAnalyzer : SpellcheckAnalyzerBase
   {
     public const string CommentDiagnosticId = "YS106";
     private const string CommentRuleTitle = "Comment should be spelled correctly";
@@ -35,44 +34,37 @@
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
       context.EnableConcurrentExecution();
-
-      // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
-      // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
-      context.RegisterSyntaxNodeAction(this.AnalyzeXmlText, SyntaxKind.XmlText);
+      this.InitializeAnalyzer(context);
     }
 
-    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
+    internal override void RegisterActions(CompilationStartAnalysisContext context, CompilationSpellcheckState state)
     {
-      if (!base.CheckWord(rule, word, wordLocation, context, languages))
+      context.RegisterSyntaxNodeAction(nodeContext => this.AnalyzeXmlText(nodeContext, state), SyntaxKind.XmlText);
+    }
+
+    private protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages, CompilationSpellcheckState state)
+    {
+      if (!base.CheckWord(rule, word, wordLocation, context, languages, state))
       {
-        ReportWord(rule, word, wordLocation, context);
+        ReportWord(rule, word, wordLocation, context, languages, state);
       }
 
       return true;
     }
 
-    protected void CheckAllTokensOfType(SyntaxNodeAnalysisContext context, SyntaxNode syntaxNode, SyntaxKind syntaxKind)
+    private void CheckAllTokensOfType(SyntaxNodeAnalysisContext context, SyntaxNode syntaxNode, SyntaxKind syntaxKind, CompilationSpellcheckState state)
     {
       foreach (var syntaxToken in syntaxNode.ChildTokens().Where(x => x.IsKind(syntaxKind)))
       {
-        this.CheckToken(CommentRule, context, syntaxToken);
+        this.CheckToken(CommentRule, context, syntaxToken, state);
       }
     }
 
-    private void AnalyzeXmlText(SyntaxNodeAnalysisContext context)
+    private void AnalyzeXmlText(SyntaxNodeAnalysisContext context, CompilationSpellcheckState state)
     {
-      try
+      if (context.Node is XmlTextSyntax xmlTextSyntax)
       {
-        AnalyzerContext.InitializeSettings(context);
-        if (context.Node is XmlTextSyntax xmlTextSyntax)
-        {
-          this.CheckAllTokensOfType(context, xmlTextSyntax, SyntaxKind.XmlTextLiteralToken);
-        }
-      }
-      catch (Exception e)
-      {
-        Logger.Log(e);
-        Console.WriteLine(e);
+        this.CheckAllTokensOfType(context, xmlTextSyntax, SyntaxKind.XmlTextLiteralToken, state);
       }
     }
   }
