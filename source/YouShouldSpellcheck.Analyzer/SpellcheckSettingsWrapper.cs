@@ -38,11 +38,18 @@ namespace YouShouldSpellcheck.Analyzer
 
     public IEnumerable<ILanguage> StringLiteralLanguages => this.spellcheckSettings.StringLiteralLanguages ?? this.spellcheckSettings.DefaultLanguages;
 
-    public IEnumerable<IAttributeProperty> Attributes => this.spellcheckSettings.Attributes.Select(x => new AttributePropertyWrapper(x));
+    public IEnumerable<IAttributeProperty> Attributes =>
+      this.spellcheckSettings.Attributes?.Select(x => new AttributePropertyWrapper(x)) ?? Enumerable.Empty<IAttributeProperty>();
 
     public string? CustomDictionariesFolder { get; }
 
     public string? LanguageToolUrl => this.spellcheckSettings.LanguageToolUrl;
+
+    public LanguageToolExecutionMode LanguageToolMode => this.spellcheckSettings.LanguageToolMode;
+
+    public int LanguageToolTimeoutSeconds => Math.Max(1, this.spellcheckSettings.LanguageToolTimeoutSeconds);
+
+    public int LanguageToolMaxConcurrency => Math.Max(1, this.spellcheckSettings.LanguageToolMaxConcurrency);
 
     private static string? EvaluateCustomDirectoryFolder(string? configFile, string? rawPath)
     {
@@ -51,7 +58,9 @@ namespace YouShouldSpellcheck.Analyzer
         return null;
       }
 
-      var path = Environment.ExpandEnvironmentVariables(rawPath);
+      // Analyzer configuration must be determined entirely by tracked project inputs.
+      // Environment variable expansion would make identical compilations behave differently.
+      var path = rawPath;
       var basePath = configFile == null ? Path.GetFullPath(".") : Path.GetDirectoryName(configFile);
 
       string finalPath;

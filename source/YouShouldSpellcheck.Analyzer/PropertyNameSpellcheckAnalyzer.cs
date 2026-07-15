@@ -11,8 +11,7 @@ namespace YouShouldSpellcheck.Analyzer
   /// <summary>
   /// This analyzer is designed to detect potential spelling mistakes in property names.
   /// </summary>
-  [DiagnosticAnalyzer(LanguageNames.CSharp)]
-  public class PropertyNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
+  public sealed class PropertyNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string PropertyNameDiagnosticId = "YS105";
     private const string PropertyNameRuleTitle = "Property name should be spelled correctly";
@@ -32,26 +31,18 @@ namespace YouShouldSpellcheck.Analyzer
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
       context.EnableConcurrentExecution();
-
-      // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
-      // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
-      ////context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
-      context.RegisterSyntaxNodeAction(this.AnalyzePropertyDeclaration, SyntaxKind.PropertyDeclaration);
+      this.InitializeAnalyzer(context);
     }
 
-    private void AnalyzePropertyDeclaration(SyntaxNodeAnalysisContext context)
+    internal override void RegisterActions(CompilationStartAnalysisContext context, CompilationSpellcheckState state)
     {
-      try
-      {
-        AnalyzerContext.InitializeSettings(context);
-        var propertyDeclarationSyntax = context.Node as PropertyDeclarationSyntax;
-        this.CheckToken(PropertyNameRule, context, propertyDeclarationSyntax?.Identifier);
-      }
-      catch (Exception e)
-      {
-        Logger.Log(e);
-        Console.WriteLine(e);
-      }
+      context.RegisterSyntaxNodeAction(nodeContext => this.AnalyzePropertyDeclaration(nodeContext, state), SyntaxKind.PropertyDeclaration);
+    }
+
+    private void AnalyzePropertyDeclaration(SyntaxNodeAnalysisContext context, CompilationSpellcheckState state)
+    {
+      var propertyDeclarationSyntax = context.Node as PropertyDeclarationSyntax;
+      this.CheckToken(PropertyNameRule, context, propertyDeclarationSyntax?.Identifier, state);
     }
 
   }

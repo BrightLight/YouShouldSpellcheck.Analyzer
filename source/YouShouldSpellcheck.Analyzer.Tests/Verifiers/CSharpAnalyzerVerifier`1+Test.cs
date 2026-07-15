@@ -11,6 +11,11 @@ namespace AnalyzerFromTemplate2019.Test
     {
       public Test()
       {
+        foreach (var input in YouShouldSpellcheck.Analyzer.Test.DefaultTestInputs.Get())
+        {
+          TestState.AdditionalFiles.Add(input);
+        }
+
         SolutionTransforms.Add((solution, projectId) =>
         {
           var compilationOptions = solution.GetProject(projectId).CompilationOptions;

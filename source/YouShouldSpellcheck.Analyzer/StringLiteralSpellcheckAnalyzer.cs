@@ -10,8 +10,7 @@
   using Microsoft.CodeAnalysis.Diagnostics;
   using Microsoft.CodeAnalysis.Text;
 
-  [DiagnosticAnalyzer(LanguageNames.CSharp)]
-  public class StringLiteralSpellcheckAnalyzer : SpellcheckAnalyzerBase
+  public sealed class StringLiteralSpellcheckAnalyzer : SpellcheckAnalyzerBase
   {
     public const string AttributeArgumentStringDiagnosticId = "YS100";
     public const string StringLiteralDiagnosticId = "YS101";
@@ -25,25 +24,7 @@
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
       StringLiteralRule,
-      AttributeArgumentStringRule,
-      LanguageToolCasingRule,
-      LanguageToolColloquialismsRule,
-      LanguageToolCompoundingRule,
-      LanguageToolConfusedWordsRule,
-      LanguageToolFalseFriendsRule,
-      LanguageToolGenderNeutralityRule,
-      LanguageToolGrammarRule,
-      LanguageToolMiscRule,
-      LanguageToolPunctuationRule,
-      LanguageToolRedundancyRule,
-      LanguageToolRegionalismsRule,
-      LanguageToolRepetitionsRule,
-      LanguageToolSemanticsRule,
-      LanguageToolStyleRule,
-      LanguageToolTypographyRule,
-      LanguageToolTyposRule,
-      LanguageToolWikipediaRule
-    );
+      AttributeArgumentStringRule);
 
     protected override bool ConsiderEscapedCharacters => true;
 
@@ -51,58 +32,53 @@
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
       context.EnableConcurrentExecution();
-
-      // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
-      // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
-      context.RegisterSyntaxNodeAction(this.AnalyzeStringLiteralToken, SyntaxKind.StringLiteralExpression);
+      this.InitializeAnalyzer(context);
     }
 
-    protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages)
+    internal override void RegisterActions(CompilationStartAnalysisContext context, CompilationSpellcheckState state)
     {
-      if (!base.CheckWord(rule, word, wordLocation, context, languages))
+      context.RegisterSyntaxNodeAction(nodeContext => this.AnalyzeStringLiteralToken(nodeContext, state), SyntaxKind.StringLiteralExpression);
+    }
+
+    private protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages, CompilationSpellcheckState state)
+    {
+      if (!base.CheckWord(rule, word, wordLocation, context, languages, state))
       {
-        ReportWord(rule, word, wordLocation, context, languages);
+        ReportWord(rule, word, wordLocation, context, languages, state);
       }
 
       return true;
     }
 
-    private void AnalyzeStringLiteralToken(SyntaxNodeAnalysisContext context)
+    private void AnalyzeStringLiteralToken(SyntaxNodeAnalysisContext context, CompilationSpellcheckState state)
     {
-      try
+      if (context.Node?.Parent is AttributeArgumentSyntax attributeArgumentSyntax)
       {
-        AnalyzerContext.InitializeSettings(context);
-        if (context.Node?.Parent is AttributeArgumentSyntax attributeArgumentSyntax)
+        this.AnalyzeAttributeArgument(context, attributeArgumentSyntax, state);
+      }
+      else
+      {
+        if (context.Node is LiteralExpressionSyntax literalExpressionSyntax)
         {
-          this.AnalyzeAttributeArgument(context, attributeArgumentSyntax);
-        }
-        else
-        {
-          // TODO: use "context.Node.SyntaxTree.FilePath" to find the "custom dictionary"
-          if (context.Node is LiteralExpressionSyntax literalExpressionSyntax)
+          var token = literalExpressionSyntax.Token;
+          var text = token.ValueText;
+          var nodeLocation = literalExpressionSyntax.GetLocation();
+          var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
+          var languages = state.LanguagesByRule(StringLiteralRule.Id);
+          if (!state.QueueLanguageToolText(text, stringLocation, languages))
           {
-            var foo = literalExpressionSyntax.Token;
-            var text = foo.ValueText;
-            var nodeLocation = literalExpressionSyntax.GetLocation();
-            var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
-
-            this.CheckLine(StringLiteralRule, text, stringLocation, context, LanguagesByRule(StringLiteralRule.Id));
+            this.CheckLine(StringLiteralRule, text, stringLocation, context, languages, state);
           }
         }
       }
-      catch (Exception e)
-      {
-        Logger.Log(e);
-        Console.WriteLine(e);
-      }
     }
 
-    private void AnalyzeAttributeArgument(SyntaxNodeAnalysisContext context, AttributeArgumentSyntax attributeArgumentSyntax)
+    private void AnalyzeAttributeArgument(SyntaxNodeAnalysisContext context, AttributeArgumentSyntax attributeArgumentSyntax, CompilationSpellcheckState state)
     {
       if (attributeArgumentSyntax.Parent?.Parent is AttributeSyntax attributeSyntax)
       {
         var attributeName = attributeSyntax.Name.ToFullString();
-        var spellcheckSettings = AnalyzerContext.SpellcheckSettings;
+        var spellcheckSettings = state.Settings;
         var attributeProperties = spellcheckSettings.Attributes?.Where(x => (x.AttributeName == attributeName) || (x.AttributeName + "Attribute" == attributeName) || (x.AttributeName == attributeName + "Attribute")).ToList();
         if (attributeProperties == null || !attributeProperties.Any())
         {
@@ -128,12 +104,9 @@
             var nodeLocation = literalExpressionSyntax.GetLocation();
             var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
 
-            // Analyzer callbacks must finish before returning because Roslyn analysis contexts
-            // contain pooled state. When configured, wait for LanguageTool here so all diagnostics
-            // are reported before the callback completes; otherwise use the local dictionaries.
-            if (!CheckTextWithLanguageTool(stringLocation, text, attributePropertyLanguages.Languages, context))
+            if (!state.QueueLanguageToolText(text, stringLocation, attributePropertyLanguages.Languages))
             {
-              this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages);
+              this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages, state);
             }
           }
         }

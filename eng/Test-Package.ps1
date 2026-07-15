@@ -22,8 +22,16 @@ function Invoke-DotNet {
 try {
   New-Item -ItemType Directory -Path $packageOutput -Force | Out-Null
   New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+  $nuspecOutput = Join-Path $testRoot 'pack'
+  $intermediateOutput = Join-Path $testRoot 'obj'
+  $buildOutput = Join-Path $testRoot 'bin'
+  New-Item -ItemType Directory -Path $nuspecOutput -Force | Out-Null
 
-  Invoke-DotNet pack $analyzerProject --configuration $Configuration --no-restore --output $packageOutput
+  Invoke-DotNet pack $analyzerProject --configuration $Configuration --no-restore --output $packageOutput `
+    "-p:IntermediateOutputPath=$intermediateOutput\" `
+    "-p:OutputPath=$buildOutput\" `
+    "-p:NuspecOutputPath=$nuspecOutput\" `
+    "-p:UseSharedCompilation=false"
 
   $packageVersion = (& dotnet msbuild $analyzerProject -getProperty:PackageVersion -nologo).Trim()
   if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($packageVersion)) {
@@ -42,8 +50,6 @@ try {
     $requiredEntries = @(
       'analyzers/dotnet/cs/YouShouldSpellcheck.Analyzer.dll',
       'analyzers/dotnet/cs/WeCantSpell.Hunspell.dll',
-      'analyzers/dotnet/cs/RestSharp.dll',
-      'analyzers/dotnet/cs/System.Text.Json.dll',
       'buildTransitive/YouShouldSpellcheck.Analyzer.props',
       'contentFiles/any/any/dic/en_US.aff',
       'contentFiles/any/any/dic/en_US.dic',

@@ -49,5 +49,11 @@ namespace YouShouldSpellcheck.Analyzer
 
     /// <inheritdoc />
     public string LanguageToolUrl => string.Empty;
+
+    public LanguageToolExecutionMode LanguageToolMode => LanguageToolExecutionMode.Off;
+
+    public int LanguageToolTimeoutSeconds => 30;
+
+    public int LanguageToolMaxConcurrency => 4;
   }
 }

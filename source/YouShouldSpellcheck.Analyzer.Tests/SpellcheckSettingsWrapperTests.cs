@@ -9,6 +9,14 @@
   public class SpellcheckSettingsWrapperTests
   {
     [Test]
+    public void MissingAttributesDefaultsToEmpty()
+    {
+      var settings = new SpellcheckSettingsWrapper(new SpellcheckSettings(), null);
+
+      Assert.That(settings.Attributes, Is.Empty);
+    }
+
+    [Test]
     public void TestCustomDictionariesFolder()
     {
       var relativePath = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"..\test\dic" }, @"C:\config-folder\config.xml");
@@ -18,7 +26,7 @@
 
       Assert.That(relativePath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\test\dic"));
       Assert.That(absolutePath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\my-custom\dic"));
-      Assert.That(envPath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\windows\dic"));
+      Assert.That(envPath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\%systemroot%\dic"));
       Assert.That(envPath2.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\test\dic"));
     }
   }

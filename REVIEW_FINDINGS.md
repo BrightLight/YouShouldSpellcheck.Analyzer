@@ -11,6 +11,17 @@ At review time this verified ordinary project-reference compilation, but not the
 
 ## Implementation progress
 
+### 2026-07-15: compilation-scoped execution model
+
+- [x] Replaced process-wide analyzer settings, dictionary registrations, parsed dictionaries, custom words, and spelling caches with state created and captured by compilation-start actions.
+- [x] Made custom word lists tracked `AdditionalFiles` named `CustomDictionary.<language>.txt`.
+- [x] Replaced per-syntax-callback LanguageTool calls with explicit opt-in, compilation-scoped batching at compilation end; removed the RestSharp/JSON runtime dependency closure.
+- [x] Removed the direct-filesystem custom-dictionary code action; custom dictionaries remain editable project inputs.
+- [x] Removed the fixed-path debug logger and environment-variable expansion from analyzer configuration.
+- [x] Made analyzer diagnostics carry Hunspell suggestions so code fixes do not depend on process-wide dictionary state.
+- [x] Removed the global test setup and added concurrent two-compilation isolation coverage.
+- [x] Enabled Roslyn extended analyzer-authoring rules.
+
 ### 2026-07-15: package stabilization
 
 - [x] Replaced the hand-maintained nuspec with SDK-style packing.
@@ -26,6 +37,8 @@ At review time this verified ordinary project-reference compilation, but not the
 ## Prioritized findings
 
 ### 1. Critical: settings, dictionaries, and caches are process-wide
+
+Status: addressed locally on 2026-07-15.
 
 Evidence:
 
@@ -52,6 +65,8 @@ Acceptance checks:
 
 ### 2. Critical: attribute analysis escapes through `async void`
 
+Status: addressed locally on 2026-07-15. Analyzer callbacks remain synchronous. LanguageTool work is collected during syntax analysis and, only in explicit `CompilationEnd` mode, completed as a bounded batch before the compilation-end callback returns.
+
 Evidence:
 
 - `StringLiteralSpellcheckAnalyzer.AnalyzeStringLiteralToken` calls `AnalyzeAttributeArgument` without awaiting it.
@@ -66,12 +81,12 @@ Impact:
 
 Recommended direction:
 
-Keep analyzer callbacks synchronous and deterministic. Remove LanguageTool network access from build-time analysis. Consider a separate explicitly invoked tool, IDE feature, or post-processing step if remote grammar checking remains a requirement.
+Keep syntax callbacks synchronous and free of network access. The implemented compatibility mode collects sentence-like candidates and performs bounded asynchronous HTTP work from a compilation-end action, then synchronously joins that batch while the Roslyn context remains valid. It is off by default; a separately invoked tool remains the preferred future option for fully asynchronous and hermetic CI orchestration.
 
 Acceptance checks:
 
 - No analyzer callback uses `async void` or fire-and-forget work.
-- Analyzer results do not require network availability.
+- Default analyzer results do not require network availability; explicitly enabled LanguageTool mode reports YS218 when the service fails.
 - All analyzer operations observe Roslyn cancellation where applicable.
 
 ### 3. Critical: the NuGet package did not include analyzer runtime dependencies
@@ -100,6 +115,8 @@ Acceptance checks:
 - [x] Package contents are asserted by an automated test.
 
 ### 4. High: analysis performs direct filesystem I/O
+
+Status: addressed for analyzer execution locally on 2026-07-15. Custom word lists are `AdditionalFiles`; the side-effecting custom-dictionary code action and fixed-path logger were removed.
 
 Evidence:
 
@@ -210,6 +227,8 @@ Acceptance checks:
 - XML documentation tests include entities and multiline text.
 
 ### 9. Medium: tests mask project isolation and packaging failures
+
+Status: partially addressed locally on 2026-07-15. Tests now receive explicit settings and dictionaries, and concurrent compilation isolation has regression coverage. Broader syntax and invalid-input coverage remains outstanding.
 
 Evidence:
 

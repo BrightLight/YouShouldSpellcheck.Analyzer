@@ -11,11 +11,7 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
 
   public abstract class YouShouldSpellcheckAnalyzerCodeFixProvider : CodeFixProvider
   {
-    protected async Task<Document> AddToCustomDictionary(Document document, string wordToIgnore, string language)
-    {
-      DictionaryManager.AddToCustomDictionary(wordToIgnore, language);
-      return document;
-    }
+    public abstract override FixAllProvider? GetFixAllProvider();
 
     protected static bool Suggestions(Diagnostic diagnostic, out string? offendingWord, Dictionary<string, List<string>> allSuggestions, IEnumerable<string> languages)
     {
@@ -51,33 +47,33 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
           return true;
         }
 
-        // no LanguageTool suggestions -> try to find suggestions using local dictionary
-        return Suggestions(offendingWord, languages, allSuggestions);
-      }
+        var localSuggestionIndex = 1;
+        while (diagnostic.Properties.TryGetValue($"localSuggestion_{localSuggestionIndex}", out var localSuggestion)
+          && diagnostic.Properties.TryGetValue($"localSuggestionLanguage_{localSuggestionIndex}", out var localLanguage))
+        {
+          if (localSuggestion != null && localLanguage != null)
+          {
+            if (!allSuggestions.TryGetValue(localLanguage, out var suggestionsForLanguage))
+            {
+              suggestionsForLanguage = [];
+              allSuggestions.Add(localLanguage, suggestionsForLanguage);
+            }
 
-      return false;
-    }
+            suggestionsForLanguage.Add(localSuggestion);
+          }
 
-    protected static bool Suggestions(string word, IEnumerable<string> languages, Dictionary<string, List<string>>? allSuggestions)
-    {
-      if ((languages == null)
-       || (allSuggestions == null))
-      {
+          localSuggestionIndex++;
+        }
+
+        if (localSuggestionIndex > 1)
+        {
+          return true;
+        }
+
         return false;
       }
 
-      foreach (var language in languages)
-      {
-        if (DictionaryManager.Suggest(word, out var suggestions, language))
-        {
-          var suggestionsForLanguage = new List<string>();
-          allSuggestions.Add(language, suggestionsForLanguage);
-
-          suggestionsForLanguage.AddRange(suggestions);
-        }
-      }
-
-      return true;
+      return false;
     }
 
     protected class NoPreviewCodeAction : CodeAction

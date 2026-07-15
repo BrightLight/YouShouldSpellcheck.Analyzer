@@ -7,8 +7,7 @@
   using Microsoft.CodeAnalysis.CSharp.Syntax;
   using Microsoft.CodeAnalysis.Diagnostics;
 
-  [DiagnosticAnalyzer(LanguageNames.CSharp)]
-  public class EventNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
+  public sealed class EventNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string EventNameDiagnosticId = "YS109";
     private const string EventNameRuleTitle = "Event name should be spelled correctly";
@@ -21,28 +20,18 @@
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
       context.EnableConcurrentExecution();
-
-      // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
-      // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
-      context.RegisterSyntaxNodeAction(this.AnalyzeEventDeclaration, SyntaxKind.EventDeclaration);
-
-      ////string x;
-      ////context.RegisterSyntaxTreeAction(analysisContext => x = analysisContext.Tree.FilePath);
+      this.InitializeAnalyzer(context);
     }
 
-    private void AnalyzeEventDeclaration(SyntaxNodeAnalysisContext context)
+    internal override void RegisterActions(CompilationStartAnalysisContext context, CompilationSpellcheckState state)
     {
-      try
-      {
-        AnalyzerContext.InitializeSettings(context);
-        var eventDeclarationSyntax = context.Node as EventDeclarationSyntax;
-        this.CheckToken(EventNameRule, context, eventDeclarationSyntax?.Identifier);
-      }
-      catch (Exception e)
-      {
-        Logger.Log(e);
-        Console.WriteLine(e);
-      }
+      context.RegisterSyntaxNodeAction(nodeContext => this.AnalyzeEventDeclaration(nodeContext, state), SyntaxKind.EventDeclaration);
+    }
+
+    private void AnalyzeEventDeclaration(SyntaxNodeAnalysisContext context, CompilationSpellcheckState state)
+    {
+      var eventDeclarationSyntax = context.Node as EventDeclarationSyntax;
+      this.CheckToken(EventNameRule, context, eventDeclarationSyntax?.Identifier, state);
     }
   }
 }

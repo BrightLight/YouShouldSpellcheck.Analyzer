@@ -7,8 +7,7 @@ namespace YouShouldSpellcheck.Analyzer
   using Microsoft.CodeAnalysis.CSharp.Syntax;
   using Microsoft.CodeAnalysis.Diagnostics;
 
-  [DiagnosticAnalyzer(LanguageNames.CSharp)]
-  public class EnumMemberNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
+  public sealed class EnumMemberNameSpellcheckAnalyzer : IdentifierNameSpellcheckAnalyzer
   {
     public const string EnumMemberNameDiagnosticId = "YS108";
     private const string EnumMemberNameRuleTitle = "Enumeration member name should be spelled correctly";
@@ -21,28 +20,18 @@ namespace YouShouldSpellcheck.Analyzer
     {
       context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
       context.EnableConcurrentExecution();
-
-      // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
-      // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
-      context.RegisterSyntaxNodeAction(this.AnalyzeEnumMemberDeclaration, SyntaxKind.EnumMemberDeclaration);
-
-      ////string x;
-      ////context.RegisterSyntaxTreeAction(analysisContext => x = analysisContext.Tree.FilePath);
+      this.InitializeAnalyzer(context);
     }
 
-    private void AnalyzeEnumMemberDeclaration(SyntaxNodeAnalysisContext context)
+    internal override void RegisterActions(CompilationStartAnalysisContext context, CompilationSpellcheckState state)
     {
-      try
-      {
-        AnalyzerContext.InitializeSettings(context);
-        var enumMemberDeclarationSyntax = context.Node as EnumMemberDeclarationSyntax;
-        this.CheckToken(EnumMemberNameRule, context, enumMemberDeclarationSyntax?.Identifier);
-      }
-      catch (Exception e)
-      {
-        Logger.Log(e);
-        Console.WriteLine(e);
-      }
+      context.RegisterSyntaxNodeAction(nodeContext => this.AnalyzeEnumMemberDeclaration(nodeContext, state), SyntaxKind.EnumMemberDeclaration);
+    }
+
+    private void AnalyzeEnumMemberDeclaration(SyntaxNodeAnalysisContext context, CompilationSpellcheckState state)
+    {
+      var enumMemberDeclarationSyntax = context.Node as EnumMemberDeclarationSyntax;
+      this.CheckToken(EnumMemberNameRule, context, enumMemberDeclarationSyntax?.Identifier, state);
     }
   }
 }

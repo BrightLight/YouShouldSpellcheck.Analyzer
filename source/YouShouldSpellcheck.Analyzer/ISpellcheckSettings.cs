@@ -68,6 +68,12 @@ namespace YouShouldSpellcheck.Analyzer
     string? CustomDictionariesFolder { get; }
 
     string? LanguageToolUrl { get; }
+
+    LanguageToolExecutionMode LanguageToolMode { get; }
+
+    int LanguageToolTimeoutSeconds { get; }
+
+    int LanguageToolMaxConcurrency { get; }
   }
 
   public interface IAttributeProperty
