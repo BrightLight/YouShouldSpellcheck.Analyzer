@@ -14,11 +14,10 @@
     <Nullable>enable</Nullable>
     <PackageId>YouShouldSpellcheck.Analyzer</PackageId>
     <Deterministic>true</Deterministic>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <!--EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules-->
     <ComVisible>false</ComVisible>
-    <AssemblyCulture>en-US</AssemblyCulture>
     <InternalsVisibleTo>YouShouldSpellcheck.Analyzer.Test</InternalsVisibleTo>
     <WarningsAsErrors>$(WarningsAsErrors);Nullable</WarningsAsErrors>
   </PropertyGroup>
@@ -32,8 +31,12 @@
     <Copyright>Copyright 2018-2024 Markus Hastreiter</Copyright>
     <Version>1.2.0</Version>
     <PackageVersion Condition="'$(APPVEYOR_BUILD_VERSION)' != ''">$(APPVEYOR_BUILD_VERSION)</PackageVersion>
-    <AssemblyVersion>1.2.0</AssemblyVersion>
+    <Version Condition="'$(APPVEYOR_BUILD_VERSION)' != ''">$(APPVEYOR_BUILD_VERSION)</Version>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <AssemblyVersion Condition="'$(APPVEYOR_BUILD_VERSION)' != ''">$(APPVEYOR_BUILD_VERSION)</AssemblyVersion>
     <FileVersion>1.2.0.0</FileVersion>
+    <FileVersion Condition="'$(APPVEYOR_BUILD_VERSION)' != ''">$(APPVEYOR_BUILD_VERSION).0</FileVersion>
+    <InformationalVersion Condition="'$(APPVEYOR_BUILD_VERSION)' != ''">$(APPVEYOR_BUILD_VERSION)</InformationalVersion>
     <RepositoryType>git</RepositoryType>
     <NeutralLanguage>en-US</NeutralLanguage>
     <RepositoryUrl>https://github.com/BrightLight/YouShouldSpellcheck.Analyzer</RepositoryUrl>
