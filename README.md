@@ -16,4 +16,4 @@ eng\Test-Package.ps1
 
 The package smoke test creates the NuGet package, restores it into a clean temporary consumer project, and verifies that the packaged analyzer and dictionaries produce an expected diagnostic.
 
-AppVeyor passes its `1.2.{build}` build version to SDK-style packing as `PackageVersion`, so every CI build publishes a uniquely versioned package artifact. Local packages continue to use the version declared in the analyzer project.
+The analyzer project uses AppVeyor's `APPVEYOR_BUILD_VERSION` as `PackageVersion`, and `appveyor.yml` sets the build version format to `1.2.{build}`. This gives every CI package artifact a unique version while local packages continue to use the version declared in the analyzer project.

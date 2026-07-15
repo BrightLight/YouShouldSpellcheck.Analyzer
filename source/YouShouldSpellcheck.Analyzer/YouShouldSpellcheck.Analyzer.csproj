@@ -31,6 +31,7 @@
     <Product>YouShouldSpellcheck.Analyzer</Product>
     <Copyright>Copyright 2018-2024 Markus Hastreiter</Copyright>
     <Version>1.2.0</Version>
+    <PackageVersion Condition="'$(APPVEYOR_BUILD_VERSION)' != ''">$(APPVEYOR_BUILD_VERSION)</PackageVersion>
     <AssemblyVersion>1.2.0</AssemblyVersion>
     <FileVersion>1.2.0.0</FileVersion>
     <RepositoryType>git</RepositoryType>
