@@ -128,16 +128,13 @@
             var nodeLocation = literalExpressionSyntax.GetLocation();
             var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
 
-            ////// try to do a languagetool check
-            ////// if languagetool is not configured, use local dictionary
-            ////if (!await CheckTextWithLanguageToolAsync(stringLocation, text, attributePropertyLanguages.Languages, context))
-            ////{
-            ////  this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages);
-            ////}
-
             // Analyzer callbacks must finish before returning because Roslyn analysis contexts
-            // contain pooled state. Remote LanguageTool requests cannot safely run here.
-            this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages);
+            // contain pooled state. When configured, wait for LanguageTool here so all diagnostics
+            // are reported before the callback completes; otherwise use the local dictionaries.
+            if (!CheckTextWithLanguageTool(stringLocation, text, attributePropertyLanguages.Languages, context))
+            {
+              this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages);
+            }
           }
         }
       }

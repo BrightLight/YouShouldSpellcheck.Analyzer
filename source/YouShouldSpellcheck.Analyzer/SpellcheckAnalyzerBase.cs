@@ -225,7 +225,14 @@ namespace YouShouldSpellcheck.Analyzer
       context.ReportDiagnostic(diagnostic);
     }
 
-    // result: true is LanguageTool was configured, otherwise false
+    // Roslyn analyzer callbacks are synchronous. Keep the callback alive while the configured
+    // LanguageTool request completes so its pooled analysis context remains valid.
+    protected static bool CheckTextWithLanguageTool(Location location, string text, IEnumerable<ILanguage> languages, SyntaxNodeAnalysisContext context)
+    {
+      return CheckTextWithLanguageToolAsync(location, text, languages, context).GetAwaiter().GetResult();
+    }
+
+    // result: true if LanguageTool was configured and handled the text, otherwise false
     protected static async Task<bool> CheckTextWithLanguageToolAsync(Location location, string text, IEnumerable<ILanguage> languages, SyntaxNodeAnalysisContext context)
     {
       var languageToolUriString = AnalyzerContext.SpellcheckSettings.LanguageToolUrl;
@@ -235,7 +242,7 @@ namespace YouShouldSpellcheck.Analyzer
       {
         foreach (var language in languages)
         {
-          var response = await LanguageToolClient.CheckAsync(languageToolUri, text, language.LanguageToolLanguage);
+          var response = await LanguageToolClient.CheckAsync(languageToolUri, text, language.LanguageToolLanguage, context.CancellationToken).ConfigureAwait(false);
           if (response == null)
           {
             // seems like an error occured. Disable LanguageTool analysis
