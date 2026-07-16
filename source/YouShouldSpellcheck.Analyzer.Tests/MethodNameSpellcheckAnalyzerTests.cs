@@ -99,7 +99,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
       {
         TestCode = source,
         FixedCode = fixedSource,
-        CodeActionIndex = 1,
+        CodeActionEquivalenceKey = "Replace with (en_US): MethodName",
       };
 
       test.ExpectedDiagnostics.AddRange(DiagnosticResult.EmptyDiagnosticResults);
