@@ -54,6 +54,6 @@
       </Languages>
     </AttributeProperty>
   </Attributes>
-  <CustomDictionariesFolder>c:\projects\GitHub\YouShouldSpellcheck.Analyzer\dic\</CustomDictionariesFolder>
+  <CustomDictionariesFolder>c:\projects\GitHub\YouShouldSpellcheck.Analyzer\dictionaries\</CustomDictionariesFolder>
   <LanguageToolUrl>http://localhost:8081/v2/</LanguageToolUrl>
 </SpellcheckSettings>

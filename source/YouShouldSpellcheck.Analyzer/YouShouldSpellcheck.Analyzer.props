@@ -1,6 +1,6 @@
 <Project>
   <ItemGroup>
-    <AdditionalFiles Include="$(MSBuildThisFileDirectory)dic\**\*.dic" Visible="false" />
-    <AdditionalFiles Include="$(MSBuildThisFileDirectory)dic\**\*.aff" Visible="false" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)dictionaries\**\*.dic" Visible="false" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)dictionaries\**\*.aff" Visible="false" />
   </ItemGroup>
 </Project>

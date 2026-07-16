@@ -107,7 +107,7 @@
       };
 
       var testDirectory = TestContext.CurrentContext.TestDirectory;
-      var dictionaryFolder = Path.Combine(testDirectory, "dic");
+      var dictionaryFolder = Path.Combine(testDirectory, "dictionaries");
       foreach (var dicFile in Directory.EnumerateFiles(dictionaryFolder, "*.dic"))
       {
         var affFile = dicFile.Replace(".dic", ".aff");

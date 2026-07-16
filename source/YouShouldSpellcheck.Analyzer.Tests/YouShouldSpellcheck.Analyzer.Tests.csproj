@@ -16,8 +16,8 @@
     <ProjectReference Include="..\YouShouldSpellcheck.Analyzer\YouShouldSpellcheck.Analyzer.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\dic\**\*">
-      <Link>dic\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    <None Include="..\..\dictionaries\**\*">
+      <Link>dictionaries\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

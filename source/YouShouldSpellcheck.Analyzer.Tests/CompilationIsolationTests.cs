@@ -74,11 +74,11 @@ namespace YouShouldSpellcheck.Analyzer.Test
         new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) },
         new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-      var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dic");
+      var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dictionaries");
       var additionalFiles = ImmutableArray.Create<AdditionalText>(
         new InMemoryAdditionalText("/config/youshouldspellcheck.config.xml", Settings),
-        new InMemoryAdditionalText("/dic/en_US.dic", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.dic"))),
-        new InMemoryAdditionalText("/dic/en_US.aff", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff"))),
+        new InMemoryAdditionalText("/dictionaries/en_US.dic", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.dic"))),
+        new InMemoryAdditionalText("/dictionaries/en_US.aff", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff"))),
         new InMemoryAdditionalText("/custom/CustomDictionary.en_US.txt", customWords));
       var options = new AnalyzerOptions(additionalFiles);
 

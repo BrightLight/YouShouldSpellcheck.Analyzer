@@ -10,7 +10,7 @@ Preserve this multi-language behavior when changing analyzer architecture or con
 
 - `source/YouShouldSpellcheck.Analyzer`: analyzer, code fixes, configuration, dictionary handling, and NuGet packaging files.
 - `source/YouShouldSpellcheck.Analyzer.Tests`: NUnit and Roslyn analyzer/code-fix tests.
-- `dic`: bundled Hunspell `.dic`/`.aff` pairs and their license files.
+- `dictionaries`: bundled Hunspell `.dic`/`.aff` pairs and their license files.
 - `demo/SpellcheckerDemo`: legacy consumer example.
 - `REVIEW_FINDINGS.md`: modernization findings and proposed work order.
 
@@ -67,4 +67,3 @@ Tests must fail on unexpected exceptions. Do not turn arbitrary failures into ig
 - Preserve dictionary license and attribution files when changing package contents.
 - Avoid unrelated formatting or generated-file churn.
 - Document user-visible configuration and packaging changes in the root README.
-

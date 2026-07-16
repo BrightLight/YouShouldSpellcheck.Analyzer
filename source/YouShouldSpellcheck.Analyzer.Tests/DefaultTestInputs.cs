@@ -26,10 +26,10 @@ namespace YouShouldSpellcheck.Analyzer.Test
 
     public static IEnumerable<(string Filename, string Content)> Get()
     {
-      var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dic");
+      var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dictionaries");
       yield return ("/config/youshouldspellcheck.config.xml", Settings);
-      yield return ("/dic/en_US.dic", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.dic")));
-      yield return ("/dic/en_US.aff", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff")));
+      yield return ("/dictionaries/en_US.dic", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.dic")));
+      yield return ("/dictionaries/en_US.aff", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff")));
     }
   }
 }

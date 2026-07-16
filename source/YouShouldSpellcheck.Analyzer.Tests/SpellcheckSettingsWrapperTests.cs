@@ -19,15 +19,15 @@
     [Test]
     public void TestCustomDictionariesFolder()
     {
-      var relativePath = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"..\test\dic" }, @"C:\config-folder\config.xml");
-      var absolutePath = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"C:\my-custom\dic" }, @"C:\config.xml");
-      var envPath = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"%SystemRoot%\dic" }, @"C:\config.xml");
-      var envPath2 = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"%SystemRoot%\..\test\dic" }, @"C:\config.xml");
+      var relativePath = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"..\test\dictionaries" }, @"C:\config-folder\config.xml");
+      var absolutePath = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"C:\my-custom\dictionaries" }, @"C:\config.xml");
+      var envPath = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"%SystemRoot%\dictionaries" }, @"C:\config.xml");
+      var envPath2 = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"%SystemRoot%\..\test\dictionaries" }, @"C:\config.xml");
 
-      Assert.That(relativePath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\test\dic"));
-      Assert.That(absolutePath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\my-custom\dic"));
-      Assert.That(envPath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\%systemroot%\dic"));
-      Assert.That(envPath2.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\test\dic"));
+      Assert.That(relativePath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\test\dictionaries"));
+      Assert.That(absolutePath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\my-custom\dictionaries"));
+      Assert.That(envPath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\%systemroot%\dictionaries"));
+      Assert.That(envPath2.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\test\dictionaries"));
     }
   }
 }

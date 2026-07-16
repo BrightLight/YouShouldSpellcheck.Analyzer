@@ -52,9 +52,9 @@ try {
       'analyzers/dotnet/cs/WeCantSpell.Hunspell.dll',
       'buildTransitive/YouShouldSpellcheck.Analyzer.props',
       'buildTransitive/YouShouldSpellcheck.Analyzer.targets',
-      'buildTransitive/dic/en_US.aff',
-      'buildTransitive/dic/en_US.dic',
-      'buildTransitive/dic/LICENSE_en_US.txt'
+      'buildTransitive/dictionaries/en_US.aff',
+      'buildTransitive/dictionaries/en_US.dic',
+      'buildTransitive/dictionaries/LICENSE_en_US.txt'
     )
 
     foreach ($requiredEntry in $requiredEntries) {
@@ -64,7 +64,7 @@ try {
     }
 
     $contentDictionary = $packageEntries | Where-Object {
-      $_ -match '^contentFiles/any/any/dic/'
+      $_ -match '^contentFiles/any/any/dictionaries/'
     } | Select-Object -First 1
     if ($contentDictionary) {
       throw "Bundled dictionaries must not be NuGet contentFiles because those become visible consumer project items ('$contentDictionary')."
@@ -127,7 +127,7 @@ public class TypName
   }
 
   $bundledAdditionalFiles = @($evaluatedItems.Items.AdditionalFiles | Where-Object {
-    $_.FullPath -match '[\\/]buildTransitive[\\/]dic[\\/].+\.(?:dic|aff)$'
+    $_.FullPath -match '[\\/]buildTransitive[\\/]dictionaries[\\/].+\.(?:dic|aff)$'
   })
   if ($bundledAdditionalFiles.Count -eq 0) {
     throw 'The bundled dictionaries were not imported as AdditionalFiles.'
@@ -140,7 +140,7 @@ public class TypName
   }
 
   $visibleBundledFiles = @($evaluatedItems.Items.None | Where-Object {
-    $_.FullPath -match '[\\/]buildTransitive[\\/]dic[\\/]'
+    $_.FullPath -match '[\\/]buildTransitive[\\/]dictionaries[\\/]'
   })
   if ($visibleBundledFiles.Count -ne 0) {
     throw 'Bundled dictionaries were also imported as visible None items in the consumer project.'

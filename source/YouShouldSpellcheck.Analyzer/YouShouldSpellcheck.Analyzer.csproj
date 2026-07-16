@@ -76,7 +76,7 @@
     <!-- Keep dictionaries out of NuGet's contentFiles convention. contentFiles creates
          visible None items in SDK-style consumers; the props import below is the only
          project item the analyzer needs. -->
-    <None Include="..\..\dic\**\*" Pack="true" PackagePath="buildTransitive\dic\%(RecursiveDir)" />
+    <None Include="..\..\dictionaries\**\*" Pack="true" PackagePath="buildTransitive\dictionaries\%(RecursiveDir)" />
   </ItemGroup>
 
   <ItemGroup>
