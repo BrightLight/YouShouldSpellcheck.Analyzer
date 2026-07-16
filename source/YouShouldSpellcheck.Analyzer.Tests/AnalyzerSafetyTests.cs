@@ -33,5 +33,17 @@ namespace YouShouldSpellcheck.Analyzer.Test
 
       Assert.That(asyncVoidMethods, Is.Empty, "Analyzer methods must not outlive their Roslyn callback context.");
     }
+
+    [Test]
+    public void ExportedDiagnosticsHaveDescriptions()
+    {
+      var diagnosticsWithoutDescriptions = new YouShouldSpellcheckDiagnosticAnalyzer()
+        .SupportedDiagnostics
+        .Where(descriptor => string.IsNullOrWhiteSpace(descriptor.Description.ToString()))
+        .Select(descriptor => descriptor.Id)
+        .ToArray();
+
+      Assert.That(diagnosticsWithoutDescriptions, Is.Empty, "Every exported rule must provide a description for analyzer hosts.");
+    }
   }
 }

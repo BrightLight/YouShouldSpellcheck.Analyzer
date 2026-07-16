@@ -16,23 +16,74 @@ namespace YouShouldSpellcheck.Analyzer
 
   internal static class LanguageToolCompilationRunner
   {
-    private static readonly DiagnosticDescriptor CasingRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolCasingDiagnosticId, "Casing");
-    private static readonly DiagnosticDescriptor ColloquialismsRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolColloquialismsDiagnosticId, "Colloquialisms");
-    private static readonly DiagnosticDescriptor CompoundingRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolCompoundingDiagnosticId, "Compounding");
-    private static readonly DiagnosticDescriptor ConfusedWordsRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolConfusedWordsDiagnosticId, "Confused words");
-    private static readonly DiagnosticDescriptor FalseFriendsRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolFalseFriendsDiagnosticId, "False friends");
-    private static readonly DiagnosticDescriptor GenderNeutralityRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolGenderNeutralityDiagnosticId, "Gender neutrality");
-    private static readonly DiagnosticDescriptor GrammarRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolGrammarDiagnosticId, "Grammar");
-    private static readonly DiagnosticDescriptor MiscRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolMiscDiagnosticId, "Miscellaneous");
-    private static readonly DiagnosticDescriptor PunctuationRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolPunctuationDiagnosticId, "Punctuation");
-    private static readonly DiagnosticDescriptor RedundancyRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolRedundancyDiagnosticId, "Redundancy");
-    private static readonly DiagnosticDescriptor RegionalismsRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolRegionalismsDiagnosticId, "Regionalisms");
-    private static readonly DiagnosticDescriptor RepetitionsRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolRepetitionsDiagnosticId, "Repetitions");
-    private static readonly DiagnosticDescriptor SemanticsRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolSemanticsDiagnosticId, "Semantics");
-    private static readonly DiagnosticDescriptor StyleRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolStyleDiagnosticId, "Style");
-    private static readonly DiagnosticDescriptor TypographyRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolTypographyDiagnosticId, "Typography");
-    private static readonly DiagnosticDescriptor TyposRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolTyposDiagnosticId, "Typos");
-    private static readonly DiagnosticDescriptor WikipediaRule = CreateRule(SpellcheckAnalyzerBase.LanguageToolWikipediaDiagnosticId, "Wikipedia");
+    private static readonly DiagnosticDescriptor CasingRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolCasingDiagnosticId,
+      "Casing",
+      "Reports incorrect capitalization, such as uppercase text where lowercase is required or vice versa.");
+    private static readonly DiagnosticDescriptor ColloquialismsRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolColloquialismsDiagnosticId,
+      "Colloquialisms",
+      "Reports colloquial or overly informal language.");
+    private static readonly DiagnosticDescriptor CompoundingRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolCompoundingDiagnosticId,
+      "Compounding",
+      "Reports compound terms that should be joined, separated, or hyphenated differently.");
+    private static readonly DiagnosticDescriptor ConfusedWordsRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolConfusedWordsDiagnosticId,
+      "Confused words",
+      "Reports words that are easily confused and do not fit their context.");
+    private static readonly DiagnosticDescriptor FalseFriendsRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolFalseFriendsDiagnosticId,
+      "False friends",
+      "Reports words that language learners may confuse with similar words from another language.");
+    private static readonly DiagnosticDescriptor GenderNeutralityRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolGenderNeutralityDiagnosticId,
+      "Gender neutrality",
+      "Reports wording that may not be gender-neutral.");
+    private static readonly DiagnosticDescriptor GrammarRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolGrammarDiagnosticId,
+      "Grammar",
+      "Reports grammatical errors detected by LanguageTool.");
+    private static readonly DiagnosticDescriptor MiscRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolMiscDiagnosticId,
+      "Miscellaneous",
+      "Reports miscellaneous LanguageTool issues and issues whose categories are not mapped to another YS2xx rule.");
+    private static readonly DiagnosticDescriptor PunctuationRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolPunctuationDiagnosticId,
+      "Punctuation",
+      "Reports missing, incorrect, or unnecessary punctuation.");
+    private static readonly DiagnosticDescriptor RedundancyRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolRedundancyDiagnosticId,
+      "Redundancy",
+      "Reports redundant words or phrases.");
+    private static readonly DiagnosticDescriptor RegionalismsRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolRegionalismsDiagnosticId,
+      "Regionalisms",
+      "Reports terms that are inappropriate for the selected regional language variant or have a different meaning in it.");
+    private static readonly DiagnosticDescriptor RepetitionsRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolRepetitionsDiagnosticId,
+      "Repetitions",
+      "Reports unnecessarily repeated words or phrases.");
+    private static readonly DiagnosticDescriptor SemanticsRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolSemanticsDiagnosticId,
+      "Semantics",
+      "Reports logic, content, or consistency problems.");
+    private static readonly DiagnosticDescriptor StyleRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolStyleDiagnosticId,
+      "Style",
+      "Reports general style issues not covered by another LanguageTool category.");
+    private static readonly DiagnosticDescriptor TypographyRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolTypographyDiagnosticId,
+      "Typography",
+      "Reports violations of typographic conventions, such as incorrect dash or quotation mark usage.");
+    private static readonly DiagnosticDescriptor TyposRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolTyposDiagnosticId,
+      "Typos",
+      "Reports spelling errors detected by LanguageTool.");
+    private static readonly DiagnosticDescriptor WikipediaRule = CreateRule(
+      SpellcheckAnalyzerBase.LanguageToolWikipediaDiagnosticId,
+      "Wikipedia",
+      "Reports issues from LanguageTool rules intended specifically for Wikipedia content.");
     private static readonly DiagnosticDescriptor UnavailableRule = new(
       SpellcheckAnalyzerBase.LanguageToolUnavailableDiagnosticId,
       "LanguageTool check could not be completed",
@@ -174,13 +225,14 @@ namespace YouShouldSpellcheck.Analyzer
       return Diagnostic.Create(descriptor, location, properties.ToImmutable(), message);
     }
 
-    private static DiagnosticDescriptor CreateRule(string id, string category) => new(
+    private static DiagnosticDescriptor CreateRule(string id, string category, string description) => new(
       id,
       "LanguageTool: " + category,
       SpellcheckAnalyzerBase.MessageFormat,
       "LanguageTool",
       DiagnosticSeverity.Warning,
       isEnabledByDefault: true,
+      description: description,
       customTags: WellKnownDiagnosticTags.CompilationEnd);
   }
 #pragma warning restore RS2001
