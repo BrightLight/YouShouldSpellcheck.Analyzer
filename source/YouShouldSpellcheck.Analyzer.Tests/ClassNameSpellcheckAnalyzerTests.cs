@@ -207,7 +207,7 @@
       {
         TestCode = test,
         FixedCode = fixtest,
-        CodeActionIndex = 6,
+        CodeActionEquivalenceKey = "Replace with (en_US): TypeName",
       };
 
       testIt.ExpectedDiagnostics.Add(expected);
