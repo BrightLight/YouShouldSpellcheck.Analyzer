@@ -52,15 +52,22 @@ try {
       'analyzers/dotnet/cs/WeCantSpell.Hunspell.dll',
       'buildTransitive/YouShouldSpellcheck.Analyzer.props',
       'buildTransitive/YouShouldSpellcheck.Analyzer.targets',
-      'contentFiles/any/any/dic/en_US.aff',
-      'contentFiles/any/any/dic/en_US.dic',
-      'contentFiles/any/any/dic/LICENSE_en_US.txt'
+      'buildTransitive/dic/en_US.aff',
+      'buildTransitive/dic/en_US.dic',
+      'buildTransitive/dic/LICENSE_en_US.txt'
     )
 
     foreach ($requiredEntry in $requiredEntries) {
       if ($requiredEntry -notin $packageEntries) {
         throw "The package does not contain required entry '$requiredEntry'."
       }
+    }
+
+    $contentDictionary = $packageEntries | Where-Object {
+      $_ -match '^contentFiles/any/any/dic/'
+    } | Select-Object -First 1
+    if ($contentDictionary) {
+      throw "Bundled dictionaries must not be NuGet contentFiles because those become visible consumer project items ('$contentDictionary')."
     }
 
     $hostAssembly = $packageEntries | Where-Object {
@@ -112,6 +119,32 @@ public class TypName
   Set-Content -LiteralPath (Join-Path $testRoot 'Class1.cs') -Value $source -Encoding utf8
 
   Invoke-DotNet restore (Join-Path $testRoot 'PackageConsumer.csproj') --source $packageOutput --no-cache
+
+  $evaluatedItems = (& dotnet msbuild (Join-Path $testRoot 'PackageConsumer.csproj') `
+    -getItem:AdditionalFiles -getItem:None -nologo | Out-String | ConvertFrom-Json)
+  if ($LASTEXITCODE -ne 0) {
+    throw 'Could not inspect the clean consumer project items.'
+  }
+
+  $bundledAdditionalFiles = @($evaluatedItems.Items.AdditionalFiles | Where-Object {
+    $_.FullPath -match '[\\/]buildTransitive[\\/]dic[\\/].+\.(?:dic|aff)$'
+  })
+  if ($bundledAdditionalFiles.Count -eq 0) {
+    throw 'The bundled dictionaries were not imported as AdditionalFiles.'
+  }
+  $nonHiddenBundledAdditionalFiles = @($bundledAdditionalFiles | Where-Object {
+    $_.Visible -ne 'false'
+  })
+  if ($nonHiddenBundledAdditionalFiles.Count -ne 0) {
+    throw 'Bundled dictionary AdditionalFiles must carry Visible=false for IDE project systems.'
+  }
+
+  $visibleBundledFiles = @($evaluatedItems.Items.None | Where-Object {
+    $_.FullPath -match '[\\/]buildTransitive[\\/]dic[\\/]'
+  })
+  if ($visibleBundledFiles.Count -ne 0) {
+    throw 'Bundled dictionaries were also imported as visible None items in the consumer project.'
+  }
 
   $buildOutput = (& dotnet build (Join-Path $testRoot 'PackageConsumer.csproj') --no-restore --verbosity minimal 2>&1 | Out-String)
   if ($LASTEXITCODE -eq 0) {

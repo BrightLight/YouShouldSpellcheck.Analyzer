@@ -21,6 +21,7 @@ The package smoke test creates the NuGet package, restores it into a clean tempo
 The compiler analyzer uses synchronous Roslyn callbacks. Settings, Hunspell dictionaries, custom words, parsed dictionaries, spelling caches, and optional LanguageTool work are scoped to each compilation. This allows projects with different language configurations to be analyzed concurrently in the same compiler or IDE process.
 
 Configuration, `.dic`/`.aff` pairs, and custom word lists are supplied as MSBuild `AdditionalFiles`.
+Bundled dictionary files remain hidden package assets and are not added as visible content items to consuming projects.
 
 ## Custom dictionaries
 
