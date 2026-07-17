@@ -160,7 +160,8 @@ namespace YouShouldSpellcheck.Analyzer
         }
       }
 
-      context.ReportDiagnostic(Diagnostic.Create(rule, location, properties, "Possible spelling mistake: " + word));
+      var diagnostic = Diagnostic.Create(rule, location, properties, "Possible spelling mistake: " + word);
+      state.ReportOrDeferLocalDiagnostic(rule.Id, diagnostic, context);
     }
 
   }

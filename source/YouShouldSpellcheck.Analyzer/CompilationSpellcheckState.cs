@@ -27,30 +27,38 @@ namespace YouShouldSpellcheck.Analyzer
     private readonly ConcurrentDictionary<string, Lazy<WordList?>> dictionaries = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<Tuple<string, string>, bool> spellingCache = new();
     private readonly ConcurrentQueue<LanguageToolCandidate> languageToolCandidates = new();
+    private readonly ConcurrentQueue<Diagnostic> languageToolFallbackDiagnostics = new();
 
     private CompilationSpellcheckState(
       ISpellcheckSettings settings,
+      LanguageToolExecutionMode languageToolMode,
       ImmutableDictionary<string, DictionarySources> dictionarySources,
       ImmutableDictionary<string, ImmutableHashSet<string>> customWords)
     {
       this.Settings = settings;
+      this.LanguageToolMode = languageToolMode;
       this.dictionarySources = dictionarySources;
       this.customWords = customWords;
     }
 
     public ISpellcheckSettings Settings { get; }
 
+    public LanguageToolExecutionMode LanguageToolMode { get; }
+
     public bool LanguageToolEnabled =>
-      this.Settings.LanguageToolMode == LanguageToolExecutionMode.CompilationEnd
+      this.LanguageToolMode != LanguageToolExecutionMode.Off
       && !string.IsNullOrWhiteSpace(this.Settings.LanguageToolUrl);
+
+    public bool LanguageToolAutoFallback => this.LanguageToolMode == LanguageToolExecutionMode.AutoFallback;
 
     public static CompilationSpellcheckState Create(AnalyzerOptions options, CancellationToken cancellationToken)
     {
       var additionalFiles = options?.AdditionalFiles ?? ImmutableArray<AdditionalText>.Empty;
       var settings = ReadSettings(additionalFiles, cancellationToken) ?? new DefaultSpellcheckSettings();
+      var languageToolMode = ReadLanguageToolModeOverride(options) ?? settings.LanguageToolMode;
       var sources = ReadDictionarySources(additionalFiles, cancellationToken);
       var customWords = ReadCustomWords(additionalFiles, cancellationToken);
-      return new CompilationSpellcheckState(settings, sources, customWords);
+      return new CompilationSpellcheckState(settings, languageToolMode, sources, customWords);
     }
 
     public IEnumerable<ILanguage> LanguagesByRule(string ruleId)
@@ -130,10 +138,41 @@ namespace YouShouldSpellcheck.Analyzer
         .Distinct(LanguageToolCandidateComparer.Instance)
         .ToImmutableArray();
 
+    public void ReportOrDeferLocalDiagnostic(string ruleId, Diagnostic diagnostic, SyntaxNodeAnalysisContext context)
+    {
+      var isLanguageToolTextRule = ruleId == StringLiteralSpellcheckAnalyzer.AttributeArgumentStringDiagnosticId
+        || ruleId == StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId;
+      var diagnosticLocation = diagnostic.Location;
+      var hasQueuedCandidate = this.languageToolCandidates.Any(candidate =>
+        Equals(candidate.Location.SourceTree, diagnosticLocation.SourceTree)
+        && candidate.Location.SourceSpan.Contains(diagnosticLocation.SourceSpan));
+      if (this.LanguageToolAutoFallback && isLanguageToolTextRule && hasQueuedCandidate)
+      {
+        this.languageToolFallbackDiagnostics.Enqueue(diagnostic);
+      }
+      else
+      {
+        context.ReportDiagnostic(diagnostic);
+      }
+    }
+
+    public ImmutableArray<Diagnostic> GetLanguageToolFallbackDiagnostics() =>
+      this.languageToolFallbackDiagnostics.ToImmutableArray();
+
     private bool IsLanguageToolTextKindEnabled(LanguageToolTextKind textKind) =>
       this.Settings.LanguageToolScope == LanguageToolScope.StringLiteralsAndAttributeArguments
       || (this.Settings.LanguageToolScope == LanguageToolScope.AttributeArgumentsOnly && textKind == LanguageToolTextKind.AttributeArgument)
       || (this.Settings.LanguageToolScope == LanguageToolScope.StringLiteralsOnly && textKind == LanguageToolTextKind.StringLiteral);
+
+    private static LanguageToolExecutionMode? ReadLanguageToolModeOverride(AnalyzerOptions? options)
+    {
+      const string propertyName = "build_property.YouShouldSpellcheckLanguageToolMode";
+      return options != null
+        && options.AnalyzerConfigOptionsProvider.GlobalOptions.TryGetValue(propertyName, out var value)
+        && Enum.TryParse(value, ignoreCase: true, out LanguageToolExecutionMode mode)
+          ? mode
+          : null;
+    }
 
     private static ISpellcheckSettings? ReadSettings(ImmutableArray<AdditionalText> additionalFiles, CancellationToken cancellationToken)
     {

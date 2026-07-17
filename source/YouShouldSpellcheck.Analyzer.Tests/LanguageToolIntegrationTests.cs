@@ -1,6 +1,8 @@
 namespace YouShouldSpellcheck.Analyzer.Test
 {
   using System.Collections.Immutable;
+  using System.Collections.Generic;
+  using System.IO;
   using System.Linq;
   using System.Net;
   using System.Net.Sockets;
@@ -156,6 +158,81 @@ namespace YouShouldSpellcheck.Analyzer.Test
       Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Not.Contain(SpellcheckAnalyzerBase.LanguageToolGrammarDiagnosticId));
     }
 
+    [Test]
+    public async Task AutoFallbackUsesLocalDiagnosticsWhenProbeFails()
+    {
+      const string source = "public class Test { string First = \"Zorbax.\"; string Second = \"Blorple.\"; }";
+      using var server = new MultiRequestLanguageToolServer();
+      var serverTask = server.RespondAsync(1, _ => new TestResponse(500, """{"error":"failure"}"""));
+
+      var diagnostics = await AnalyzeAsync(
+        CreateSettings(server.Url, LanguageToolExecutionMode.AutoFallback),
+        source,
+        includeDictionaries: true);
+      var requests = await serverTask;
+
+      Assert.That(requests, Has.Length.EqualTo(1));
+      Assert.That(diagnostics.Count(diagnostic => diagnostic.Id == StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId), Is.GreaterThanOrEqualTo(2));
+      Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Not.Contain(SpellcheckAnalyzerBase.LanguageToolUnavailableDiagnosticId));
+    }
+
+    [Test]
+    public async Task AutoFallbackUsesLanguageToolAndSuppressesDeferredLocalDiagnostics()
+    {
+      const string source = "public class Test { string Text = \"Zorbax are wrong.\"; }";
+      using var server = new OneShotLanguageToolServer();
+      var serverTask = server.RespondAsync("""{"matches":[{"message":"Agreement error","offset":7,"length":3,"replacements":[],"rule":{"id":"AGREEMENT","issueType":"grammar","category":{"id":"GRAMMAR"}}}]}""");
+
+      var diagnostics = await AnalyzeAsync(
+        CreateSettings(server.Url, LanguageToolExecutionMode.AutoFallback),
+        source,
+        includeDictionaries: true);
+      await serverTask;
+
+      Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Contain(SpellcheckAnalyzerBase.LanguageToolGrammarDiagnosticId));
+      Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Not.Contain(StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId));
+      Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Not.Contain(SpellcheckAnalyzerBase.LanguageToolUnavailableDiagnosticId));
+    }
+
+    [Test]
+    public async Task AutoFallbackDiscardsEarlierLanguageToolResultsWhenLaterRequestFails()
+    {
+      const string source = "public class Test { string First = \"Zorbax are wrong.\"; string Second = \"Blorple.\"; }";
+      using var server = new MultiRequestLanguageToolServer();
+      var serverTask = server.RespondAsync(2, request =>
+        request.Contains("Zorbax+are+wrong.", System.StringComparison.Ordinal)
+          ? new TestResponse(200, """{"matches":[{"message":"Agreement error","offset":7,"length":3,"replacements":[],"rule":{"id":"AGREEMENT","issueType":"grammar","category":{"id":"GRAMMAR"}}}]}""")
+          : new TestResponse(500, """{"error":"failure"}"""));
+
+      var diagnostics = await AnalyzeAsync(
+        CreateSettings(server.Url, LanguageToolExecutionMode.AutoFallback),
+        source,
+        includeDictionaries: true);
+      await serverTask;
+
+      Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Contain(StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId));
+      Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Not.Contain(SpellcheckAnalyzerBase.LanguageToolGrammarDiagnosticId));
+      Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Not.Contain(SpellcheckAnalyzerBase.LanguageToolUnavailableDiagnosticId));
+    }
+
+    [Test]
+    public async Task BuildPropertyCanForceRequiredLanguageToolMode()
+    {
+      const string source = "public class Test { string Text = \"Zorbax.\"; }";
+      using var server = new MultiRequestLanguageToolServer();
+      var serverTask = server.RespondAsync(1, _ => new TestResponse(500, """{"error":"failure"}"""));
+
+      var diagnostics = await AnalyzeAsync(
+        CreateSettings(server.Url, LanguageToolExecutionMode.AutoFallback),
+        source,
+        includeDictionaries: true,
+        modeOverride: LanguageToolExecutionMode.CompilationEnd);
+      await serverTask;
+
+      Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Contain(SpellcheckAnalyzerBase.LanguageToolUnavailableDiagnosticId));
+      Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Not.Contain(StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId));
+    }
+
     private static string CreateSettings(
       string url,
       LanguageToolExecutionMode mode,
@@ -175,7 +252,11 @@ namespace YouShouldSpellcheck.Analyzer.Test
       </SpellcheckSettings>
       """;
 
-    private static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(string settings, string source = Source)
+    private static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(
+      string settings,
+      string source = Source,
+      bool includeDictionaries = false,
+      LanguageToolExecutionMode? modeOverride = null)
     {
       var syntaxTree = CSharpSyntaxTree.ParseText(source);
       var compilation = CSharpCompilation.Create(
@@ -183,12 +264,53 @@ namespace YouShouldSpellcheck.Analyzer.Test
         new[] { syntaxTree },
         new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) },
         new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-      var options = new AnalyzerOptions(ImmutableArray.Create<AdditionalText>(
-        new InMemoryAdditionalText("/config/youshouldspellcheck.config.xml", settings)));
+      var additionalFiles = ImmutableArray.CreateBuilder<AdditionalText>();
+      additionalFiles.Add(new InMemoryAdditionalText("/config/youshouldspellcheck.config.xml", settings));
+      if (includeDictionaries)
+      {
+        var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dictionaries");
+        additionalFiles.Add(new InMemoryAdditionalText("/dictionaries/en_US.dic", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.dic"))));
+        additionalFiles.Add(new InMemoryAdditionalText("/dictionaries/en_US.aff", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff"))));
+      }
+
+      var globalOptions = modeOverride == null
+        ? ImmutableDictionary<string, string>.Empty
+        : ImmutableDictionary<string, string>.Empty.Add(
+          "build_property.YouShouldSpellcheckLanguageToolMode",
+          modeOverride.Value.ToString());
+      var options = new AnalyzerOptions(additionalFiles.ToImmutable(), new TestAnalyzerConfigOptionsProvider(globalOptions));
 
       return await compilation
         .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new YouShouldSpellcheckDiagnosticAnalyzer()), options)
         .GetAnalyzerDiagnosticsAsync(CancellationToken.None);
+    }
+
+    private sealed class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
+    {
+      private static readonly AnalyzerConfigOptions EmptyOptions = new TestAnalyzerConfigOptions(ImmutableDictionary<string, string>.Empty);
+
+      public TestAnalyzerConfigOptionsProvider(ImmutableDictionary<string, string> globalOptions)
+      {
+        this.GlobalOptions = new TestAnalyzerConfigOptions(globalOptions);
+      }
+
+      public override AnalyzerConfigOptions GlobalOptions { get; }
+
+      public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => EmptyOptions;
+
+      public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => EmptyOptions;
+    }
+
+    private sealed class TestAnalyzerConfigOptions : AnalyzerConfigOptions
+    {
+      private readonly IReadOnlyDictionary<string, string> options;
+
+      public TestAnalyzerConfigOptions(IReadOnlyDictionary<string, string> options)
+      {
+        this.options = options;
+      }
+
+      public override bool TryGetValue(string key, out string value) => this.options.TryGetValue(key, out value);
     }
 
     private sealed class TestResponse

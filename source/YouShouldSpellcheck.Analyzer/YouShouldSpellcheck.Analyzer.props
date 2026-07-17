@@ -1,5 +1,6 @@
 <Project>
   <ItemGroup>
+    <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolMode" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)dictionaries\**\*.dic" Visible="false" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)dictionaries\**\*.aff" Visible="false" />
   </ItemGroup>

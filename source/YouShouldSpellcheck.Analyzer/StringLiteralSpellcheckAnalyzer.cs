@@ -65,7 +65,8 @@
           var nodeLocation = literalExpressionSyntax.GetLocation();
           var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
           var languages = state.LanguagesByRule(StringLiteralRule.Id);
-          if (!state.QueueLanguageToolText(text, stringLocation, languages, LanguageToolTextKind.StringLiteral))
+          var queuedForLanguageTool = state.QueueLanguageToolText(text, stringLocation, languages, LanguageToolTextKind.StringLiteral);
+          if (!queuedForLanguageTool || state.LanguageToolAutoFallback)
           {
             this.CheckLine(StringLiteralRule, text, stringLocation, context, languages, state);
           }
@@ -104,7 +105,8 @@
             var nodeLocation = literalExpressionSyntax.GetLocation();
             var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
 
-            if (!state.QueueLanguageToolText(text, stringLocation, attributePropertyLanguages.Languages, LanguageToolTextKind.AttributeArgument))
+            var queuedForLanguageTool = state.QueueLanguageToolText(text, stringLocation, attributePropertyLanguages.Languages, LanguageToolTextKind.AttributeArgument);
+            if (!queuedForLanguageTool || state.LanguageToolAutoFallback)
             {
               this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages, state);
             }

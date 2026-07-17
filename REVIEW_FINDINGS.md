@@ -19,6 +19,8 @@ At review time this verified ordinary project-reference compilation, but not the
 - [x] Made request failures candidate-scoped so successful candidates remain reportable; YS218 summarizes failed requests.
 - [x] Applied multi-language acceptance semantics by reporting only spans flagged by every configured LanguageTool language.
 - [x] Added request-body, scope, XML exclusion, mixed-success, and multi-language integration coverage.
+- [x] Added `AutoFallback`, which probes once and selects either complete LanguageTool results or complete local Hunspell results for the compilation without reporting YS218 for expected unavailability.
+- [x] Added the compiler-visible `YouShouldSpellcheckLanguageToolMode` MSBuild override so grammar-specific builds can require LanguageTool while the checked-in XML remains in automatic fallback mode.
 
 ### 2026-07-15: compilation-scoped execution model
 

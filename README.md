@@ -61,18 +61,34 @@ LanguageTool is disabled by default, so ordinary IDE and build analysis remains 
     <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
   </StringLiteralLanguages>
   <LanguageToolUrl>http://localhost:8081/v2</LanguageToolUrl>
-  <LanguageToolMode>CompilationEnd</LanguageToolMode>
+  <LanguageToolMode>AutoFallback</LanguageToolMode>
   <LanguageToolScope>StringLiteralsAndAttributeArguments</LanguageToolScope>
   <LanguageToolTimeoutSeconds>30</LanguageToolTimeoutSeconds>
   <LanguageToolMaxConcurrency>1</LanguageToolMaxConcurrency>
 </SpellcheckSettings>
 ```
 
-In `CompilationEnd` mode, the analyzer collects complete string literals and configured attribute arguments without making requests from syntax callbacks. XML documentation and identifiers continue to use the local dictionaries. At the compilation-end callback it sends deduplicated, bounded asynchronous requests, waits for the batch while the Roslyn context is valid, and reports LanguageTool results as YS201–YS217 diagnostics. This preserves normal Roslyn/SonarQube diagnostic output and LanguageTool replacement suggestions.
+LanguageTool has three execution modes:
+
+- `Off` always uses local dictionaries and never accesses the network.
+- `AutoFallback` probes LanguageTool with one real text. When the server is available and every request succeeds, it reports LanguageTool results as YS201–YS217. If the probe or any later request fails, it discards all LanguageTool results and reports local Hunspell diagnostics for the entire compilation instead. An unavailable optional server does not produce YS218.
+- `CompilationEnd` requires LanguageTool. It retains successful candidate results when another request fails and reports YS218 for invalid, unreachable, timed-out, or failing requests.
+
+Both enabled modes collect complete string literals and configured attribute arguments without making requests from syntax callbacks. XML documentation and identifiers continue to use the local dictionaries. Requests run as a deduplicated, bounded batch at compilation end while the Roslyn context remains valid.
 
 `LanguageToolScope` defaults to `StringLiteralsAndAttributeArguments`. Set it to `AttributeArgumentsOnly` to reproduce the narrower legacy LanguageTool scope, or to `StringLiteralsOnly` to exclude configured attribute arguments.
 
-When this mode handles a text, LanguageTool replaces its local Hunspell check. If multiple LanguageTool languages apply, a source span is reported only when every configured language flags that span. A failed request skips only its candidate: successful candidates are still reported, and one YS218 summarizes the failed requests. Network availability and response time necessarily affect enabled builds, so keep the mode off for builds that must remain hermetic. In an IDE, diagnostics arrive at the end of an analysis pass rather than one string at a time.
+When LanguageTool handles a text, it replaces its local Hunspell check. If multiple LanguageTool languages apply, a source span is reported only when every configured language flags that span. Network availability and response time necessarily affect enabled builds. In an IDE, diagnostics arrive at the end of an analysis pass rather than one string at a time.
+
+`AutoFallback` supports a checked-in URL while developers and ordinary CI agents remain independent of LanguageTool. A grammar-specific build can require the server without modifying the checked-in XML:
+
+```xml
+<PropertyGroup>
+  <YouShouldSpellcheckLanguageToolMode>CompilationEnd</YouShouldSpellcheckLanguageToolMode>
+</PropertyGroup>
+```
+
+The MSBuild property accepts the same `Off`, `AutoFallback`, and `CompilationEnd` values and overrides `<LanguageToolMode>` for that project.
 
 `LanguageToolMaxConcurrency` defaults to 1, bounds simultaneous requests per compilation, and is clamped to at least 1. Increase it only when the configured server can handle parallel projects and concurrent requests. `LanguageToolTimeoutSeconds` is the HTTP timeout and is also clamped to at least 1. The analyzer does not depend on `ThreadHelper`, `JoinableTaskFactory`, RestSharp, or a JSON package; those would either tie it to Visual Studio or add analyzer load-context dependencies without changing Roslyn's synchronous callback contract.
 

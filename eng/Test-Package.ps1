@@ -121,7 +121,7 @@ public class TypName
   Invoke-DotNet restore (Join-Path $testRoot 'PackageConsumer.csproj') --source $packageOutput --no-cache
 
   $evaluatedItems = (& dotnet msbuild (Join-Path $testRoot 'PackageConsumer.csproj') `
-    -getItem:AdditionalFiles -getItem:None -nologo | Out-String | ConvertFrom-Json)
+    -getItem:AdditionalFiles -getItem:None -getItem:CompilerVisibleProperty -nologo | Out-String | ConvertFrom-Json)
   if ($LASTEXITCODE -ne 0) {
     throw 'Could not inspect the clean consumer project items.'
   }
@@ -137,6 +137,13 @@ public class TypName
   })
   if ($nonHiddenBundledAdditionalFiles.Count -ne 0) {
     throw 'Bundled dictionary AdditionalFiles must carry Visible=false for IDE project systems.'
+  }
+
+  $languageToolModeProperty = @($evaluatedItems.Items.CompilerVisibleProperty | Where-Object {
+    $_.Identity -eq 'YouShouldSpellcheckLanguageToolMode'
+  })
+  if ($languageToolModeProperty.Count -ne 1) {
+    throw 'The package did not expose YouShouldSpellcheckLanguageToolMode as a compiler-visible property.'
   }
 
   $visibleBundledFiles = @($evaluatedItems.Items.None | Where-Object {

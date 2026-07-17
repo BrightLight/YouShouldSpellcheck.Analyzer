@@ -55,6 +55,7 @@ namespace YouShouldSpellcheck.Analyzer
   public enum LanguageToolExecutionMode
   {
     Off,
+    AutoFallback,
     CompilationEnd,
   }
 

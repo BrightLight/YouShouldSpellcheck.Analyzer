@@ -129,13 +129,27 @@ namespace YouShouldSpellcheck.Analyzer
       if (!Uri.TryCreate(state.Settings.LanguageToolUrl, UriKind.Absolute, out var uri)
         || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
       {
-        context.ReportDiagnostic(Diagnostic.Create(UnavailableRule, Location.None, "the configured URL is invalid"));
+        if (state.LanguageToolAutoFallback)
+        {
+          ReportFallbackDiagnostics(context, state);
+        }
+        else
+        {
+          context.ReportDiagnostic(Diagnostic.Create(UnavailableRule, Location.None, "the configured URL is invalid"));
+        }
+
         return;
       }
 
       try
       {
         var result = RunAsync(context.CancellationToken, state, candidates, uri).GetAwaiter().GetResult();
+        if (state.LanguageToolAutoFallback && !result.Errors.IsDefaultOrEmpty)
+        {
+          ReportFallbackDiagnostics(context, state);
+          return;
+        }
+
         foreach (var diagnostic in result.Diagnostics)
         {
           context.ReportDiagnostic(diagnostic);
@@ -153,7 +167,22 @@ namespace YouShouldSpellcheck.Analyzer
       }
       catch (Exception exception)
       {
-        context.ReportDiagnostic(Diagnostic.Create(UnavailableRule, Location.None, exception.Message));
+        if (state.LanguageToolAutoFallback)
+        {
+          ReportFallbackDiagnostics(context, state);
+        }
+        else
+        {
+          context.ReportDiagnostic(Diagnostic.Create(UnavailableRule, Location.None, exception.Message));
+        }
+      }
+    }
+
+    private static void ReportFallbackDiagnostics(CompilationAnalysisContext context, CompilationSpellcheckState state)
+    {
+      foreach (var diagnostic in state.GetLanguageToolFallbackDiagnostics())
+      {
+        context.ReportDiagnostic(diagnostic);
       }
     }
 
@@ -162,9 +191,33 @@ namespace YouShouldSpellcheck.Analyzer
       using var client = new LanguageToolClient(uri, TimeSpan.FromSeconds(state.Settings.LanguageToolTimeoutSeconds));
       using var gate = new SemaphoreSlim(state.Settings.LanguageToolMaxConcurrency);
       var diagnostics = new ConcurrentQueue<Diagnostic>();
-      var tasks = candidates.SelectMany(candidate => candidate.Languages.Select(language =>
-        CheckCandidateAsync(cancellationToken, client, gate, candidate, language))).ToArray();
-      var requestResults = await Task.WhenAll(tasks).ConfigureAwait(false);
+      var requests = candidates.SelectMany(candidate => candidate.Languages.Select(language =>
+        new LanguageToolRequest(candidate, language))).ToArray();
+      LanguageToolRequestResult[] requestResults;
+      var attemptedRequestCount = requests.Length;
+      if (state.LanguageToolAutoFallback)
+      {
+        var probeResult = await CheckCandidateAsync(cancellationToken, client, gate, requests[0].Candidate, requests[0].Language).ConfigureAwait(false);
+        if (probeResult.Error != null)
+        {
+          requestResults = [probeResult];
+          attemptedRequestCount = 1;
+        }
+        else
+        {
+          var remainingTasks = requests.Skip(1).Select(request =>
+            CheckCandidateAsync(cancellationToken, client, gate, request.Candidate, request.Language)).ToArray();
+          var remainingResults = await Task.WhenAll(remainingTasks).ConfigureAwait(false);
+          requestResults = [probeResult, .. remainingResults];
+        }
+      }
+      else
+      {
+        var tasks = requests.Select(request =>
+          CheckCandidateAsync(cancellationToken, client, gate, request.Candidate, request.Language)).ToArray();
+        requestResults = await Task.WhenAll(tasks).ConfigureAwait(false);
+      }
+
       var errors = ImmutableArray.CreateBuilder<string>();
 
       foreach (var candidateResults in requestResults.GroupBy(result => result.Candidate, LanguageToolCandidateComparer.Instance))
@@ -192,7 +245,7 @@ namespace YouShouldSpellcheck.Analyzer
         }
       }
 
-      return new LanguageToolRunResult(diagnostics.ToImmutableArray(), errors.ToImmutable(), tasks.Length);
+      return new LanguageToolRunResult(diagnostics.ToImmutableArray(), errors.ToImmutable(), attemptedRequestCount);
     }
 
     private static async Task<LanguageToolRequestResult> CheckCandidateAsync(CancellationToken cancellationToken, LanguageToolClient client, SemaphoreSlim gate, LanguageToolCandidate candidate, string language)
@@ -283,6 +336,19 @@ namespace YouShouldSpellcheck.Analyzer
       public LanguageToolResponse? Response { get; }
 
       public string? Error { get; }
+    }
+
+    private sealed class LanguageToolRequest
+    {
+      public LanguageToolRequest(LanguageToolCandidate candidate, string language)
+      {
+        this.Candidate = candidate;
+        this.Language = language;
+      }
+
+      public LanguageToolCandidate Candidate { get; }
+
+      public string Language { get; }
     }
 
     private sealed class LanguageToolRunResult
