@@ -199,9 +199,10 @@ namespace YouShouldSpellcheck.Analyzer.Test
     {
       const string source = "public class Test { string First = \"Zorbax are wrong.\"; string Second = \"Blorple.\"; }";
       using var server = new MultiRequestLanguageToolServer();
-      var serverTask = server.RespondAsync(2, request =>
-        request.Contains("Zorbax+are+wrong.", System.StringComparison.Ordinal)
-          ? new TestResponse(200, """{"matches":[{"message":"Agreement error","offset":7,"length":3,"replacements":[],"rule":{"id":"AGREEMENT","issueType":"grammar","category":{"id":"GRAMMAR"}}}]}""")
+      var requestIndex = 0;
+      var serverTask = server.RespondAsync(2, _ =>
+        requestIndex++ == 0
+          ? new TestResponse(200, """{"matches":[{"message":"First request issue","offset":0,"length":1,"replacements":[],"rule":{"id":"FIRST_REQUEST","issueType":"grammar","category":{"id":"GRAMMAR"}}}]}""")
           : new TestResponse(500, """{"error":"failure"}"""));
 
       var diagnostics = await AnalyzeAsync(
@@ -343,7 +344,8 @@ namespace YouShouldSpellcheck.Analyzer.Test
         var requests = ImmutableArray.CreateBuilder<string>();
         for (var requestIndex = 0; requestIndex < requestCount; requestIndex++)
         {
-          using var client = await this.listener.AcceptTcpClientAsync();
+          using var acceptTimeout = new CancellationTokenSource(System.TimeSpan.FromSeconds(10));
+          using var client = await this.listener.AcceptTcpClientAsync(acceptTimeout.Token);
           using var stream = client.GetStream();
           var request = await ReadRequestAsync(stream);
           requests.Add(request);
@@ -390,7 +392,8 @@ namespace YouShouldSpellcheck.Analyzer.Test
 
       public async Task<string> RespondAsync(string json)
       {
-        using var client = await this.listener.AcceptTcpClientAsync();
+        using var acceptTimeout = new CancellationTokenSource(System.TimeSpan.FromSeconds(10));
+        using var client = await this.listener.AcceptTcpClientAsync(acceptTimeout.Token);
         using var stream = client.GetStream();
         var request = await ReadRequestAsync(stream);
         var body = Encoding.UTF8.GetBytes(json);

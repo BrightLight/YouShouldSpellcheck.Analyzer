@@ -1,12 +1,19 @@
 ﻿namespace YouShouldSpellcheck.Analyzer.Test
 {
+  using System.Collections.Generic;
+  using System.Collections.Immutable;
   using System.Diagnostics.CodeAnalysis;
   using System.IO;
+  using System.Linq;
   using System.Threading;
   using System.Threading.Tasks;
   using AnalyzerFromTemplate2019.Test;
   using Microsoft.CodeAnalysis;
+  using Microsoft.CodeAnalysis.CodeActions;
+  using Microsoft.CodeAnalysis.CodeFixes;
+  using Microsoft.CodeAnalysis.CSharp;
   using Microsoft.CodeAnalysis.Testing;
+  using Microsoft.CodeAnalysis.Text;
   using NUnit.Framework;
   using YouShouldSpellcheck.Analyzer.CodeFixes;
 
@@ -203,15 +210,45 @@
         }
     }";
 
-      var testIt = new CSharpCodeFixVerifier<ClassNameSpellcheckAnalyzer, ClassNameCodeFixProvider>.Test
-      {
-        TestCode = test,
-        FixedCode = fixtest,
-        CodeActionEquivalenceKey = "Replace with (en_US): TypeName",
-      };
+      using var workspace = new AdhocWorkspace();
+      var project = workspace.AddProject("CodeFixTest", LanguageNames.CSharp)
+        .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+        .AddMetadataReference(MetadataReference.CreateFromFile(typeof(object).Assembly.Location));
+      var document = workspace.AddDocument(project.Id, "Test0.cs", SourceText.From(test));
+      var syntaxTree = await document.GetSyntaxTreeAsync();
+      var typoStart = test.IndexOf("TypName", System.StringComparison.Ordinal);
+      var properties = ImmutableDictionary<string, string>.Empty
+        .Add("offendingWord", "Typ")
+        .Add("validLanguages", "en_US;")
+        .Add("localSuggestion_1", "Type")
+        .Add("localSuggestionLanguage_1", "en_US");
+      var descriptor = new DiagnosticDescriptor(
+        ClassNameSpellcheckAnalyzer.ClassNameDiagnosticId,
+        "Class name should be spelled correctly",
+        "{0}",
+        SpellcheckAnalyzerBase.NamingCategory,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+      var diagnostic = Diagnostic.Create(
+        descriptor,
+        Location.Create(syntaxTree!, new TextSpan(typoStart, 3)),
+        properties,
+        "Possible spelling mistake: Typ");
+      var actions = new List<CodeAction>();
+      var provider = new ClassNameCodeFixProvider();
+      var context = new CodeFixContext(
+        document,
+        diagnostic,
+        (action, _) => actions.Add(action),
+        CancellationToken.None);
 
-      testIt.ExpectedDiagnostics.Add(expected);
-      await testIt.RunAsync(CancellationToken.None);
+      await provider.RegisterCodeFixesAsync(context);
+
+      var renameAction = actions.Single(action => action.EquivalenceKey == "Replace with (en_US): TypeName");
+      var operations = await renameAction.GetOperationsAsync(CancellationToken.None);
+      var changedSolution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
+      var fixedText = await changedSolution.GetDocument(document.Id)!.GetTextAsync();
+      Assert.That(fixedText.ToString(), Is.EqualTo(fixtest));
 
     }
   }
