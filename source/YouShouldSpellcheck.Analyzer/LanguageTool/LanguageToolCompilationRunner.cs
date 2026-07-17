@@ -135,9 +135,16 @@ namespace YouShouldSpellcheck.Analyzer
 
       try
       {
-        foreach (var diagnostic in RunAsync(context.CancellationToken, state, candidates, uri).GetAwaiter().GetResult())
+        var result = RunAsync(context.CancellationToken, state, candidates, uri).GetAwaiter().GetResult();
+        foreach (var diagnostic in result.Diagnostics)
         {
           context.ReportDiagnostic(diagnostic);
+        }
+
+        if (!result.Errors.IsDefaultOrEmpty)
+        {
+          var message = $"{result.Errors.Length} of {result.RequestCount} requests failed; first error: {result.Errors[0]}";
+          context.ReportDiagnostic(Diagnostic.Create(UnavailableRule, Location.None, message));
         }
       }
       catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
@@ -150,32 +157,59 @@ namespace YouShouldSpellcheck.Analyzer
       }
     }
 
-    private static async Task<ImmutableArray<Diagnostic>> RunAsync(CancellationToken cancellationToken, CompilationSpellcheckState state, ImmutableArray<LanguageToolCandidate> candidates, Uri uri)
+    private static async Task<LanguageToolRunResult> RunAsync(CancellationToken cancellationToken, CompilationSpellcheckState state, ImmutableArray<LanguageToolCandidate> candidates, Uri uri)
     {
       using var client = new LanguageToolClient(uri, TimeSpan.FromSeconds(state.Settings.LanguageToolTimeoutSeconds));
       using var gate = new SemaphoreSlim(state.Settings.LanguageToolMaxConcurrency);
       var diagnostics = new ConcurrentQueue<Diagnostic>();
       var tasks = candidates.SelectMany(candidate => candidate.Languages.Select(language =>
-        CheckCandidateAsync(cancellationToken, client, gate, candidate, language, diagnostics))).ToArray();
-      await Task.WhenAll(tasks).ConfigureAwait(false);
-      return diagnostics.ToImmutableArray();
-    }
+        CheckCandidateAsync(cancellationToken, client, gate, candidate, language))).ToArray();
+      var requestResults = await Task.WhenAll(tasks).ConfigureAwait(false);
+      var errors = ImmutableArray.CreateBuilder<string>();
 
-    private static async Task CheckCandidateAsync(CancellationToken cancellationToken, LanguageToolClient client, SemaphoreSlim gate, LanguageToolCandidate candidate, string language, ConcurrentQueue<Diagnostic> diagnostics)
-    {
-      await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-      try
+      foreach (var candidateResults in requestResults.GroupBy(result => result.Candidate, LanguageToolCandidateComparer.Instance))
       {
-        var response = await client.CheckAsync(candidate.Text, language, cancellationToken).ConfigureAwait(false);
-        foreach (var match in response.Matches)
+        var results = candidateResults.ToArray();
+        var failedResults = results.Where(result => result.Error != null).ToArray();
+        if (failedResults.Length > 0)
+        {
+          errors.AddRange(failedResults.Select(result => result.Error!));
+          continue;
+        }
+
+        var responses = results.Select(result => result.Response!).ToArray();
+        foreach (var match in responses[0].Matches
+          .GroupBy(match => Tuple.Create(match.Offset, match.Length))
+          .Select(group => group.First())
+          .Where(match => responses.Skip(1).All(response => response.Matches.Any(other => other.Offset == match.Offset && other.Length == match.Length))))
         {
           cancellationToken.ThrowIfCancellationRequested();
-          var diagnostic = CreateDiagnostic(candidate, match);
+          var diagnostic = CreateDiagnostic(candidateResults.Key, match);
           if (diagnostic != null)
           {
             diagnostics.Enqueue(diagnostic);
           }
         }
+      }
+
+      return new LanguageToolRunResult(diagnostics.ToImmutableArray(), errors.ToImmutable(), tasks.Length);
+    }
+
+    private static async Task<LanguageToolRequestResult> CheckCandidateAsync(CancellationToken cancellationToken, LanguageToolClient client, SemaphoreSlim gate, LanguageToolCandidate candidate, string language)
+    {
+      await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+      try
+      {
+        var response = await client.CheckAsync(candidate.Text, language, cancellationToken).ConfigureAwait(false);
+        return new LanguageToolRequestResult(candidate, response, null);
+      }
+      catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+      {
+        throw;
+      }
+      catch (Exception exception)
+      {
+        return new LanguageToolRequestResult(candidate, null, exception.Message);
       }
       finally
       {
@@ -234,6 +268,38 @@ namespace YouShouldSpellcheck.Analyzer
       isEnabledByDefault: true,
       description: description,
       customTags: WellKnownDiagnosticTags.CompilationEnd);
+
+    private sealed class LanguageToolRequestResult
+    {
+      public LanguageToolRequestResult(LanguageToolCandidate candidate, LanguageToolResponse? response, string? error)
+      {
+        this.Candidate = candidate;
+        this.Response = response;
+        this.Error = error;
+      }
+
+      public LanguageToolCandidate Candidate { get; }
+
+      public LanguageToolResponse? Response { get; }
+
+      public string? Error { get; }
+    }
+
+    private sealed class LanguageToolRunResult
+    {
+      public LanguageToolRunResult(ImmutableArray<Diagnostic> diagnostics, ImmutableArray<string> errors, int requestCount)
+      {
+        this.Diagnostics = diagnostics;
+        this.Errors = errors;
+        this.RequestCount = requestCount;
+      }
+
+      public ImmutableArray<Diagnostic> Diagnostics { get; }
+
+      public ImmutableArray<string> Errors { get; }
+
+      public int RequestCount { get; }
+    }
   }
 #pragma warning restore RS2001
 }

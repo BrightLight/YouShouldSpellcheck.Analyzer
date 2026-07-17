@@ -47,6 +47,8 @@ namespace YouShouldSpellcheck.Analyzer
 
     public LanguageToolExecutionMode LanguageToolMode => this.spellcheckSettings.LanguageToolMode;
 
+    public LanguageToolScope LanguageToolScope => this.spellcheckSettings.LanguageToolScope;
+
     public int LanguageToolTimeoutSeconds => Math.Max(1, this.spellcheckSettings.LanguageToolTimeoutSeconds);
 
     public int LanguageToolMaxConcurrency => Math.Max(1, this.spellcheckSettings.LanguageToolMaxConcurrency);

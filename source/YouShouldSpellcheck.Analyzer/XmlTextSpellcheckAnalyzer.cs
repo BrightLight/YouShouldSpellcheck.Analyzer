@@ -56,11 +56,7 @@
     {
       foreach (var syntaxToken in syntaxNode.ChildTokens().Where(x => x.IsKind(syntaxKind)))
       {
-        var languages = state.LanguagesByRule(CommentRule.Id);
-        if (!state.QueueLanguageToolText(syntaxToken.ValueText, syntaxToken.GetLocation(), languages))
-        {
-          this.CheckToken(CommentRule, context, syntaxToken, state);
-        }
+        this.CheckToken(CommentRule, context, syntaxToken, state);
       }
     }
 

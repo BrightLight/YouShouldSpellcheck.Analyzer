@@ -62,15 +62,18 @@ LanguageTool is disabled by default, so ordinary IDE and build analysis remains 
   </StringLiteralLanguages>
   <LanguageToolUrl>http://localhost:8081/v2</LanguageToolUrl>
   <LanguageToolMode>CompilationEnd</LanguageToolMode>
+  <LanguageToolScope>StringLiteralsAndAttributeArguments</LanguageToolScope>
   <LanguageToolTimeoutSeconds>30</LanguageToolTimeoutSeconds>
-  <LanguageToolMaxConcurrency>4</LanguageToolMaxConcurrency>
+  <LanguageToolMaxConcurrency>1</LanguageToolMaxConcurrency>
 </SpellcheckSettings>
 ```
 
-In `CompilationEnd` mode, the analyzer collects string literals, configured attribute arguments, and XML documentation text without making requests from syntax callbacks. At the compilation-end callback it sends bounded asynchronous requests, waits for the batch while the Roslyn context is valid, and reports LanguageTool results as YS201–YS217 diagnostics. This preserves normal Roslyn/SonarQube diagnostic output and LanguageTool replacement suggestions. YS218 reports an invalid, unreachable, timed-out, or failing explicitly configured server.
+In `CompilationEnd` mode, the analyzer collects complete string literals and configured attribute arguments without making requests from syntax callbacks. XML documentation and identifiers continue to use the local dictionaries. At the compilation-end callback it sends deduplicated, bounded asynchronous requests, waits for the batch while the Roslyn context is valid, and reports LanguageTool results as YS201–YS217 diagnostics. This preserves normal Roslyn/SonarQube diagnostic output and LanguageTool replacement suggestions.
 
-When this mode handles a text, LanguageTool replaces its local Hunspell check. Identifier checks continue to use Hunspell. Network availability and response time necessarily affect enabled builds, so keep the mode off for builds that must remain hermetic. In an IDE, diagnostics arrive at the end of an analysis pass rather than one string at a time.
+`LanguageToolScope` defaults to `StringLiteralsAndAttributeArguments`. Set it to `AttributeArgumentsOnly` to reproduce the narrower legacy LanguageTool scope, or to `StringLiteralsOnly` to exclude configured attribute arguments.
 
-`LanguageToolMaxConcurrency` bounds simultaneous requests per compilation and is clamped to at least 1. `LanguageToolTimeoutSeconds` is the HTTP timeout and is also clamped to at least 1. The analyzer does not depend on `ThreadHelper`, `JoinableTaskFactory`, RestSharp, or a JSON package; those would either tie it to Visual Studio or add analyzer load-context dependencies without changing Roslyn's synchronous callback contract.
+When this mode handles a text, LanguageTool replaces its local Hunspell check. If multiple LanguageTool languages apply, a source span is reported only when every configured language flags that span. A failed request skips only its candidate: successful candidates are still reported, and one YS218 summarizes the failed requests. Network availability and response time necessarily affect enabled builds, so keep the mode off for builds that must remain hermetic. In an IDE, diagnostics arrive at the end of an analysis pass rather than one string at a time.
+
+`LanguageToolMaxConcurrency` defaults to 1, bounds simultaneous requests per compilation, and is clamped to at least 1. Increase it only when the configured server can handle parallel projects and concurrent requests. `LanguageToolTimeoutSeconds` is the HTTP timeout and is also clamped to at least 1. The analyzer does not depend on `ThreadHelper`, `JoinableTaskFactory`, RestSharp, or a JSON package; those would either tie it to Visual Studio or add analyzer load-context dependencies without changing Roslyn's synchronous callback contract.
 
 The analyzer project uses AppVeyor's `APPVEYOR_BUILD_VERSION` as `PackageVersion`, and `appveyor.yml` sets the build version format to `1.2.{build}` and publishes the result directly as a NuGet-package artifact. This gives every CI package artifact a unique `.nupkg` filename while local packages continue to use the version declared in the analyzer project.

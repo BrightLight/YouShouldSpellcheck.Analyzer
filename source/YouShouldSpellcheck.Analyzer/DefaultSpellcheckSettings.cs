@@ -52,8 +52,10 @@ namespace YouShouldSpellcheck.Analyzer
 
     public LanguageToolExecutionMode LanguageToolMode => LanguageToolExecutionMode.Off;
 
+    public LanguageToolScope LanguageToolScope => LanguageToolScope.StringLiteralsAndAttributeArguments;
+
     public int LanguageToolTimeoutSeconds => 30;
 
-    public int LanguageToolMaxConcurrency => 4;
+    public int LanguageToolMaxConcurrency => 1;
   }
 }

@@ -11,6 +11,15 @@ At review time this verified ordinary project-reference compilation, but not the
 
 ## Implementation progress
 
+### 2026-07-17: LanguageTool request and failure behavior
+
+- [x] Limited LanguageTool candidates to complete string literals and configured attribute arguments; XML documentation remains on the local dictionaries.
+- [x] Added `LanguageToolScope` with combined, attribute-only, and string-only modes.
+- [x] Deduplicated candidates and reduced default per-compilation concurrency from 4 to 1.
+- [x] Made request failures candidate-scoped so successful candidates remain reportable; YS218 summarizes failed requests.
+- [x] Applied multi-language acceptance semantics by reporting only spans flagged by every configured LanguageTool language.
+- [x] Added request-body, scope, XML exclusion, mixed-success, and multi-language integration coverage.
+
 ### 2026-07-15: compilation-scoped execution model
 
 - [x] Replaced process-wide analyzer settings, dictionary registrations, parsed dictionaries, custom words, and spelling caches with state created and captured by compilation-start actions.

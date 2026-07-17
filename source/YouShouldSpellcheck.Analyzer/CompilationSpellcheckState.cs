@@ -104,9 +104,9 @@ namespace YouShouldSpellcheck.Analyzer
       return dictionary.Value?.Suggest(word) ?? Enumerable.Empty<string>();
     }
 
-    public bool QueueLanguageToolText(string text, Location location, IEnumerable<ILanguage> languages)
+    public bool QueueLanguageToolText(string text, Location location, IEnumerable<ILanguage> languages, LanguageToolTextKind textKind)
     {
-      if (!this.LanguageToolEnabled || string.IsNullOrWhiteSpace(text))
+      if (!this.LanguageToolEnabled || !this.IsLanguageToolTextKindEnabled(textKind) || string.IsNullOrWhiteSpace(text))
       {
         return false;
       }
@@ -126,7 +126,14 @@ namespace YouShouldSpellcheck.Analyzer
     }
 
     public ImmutableArray<LanguageToolCandidate> GetLanguageToolCandidates() =>
-      this.languageToolCandidates.ToImmutableArray();
+      this.languageToolCandidates
+        .Distinct(LanguageToolCandidateComparer.Instance)
+        .ToImmutableArray();
+
+    private bool IsLanguageToolTextKindEnabled(LanguageToolTextKind textKind) =>
+      this.Settings.LanguageToolScope == LanguageToolScope.StringLiteralsAndAttributeArguments
+      || (this.Settings.LanguageToolScope == LanguageToolScope.AttributeArgumentsOnly && textKind == LanguageToolTextKind.AttributeArgument)
+      || (this.Settings.LanguageToolScope == LanguageToolScope.StringLiteralsOnly && textKind == LanguageToolTextKind.StringLiteral);
 
     private static ISpellcheckSettings? ReadSettings(ImmutableArray<AdditionalText> additionalFiles, CancellationToken cancellationToken)
     {
@@ -280,5 +287,38 @@ namespace YouShouldSpellcheck.Analyzer
     public Location Location { get; }
 
     public ImmutableArray<string> Languages { get; }
+  }
+
+  internal enum LanguageToolTextKind
+  {
+    StringLiteral,
+    AttributeArgument,
+  }
+
+  internal sealed class LanguageToolCandidateComparer : IEqualityComparer<LanguageToolCandidate>
+  {
+    public static LanguageToolCandidateComparer Instance { get; } = new();
+
+    public bool Equals(LanguageToolCandidate? x, LanguageToolCandidate? y) =>
+      ReferenceEquals(x, y)
+      || (x != null
+        && y != null
+        && string.Equals(x.Text, y.Text, StringComparison.Ordinal)
+        && Equals(x.Location.SourceTree, y.Location.SourceTree)
+        && x.Location.SourceSpan.Equals(y.Location.SourceSpan)
+        && x.Languages.SequenceEqual(y.Languages, StringComparer.OrdinalIgnoreCase));
+
+    public int GetHashCode(LanguageToolCandidate candidate)
+    {
+      var hashCode = candidate.Text.GetHashCode();
+      hashCode = (hashCode * 397) ^ candidate.Location.SourceSpan.GetHashCode();
+      hashCode = (hashCode * 397) ^ (candidate.Location.SourceTree?.GetHashCode() ?? 0);
+      foreach (var language in candidate.Languages)
+      {
+        hashCode = (hashCode * 397) ^ StringComparer.OrdinalIgnoreCase.GetHashCode(language);
+      }
+
+      return hashCode;
+    }
   }
 }

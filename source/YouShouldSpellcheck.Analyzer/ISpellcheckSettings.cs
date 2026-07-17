@@ -71,6 +71,8 @@ namespace YouShouldSpellcheck.Analyzer
 
     LanguageToolExecutionMode LanguageToolMode { get; }
 
+    LanguageToolScope LanguageToolScope { get; }
+
     int LanguageToolTimeoutSeconds { get; }
 
     int LanguageToolMaxConcurrency { get; }

@@ -12,7 +12,6 @@ namespace YouShouldSpellcheck.Analyzer
   // - class name
   // - argument name
   // - allow default language(s) (used if not specified otherwise on node type level)
-  // - coming later: grammar check!
   [Serializable]
   public class SpellcheckSettings
   {
@@ -46,15 +45,24 @@ namespace YouShouldSpellcheck.Analyzer
 
     public LanguageToolExecutionMode LanguageToolMode { get; init; } = LanguageToolExecutionMode.Off;
 
+    public LanguageToolScope LanguageToolScope { get; init; } = LanguageToolScope.StringLiteralsAndAttributeArguments;
+
     public int LanguageToolTimeoutSeconds { get; init; } = 30;
 
-    public int LanguageToolMaxConcurrency { get; init; } = 4;
+    public int LanguageToolMaxConcurrency { get; init; } = 1;
   }
 
   public enum LanguageToolExecutionMode
   {
     Off,
     CompilationEnd,
+  }
+
+  public enum LanguageToolScope
+  {
+    StringLiteralsAndAttributeArguments,
+    AttributeArgumentsOnly,
+    StringLiteralsOnly,
   }
 
   [Serializable]
