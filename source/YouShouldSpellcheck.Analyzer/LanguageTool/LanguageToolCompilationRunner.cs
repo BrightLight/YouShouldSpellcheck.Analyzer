@@ -237,7 +237,7 @@ namespace YouShouldSpellcheck.Analyzer
           .Where(match => responses.Skip(1).All(response => response.Matches.Any(other => other.Offset == match.Offset && other.Length == match.Length))))
         {
           cancellationToken.ThrowIfCancellationRequested();
-          var diagnostic = CreateDiagnostic(candidateResults.Key, match);
+          var diagnostic = CreateDiagnostic(candidateResults.Key, match, state.Settings.MaxSuggestions);
           if (diagnostic != null)
           {
             diagnostics.Enqueue(diagnostic);
@@ -270,7 +270,7 @@ namespace YouShouldSpellcheck.Analyzer
       }
     }
 
-    private static Diagnostic? CreateDiagnostic(LanguageToolCandidate candidate, LanguageToolMatch match)
+    private static Diagnostic? CreateDiagnostic(LanguageToolCandidate candidate, LanguageToolMatch match, int maxSuggestions)
     {
       if (match.Offset < 0 || match.Length < 0 || match.Offset + match.Length > candidate.Text.Length)
       {
@@ -288,10 +288,14 @@ namespace YouShouldSpellcheck.Analyzer
 
       var suggestions = new StringBuilder();
       var suggestionNumber = 1;
-      foreach (var replacement in match.Replacements.Where(replacement => !string.IsNullOrEmpty(replacement.Value)))
+      foreach (var replacement in match.Replacements
+        .Where(replacement => !string.IsNullOrWhiteSpace(replacement.Value))
+        .Select(replacement => replacement.Value!)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .Take(maxSuggestions > 0 ? maxSuggestions : int.MaxValue))
       {
-        properties[$"suggestion_{suggestionNumber++}"] = replacement.Value;
-        suggestions.AppendLine(replacement.Value);
+        properties[$"suggestion_{suggestionNumber++}"] = replacement;
+        suggestions.AppendLine(replacement);
       }
 
       var message = match.Message ?? "LanguageTool reported an issue.";

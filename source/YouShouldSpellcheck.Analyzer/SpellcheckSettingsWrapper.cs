@@ -53,6 +53,10 @@ namespace YouShouldSpellcheck.Analyzer
 
     public int LanguageToolMaxConcurrency => Math.Max(1, this.spellcheckSettings.LanguageToolMaxConcurrency);
 
+    public int MaxSuggestionsPerLanguage => Math.Max(0, this.spellcheckSettings.MaxSuggestionsPerLanguage);
+
+    public int MaxSuggestions => Math.Max(0, this.spellcheckSettings.MaxSuggestions);
+
     private static string? EvaluateCustomDirectoryFolder(string? configFile, string? rawPath)
     {
       if (rawPath == null)

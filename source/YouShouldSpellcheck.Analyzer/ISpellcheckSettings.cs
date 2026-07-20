@@ -76,6 +76,18 @@ namespace YouShouldSpellcheck.Analyzer
     int LanguageToolTimeoutSeconds { get; }
 
     int LanguageToolMaxConcurrency { get; }
+
+    /// <summary>
+    /// Gets the maximum number of distinct suggestions kept for one configured language.
+    /// A value of zero disables this limit.
+    /// </summary>
+    int MaxSuggestionsPerLanguage { get; }
+
+    /// <summary>
+    /// Gets the maximum number of distinct suggestions kept for one diagnostic.
+    /// A value of zero disables this limit.
+    /// </summary>
+    int MaxSuggestions { get; }
   }
 
   public interface IAttributeProperty

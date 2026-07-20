@@ -61,11 +61,44 @@ namespace YouShouldSpellcheck.Analyzer.Test
       Assert.That(suggestionLanguages, Is.Not.Empty.And.All.EqualTo("en_US"));
     }
 
+    [Test]
+    public async Task SuggestionLimitsKeepTheHighestRankedHunspellSuggestions()
+    {
+      const string source = "public class TypeName { public const string Text = \"lne\"; }";
+      var defaultSuggestions = await GetSuggestionsAsync(Settings, source);
+      var limitedSuggestions = await GetSuggestionsAsync(
+        Settings.Replace("<DefaultLanguages>", "<MaxSuggestionsPerLanguage>2</MaxSuggestionsPerLanguage><MaxSuggestions>2</MaxSuggestions><DefaultLanguages>"),
+        source);
+
+      Assert.That(defaultSuggestions, Has.Length.EqualTo(5));
+      Assert.That(defaultSuggestions, Does.Contain("line"));
+      Assert.That(limitedSuggestions, Is.EqualTo(defaultSuggestions.Take(2)));
+    }
+
+    private static async Task<string[]> GetSuggestionsAsync(string settings, string source)
+    {
+      var diagnostics = await AnalyzeAsync(
+        new StringLiteralSpellcheckAnalyzer(),
+        "SuggestionLimitProject",
+        string.Empty,
+        source,
+        settings);
+
+      return diagnostics.Single(result => result.Id == StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId)
+        .Properties
+        .Where(property => property.Key.StartsWith("localSuggestion_", System.StringComparison.Ordinal)
+          && !property.Key.StartsWith("localSuggestionLanguage_", System.StringComparison.Ordinal))
+        .OrderBy(property => property.Key, System.StringComparer.Ordinal)
+        .Select(property => property.Value)
+        .ToArray();
+    }
+
     private static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(
       DiagnosticAnalyzer analyzer,
       string assemblyName,
       string customWords,
-      string source = "public class Zorbax { }")
+      string source = "public class Zorbax { }",
+      string settings = null)
     {
       var syntaxTree = CSharpSyntaxTree.ParseText(source);
       var compilation = CSharpCompilation.Create(
@@ -76,7 +109,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
 
       var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dictionaries");
       var additionalFiles = ImmutableArray.Create<AdditionalText>(
-        new InMemoryAdditionalText("/config/youshouldspellcheck.config.xml", Settings),
+        new InMemoryAdditionalText("/config/youshouldspellcheck.config.xml", settings ?? Settings),
         new InMemoryAdditionalText("/dictionaries/en_US.dic", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.dic"))),
         new InMemoryAdditionalText("/dictionaries/en_US.aff", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff"))),
         new InMemoryAdditionalText("/custom/CustomDictionary.en_US.txt", customWords));

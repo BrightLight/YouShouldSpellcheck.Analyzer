@@ -51,6 +51,19 @@ These actions create or update a Roslyn `AdditionalDocument`, so the edit is rep
 
 The legacy `<CustomDictionariesFolder>` configuration element is retained for configuration compatibility but is no longer used during analysis. Custom dictionary files must be supplied through `AdditionalFiles` as shown above.
 
+## Suggestion limits
+
+To keep the IDE code-fix menu focused, the analyzer preserves Hunspell's suggestion order, removes case-insensitive duplicates, and reports at most five suggestions per configured language and eight suggestions per diagnostic by default. Configure either limit in `youshouldspellcheck.config.xml`; use `0` to remove that limit:
+
+```xml
+<SpellcheckSettings>
+  <MaxSuggestionsPerLanguage>5</MaxSuggestionsPerLanguage>
+  <MaxSuggestions>8</MaxSuggestions>
+</SpellcheckSettings>
+```
+
+The overall limit is shared by all local dictionaries. LanguageTool has no per-language relevance score in its response, so its distinct replacements use the overall `MaxSuggestions` limit and retain server order.
+
 ## Optional LanguageTool checks
 
 LanguageTool is disabled by default, so ordinary IDE and build analysis remains offline and deterministic. It can be explicitly enabled for nightly builds or an IDE session with a local LanguageTool server:

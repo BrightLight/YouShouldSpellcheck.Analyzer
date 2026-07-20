@@ -146,14 +146,42 @@ namespace YouShouldSpellcheck.Analyzer
         var languageArray = languages.ToArray();
         properties = properties.Add("validLanguages", string.Join(";", languageArray.Select(language => language.LocalDictionaryLanguage)) + ";");
         var suggestionIndex = 1;
+        var distinctSuggestions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var hasReachedGlobalLimit = false;
         foreach (var language in languageArray)
         {
+          var suggestionsForLanguage = 0;
           foreach (var suggestion in state.Suggest(word, language.LocalDictionaryLanguage))
           {
+            if (string.IsNullOrWhiteSpace(suggestion)
+              || !distinctSuggestions.Add(suggestion))
+            {
+              continue;
+            }
+
+            if (state.Settings.MaxSuggestionsPerLanguage > 0
+              && suggestionsForLanguage >= state.Settings.MaxSuggestionsPerLanguage)
+            {
+              break;
+            }
+
             properties = properties
               .Add($"localSuggestion_{suggestionIndex}", suggestion)
               .Add($"localSuggestionLanguage_{suggestionIndex}", language.LocalDictionaryLanguage);
             suggestionIndex++;
+            suggestionsForLanguage++;
+
+            if (state.Settings.MaxSuggestions > 0
+              && suggestionIndex > state.Settings.MaxSuggestions)
+            {
+              hasReachedGlobalLimit = true;
+              break;
+            }
+          }
+
+          if (hasReachedGlobalLimit)
+          {
+            break;
           }
         }
       }

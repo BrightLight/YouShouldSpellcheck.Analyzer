@@ -50,6 +50,10 @@ namespace YouShouldSpellcheck.Analyzer
     public int LanguageToolTimeoutSeconds { get; init; } = 30;
 
     public int LanguageToolMaxConcurrency { get; init; } = 1;
+
+    public int MaxSuggestionsPerLanguage { get; init; } = 5;
+
+    public int MaxSuggestions { get; init; } = 8;
   }
 
   public enum LanguageToolExecutionMode

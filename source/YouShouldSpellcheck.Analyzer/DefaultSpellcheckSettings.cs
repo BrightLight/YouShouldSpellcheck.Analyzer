@@ -57,5 +57,9 @@ namespace YouShouldSpellcheck.Analyzer
     public int LanguageToolTimeoutSeconds => 30;
 
     public int LanguageToolMaxConcurrency => 1;
+
+    public int MaxSuggestionsPerLanguage => 5;
+
+    public int MaxSuggestions => 8;
   }
 }
