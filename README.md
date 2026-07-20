@@ -25,22 +25,113 @@ Bundled dictionary files remain hidden package assets and are not added as visib
 
 ## MSBuild language configuration
 
-Configure languages with BCP 47 tags in the project file, `Directory.Build.props`, or an imported `.props` file. The package maps its bundled Hunspell dictionary file names automatically:
+The following MSBuild properties are supported by the package. They are ordinary evaluated MSBuild properties, so they can be set in an individual `.csproj`, in `Directory.Build.props` or `Directory.Build.targets`, or in a `.props`/`.targets` file imported by the project. Use a `.props` file for shared defaults; use a `.targets` file only when the setting deliberately needs to be applied after project evaluation.
+
+All language-selection values use a semicolon-separated list of BCP 47 tags, such as `en-US;de-DE`. Tags are case-insensitive when resolved, but use conventional BCP 47 casing in source-controlled configuration.
+
+| Property | Value | Effect |
+| --- | --- | --- |
+| `YouShouldSpellcheckDefaultLanguages` | BCP 47 list | Languages used when a category has no more-specific setting. |
+| `YouShouldSpellcheckIdentifierLanguages` | BCP 47 list | Languages for identifiers; class, method, variable, property, enum, enum member, and event names inherit this when not configured separately. |
+| `YouShouldSpellcheckClassNameLanguages` | BCP 47 list | Languages for class names. |
+| `YouShouldSpellcheckMethodNameLanguages` | BCP 47 list | Languages for method names. |
+| `YouShouldSpellcheckVariableNameLanguages` | BCP 47 list | Languages for variable names. |
+| `YouShouldSpellcheckPropertyNameLanguages` | BCP 47 list | Languages for property names. |
+| `YouShouldSpellcheckEnumNameLanguages` | BCP 47 list | Languages for enum type names. |
+| `YouShouldSpellcheckEnumMemberNameLanguages` | BCP 47 list | Languages for enum members. |
+| `YouShouldSpellcheckEventNameLanguages` | BCP 47 list | Languages for event names. |
+| `YouShouldSpellcheckCommentLanguages` | BCP 47 list | Languages for XML documentation text. |
+| `YouShouldSpellcheckStringLiteralLanguages` | BCP 47 list | Languages for ordinary string literals. |
+| `YouShouldSpellcheckDictionaryMappings` | `BCP-47-tag=Hunspell-file-name` entries, separated by semicolons | Maps a configured tag to the base name of its `.dic`/`.aff` pair. |
+| `YouShouldSpellcheckLanguageToolMappings` | `BCP-47-tag=LanguageTool-tag` entries, separated by semicolons | Overrides the LanguageTool code for exceptional tags. Unmapped tags use their BCP 47 tag directly. |
+| `YouShouldSpellcheckLanguageToolMode` | `Off`, `AutoFallback`, or `CompilationEnd` | Overrides the XML `LanguageToolMode` setting. |
+
+The package provides these bundled dictionary mappings by default: `de-DE=de_DE_frami`, `en-GB=en_GB`, `en-US=en_US`, `nl-NL=nl_NL`, `ru-RU=russian-aot-ieyo`, `sv-FI=sv_FI`, `sv-SE=sv_SE`, and `uk-UA=uk_UA`.
+
+### Per-project configuration
+
+Configure a single project directly in its `.csproj`:
 
 ```xml
 <PropertyGroup>
   <YouShouldSpellcheckDefaultLanguages>en-US;de-DE</YouShouldSpellcheckDefaultLanguages>
+  <YouShouldSpellcheckIdentifierLanguages>en-US</YouShouldSpellcheckIdentifierLanguages>
   <YouShouldSpellcheckStringLiteralLanguages>en-US;de-DE</YouShouldSpellcheckStringLiteralLanguages>
 </PropertyGroup>
 ```
 
-The supported category properties are `YouShouldSpellcheckDefaultLanguages`, `YouShouldSpellcheckIdentifierLanguages`, `YouShouldSpellcheckClassNameLanguages`, `YouShouldSpellcheckMethodNameLanguages`, `YouShouldSpellcheckVariableNameLanguages`, `YouShouldSpellcheckPropertyNameLanguages`, `YouShouldSpellcheckEnumNameLanguages`, `YouShouldSpellcheckEnumMemberNameLanguages`, `YouShouldSpellcheckEventNameLanguages`, `YouShouldSpellcheckCommentLanguages`, and `YouShouldSpellcheckStringLiteralLanguages`.
+For a project-owned dictionary, map the public tag to that dictionary's file base name and add both dictionary files as `AdditionalFiles`:
 
-For project-owned dictionaries or a different bundled dictionary variant, set `YouShouldSpellcheckDictionaryMappings` with `BCP-47-tag=Hunspell-file-name` entries, separated by semicolons. For example, `de-DE=de_DE_frami`. LanguageTool uses the BCP 47 tag by default; `YouShouldSpellcheckLanguageToolMappings` uses the same format for exceptional LanguageTool codes. MSBuild language properties override the equivalent XML category setting when present. Attribute-specific language rules remain in `youshouldspellcheck.config.xml` for now.
+```xml
+<PropertyGroup>
+  <YouShouldSpellcheckDefaultLanguages>en-US;de-AT</YouShouldSpellcheckDefaultLanguages>
+  <YouShouldSpellcheckDictionaryMappings>en-US=en_US;de-AT=de_AT_custom</YouShouldSpellcheckDictionaryMappings>
+</PropertyGroup>
+
+<ItemGroup>
+  <AdditionalFiles Include="dictionaries\de_AT_custom.dic" />
+  <AdditionalFiles Include="dictionaries\de_AT_custom.aff" />
+</ItemGroup>
+```
+
+Setting `YouShouldSpellcheckDictionaryMappings` replaces the package default value rather than extending it, so include every mapping required by that project, as in the example above.
+
+### Shared configuration
+
+Place shared settings in a repository-root `Directory.Build.props` to apply them to all descendant projects:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <YouShouldSpellcheckDefaultLanguages>en-US;de-DE</YouShouldSpellcheckDefaultLanguages>
+    <YouShouldSpellcheckCommentLanguages>en-US;de-DE</YouShouldSpellcheckCommentLanguages>
+    <YouShouldSpellcheckStringLiteralLanguages>en-US;de-DE</YouShouldSpellcheckStringLiteralLanguages>
+  </PropertyGroup>
+</Project>
+```
+
+An imported configuration file works the same way:
+
+```xml
+<Import Project="build\Spellcheck.props" />
+```
+
+Projects can override a shared value with their own `<PropertyGroup>`. As with normal MSBuild precedence, place that override after the import when importing a custom `.props` file directly.
+
+### Command-line configuration
+
+Every property in the table can also be supplied for a command-line build with `-p:` (or `/p:`). This is useful for CI or a one-off verification, but it does not configure IDE live analysis because Visual Studio and Rider evaluate the project rather than reusing your command-line arguments.
+
+In PowerShell, quote values containing semicolons:
+
+```powershell
+dotnet build MySolution.sln `
+  '-p:YouShouldSpellcheckDefaultLanguages=en-US;de-DE' `
+  '-p:YouShouldSpellcheckStringLiteralLanguages=en-US;de-DE'
+```
+
+For a grammar-specific CI build, require LanguageTool without changing the checked-in project configuration:
+
+```powershell
+dotnet build MySolution.sln `
+  '-p:YouShouldSpellcheckLanguageToolMode=CompilationEnd'
+```
+
+To use a project-owned dictionary for one build, pass both the language list and the complete mapping list:
+
+```powershell
+dotnet build MyProject.csproj `
+  '-p:YouShouldSpellcheckDefaultLanguages=en-US;de-AT' `
+  '-p:YouShouldSpellcheckDictionaryMappings=en-US=en_US;de-AT=de_AT_custom'
+```
+
+An explicitly set MSBuild language-category property overrides the equivalent setting in `youshouldspellcheck.config.xml`. The XML file remains the compatibility fallback for unset categories. Attribute-specific language rules, suggestion limits, the LanguageTool URL, scope, timeout, and concurrency remain XML settings for now.
+
+LanguageTool uses the configured BCP 47 tag by default. Set `YouShouldSpellcheckLanguageToolMappings` only when a configured language tag needs a different LanguageTool code; it follows the same semicolon-separated `configured-tag=LanguageTool-tag` syntax as dictionary mappings.
 
 ## Custom dictionaries
 
-Custom dictionaries remain supported as project-specific text files. Create one file per language, using the name `CustomDictionary.<language>.txt`. The language part must match the configured `LocalDictionaryLanguage`; for example, use `CustomDictionary.en_US.txt` for `en_US`.
+Custom dictionaries remain supported as project-specific text files. Create one file per language, using the name `CustomDictionary.<language>.txt`. The language part must match the mapped Hunspell dictionary name, not the public BCP 47 tag; for example, the bundled `en-US=en_US` mapping uses `CustomDictionary.en_US.txt`.
 
 List one accepted word per line:
 
