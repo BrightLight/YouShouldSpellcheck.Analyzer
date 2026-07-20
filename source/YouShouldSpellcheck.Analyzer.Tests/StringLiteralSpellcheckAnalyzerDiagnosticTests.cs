@@ -85,5 +85,35 @@
       test.ExpectedDiagnostics.Add(expected);
       await test.RunAsync(CancellationToken.None);
     }
+
+    [Test]
+    public async Task MapsUnicodeEscapeSequencesToTheirSourceSpan()
+    {
+      var source = @"
+    namespace ConsoleApplication1
+    {
+      using System.ComponentModel.DataAnnotations;
+
+      class TypeName
+      {
+        [Display(Name = ""Special \u0065scapng text"")]
+        public string Name { get; }
+      }
+    }";
+
+      var expected = new DiagnosticResult("YS100", DiagnosticSeverity.Warning)
+        .WithMessage("Possible spelling mistake: escapng")
+        .WithSpan("/0/Test0.cs", 8, 34, 8, 46);
+
+      var test = new CSharpAnalyzerVerifier<StringLiteralSpellcheckAnalyzer>.Test()
+      {
+        ReferenceAssemblies =
+          ReferenceAssemblies.Default.AddAssemblies(ImmutableArray.Create("System.ComponentModel.DataAnnotations")),
+        TestCode = source,
+      };
+
+      test.ExpectedDiagnostics.Add(expected);
+      await test.RunAsync(CancellationToken.None);
+    }
   }
 }

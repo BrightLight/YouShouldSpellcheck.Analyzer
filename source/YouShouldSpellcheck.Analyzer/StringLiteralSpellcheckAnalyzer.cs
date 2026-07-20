@@ -60,15 +60,14 @@
       {
         if (context.Node is LiteralExpressionSyntax literalExpressionSyntax)
         {
-          var token = literalExpressionSyntax.Token;
-          var text = token.ValueText;
-          var nodeLocation = literalExpressionSyntax.GetLocation();
-          var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
+          var sourceMap = StringLiteralSourceMap.Create(literalExpressionSyntax.Token);
+          var text = sourceMap.Token.ValueText;
+          var stringLocation = sourceMap.ContentLocation;
           var languages = state.LanguagesByRule(StringLiteralRule.Id);
-          var queuedForLanguageTool = state.QueueLanguageToolText(text, stringLocation, languages, LanguageToolTextKind.StringLiteral);
+          var queuedForLanguageTool = state.QueueLanguageToolText(text, stringLocation, languages, LanguageToolTextKind.StringLiteral, sourceMap.SourcePositions);
           if (!queuedForLanguageTool || state.LanguageToolAutoFallback)
           {
-            this.CheckLine(StringLiteralRule, text, stringLocation, context, languages, state);
+            this.CheckLine(StringLiteralRule, text, stringLocation, context, languages, state, sourceMap.GetSourcePosition);
           }
         }
       }
@@ -100,15 +99,14 @@
           // TODO: use "context.Node.SyntaxTree.FilePath" to find the "custom dictionary"
           if (context.Node is LiteralExpressionSyntax literalExpressionSyntax)
           {
-            var foo = literalExpressionSyntax.Token;
-            var text = foo.ValueText;
-            var nodeLocation = literalExpressionSyntax.GetLocation();
-            var stringLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(nodeLocation.SourceSpan.Start + 1, nodeLocation.SourceSpan.End - 1));
+            var sourceMap = StringLiteralSourceMap.Create(literalExpressionSyntax.Token);
+            var text = sourceMap.Token.ValueText;
+            var stringLocation = sourceMap.ContentLocation;
 
-            var queuedForLanguageTool = state.QueueLanguageToolText(text, stringLocation, attributePropertyLanguages.Languages, LanguageToolTextKind.AttributeArgument);
+            var queuedForLanguageTool = state.QueueLanguageToolText(text, stringLocation, attributePropertyLanguages.Languages, LanguageToolTextKind.AttributeArgument, sourceMap.SourcePositions);
             if (!queuedForLanguageTool || state.LanguageToolAutoFallback)
             {
-              this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages, state);
+              this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages, state, sourceMap.GetSourcePosition);
             }
           }
         }

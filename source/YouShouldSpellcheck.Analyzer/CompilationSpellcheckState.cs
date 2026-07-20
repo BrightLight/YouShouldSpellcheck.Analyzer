@@ -112,7 +112,12 @@ namespace YouShouldSpellcheck.Analyzer
       return dictionary.Value?.Suggest(word) ?? Enumerable.Empty<string>();
     }
 
-    public bool QueueLanguageToolText(string text, Location location, IEnumerable<ILanguage> languages, LanguageToolTextKind textKind)
+    public bool QueueLanguageToolText(
+      string text,
+      Location location,
+      IEnumerable<ILanguage> languages,
+      LanguageToolTextKind textKind,
+      ImmutableArray<int> sourcePositions = default)
     {
       if (!this.LanguageToolEnabled || !this.IsLanguageToolTextKindEnabled(textKind) || string.IsNullOrWhiteSpace(text))
       {
@@ -129,7 +134,7 @@ namespace YouShouldSpellcheck.Analyzer
         return false;
       }
 
-      this.languageToolCandidates.Enqueue(new LanguageToolCandidate(text, location, languageCodes));
+      this.languageToolCandidates.Enqueue(new LanguageToolCandidate(text, location, languageCodes, sourcePositions));
       return true;
     }
 
@@ -314,11 +319,12 @@ namespace YouShouldSpellcheck.Analyzer
 
   internal sealed class LanguageToolCandidate
   {
-    public LanguageToolCandidate(string text, Location location, ImmutableArray<string> languages)
+    public LanguageToolCandidate(string text, Location location, ImmutableArray<string> languages, ImmutableArray<int> sourcePositions = default)
     {
       this.Text = text;
       this.Location = location;
       this.Languages = languages;
+      this.SourcePositions = sourcePositions;
     }
 
     public string Text { get; }
@@ -326,6 +332,8 @@ namespace YouShouldSpellcheck.Analyzer
     public Location Location { get; }
 
     public ImmutableArray<string> Languages { get; }
+
+    public ImmutableArray<int> SourcePositions { get; }
   }
 
   internal enum LanguageToolTextKind

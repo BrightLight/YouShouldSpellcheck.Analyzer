@@ -305,10 +305,15 @@ namespace YouShouldSpellcheck.Analyzer
         message += "\r\nReplace with\r\n" + suggestions;
       }
 
-      var start = candidate.Location.SourceSpan.Start + match.Offset;
+      var start = candidate.SourcePositions.IsDefaultOrEmpty
+        ? candidate.Location.SourceSpan.Start + match.Offset
+        : candidate.SourcePositions[match.Offset];
+      var end = candidate.SourcePositions.IsDefaultOrEmpty
+        ? start + match.Length
+        : candidate.SourcePositions[match.Offset + match.Length];
       var location = candidate.Location.SourceTree == null
         ? candidate.Location
-        : Location.Create(candidate.Location.SourceTree, new TextSpan(start, match.Length));
+        : Location.Create(candidate.Location.SourceTree, TextSpan.FromBounds(start, end));
       return Diagnostic.Create(descriptor, location, properties.ToImmutable(), message);
     }
 

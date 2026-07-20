@@ -40,7 +40,6 @@ namespace YouShouldSpellcheck.Analyzer
 
     private readonly Regex splitLineIntoWords = new(@"((\b[^\s\/]+\b)((?<=\.\w).)?)", RegexOptions.Compiled);
     private readonly Regex isGuid = new(@"[{(]?[0-9A-Fa-f]{8}[-]?([0-9A-Fa-f]{4}[-]?){3}[0-9A-Fa-f]{12}[)}]?", RegexOptions.Compiled);
-    private readonly HashSet<char> escapeCharacters = ['\"', '\'', '\\', '\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v'];
 
     protected abstract bool ConsiderEscapedCharacters { get; }
 
@@ -85,20 +84,21 @@ namespace YouShouldSpellcheck.Analyzer
       Location location,
       SyntaxNodeAnalysisContext context,
       IEnumerable<ILanguage> languages,
-      CompilationSpellcheckState state)
+      CompilationSpellcheckState state,
+      Func<int, int>? getSourcePosition = null)
     {
       if (string.IsNullOrWhiteSpace(line))
       {
         return;
       }
 
-      var verbatimLocationAdjustment = context.Node is Microsoft.CodeAnalysis.CSharp.Syntax.LiteralExpressionSyntax literal
-        && literal.Token.Text.StartsWith("@", StringComparison.Ordinal) ? 1 : 0;
       foreach (var wordMatch in this.splitLineIntoWords.Matches(line).OfType<Match>())
       {
         context.CancellationToken.ThrowIfCancellationRequested();
-        var start = location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index) + verbatimLocationAdjustment;
-        var end = location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index + wordMatch.Length) + verbatimLocationAdjustment;
+        var start = getSourcePosition?.Invoke(wordMatch.Index)
+          ?? location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index);
+        var end = getSourcePosition?.Invoke(wordMatch.Index + wordMatch.Length)
+          ?? location.SourceSpan.Start + this.AdjustLocationForEscapedCharacters(line, wordMatch.Index + wordMatch.Length);
         var wordLocation = Location.Create(context.Node.SyntaxTree, TextSpan.FromBounds(start, end));
         this.CheckWord(rule, wordMatch.Value, wordLocation, context, languages, state);
       }
@@ -106,9 +106,7 @@ namespace YouShouldSpellcheck.Analyzer
 
     protected int AdjustLocationForEscapedCharacters(string line, int location)
     {
-      return !this.ConsiderEscapedCharacters
-        ? location
-        : location + line[..location].Count(character => this.escapeCharacters.Contains(character));
+      return location;
     }
 
     private protected virtual bool CheckWord(
