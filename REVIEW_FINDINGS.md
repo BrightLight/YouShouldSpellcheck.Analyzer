@@ -21,6 +21,7 @@ At review time this verified ordinary project-reference compilation, but not the
 - [x] Added request-body, scope, XML exclusion, mixed-success, and multi-language integration coverage.
 - [x] Added `AutoFallback`, which probes once and selects either complete LanguageTool results or complete local Hunspell results for the compilation without reporting YS218 for expected unavailability.
 - [x] Added the compiler-visible `YouShouldSpellcheckLanguageToolMode` MSBuild override so grammar-specific builds can require LanguageTool while the checked-in XML remains in automatic fallback mode.
+- [x] Preserved LanguageTool replacement code fixes when an IDE recreates a build diagnostic without its custom properties by recovering suggestions from the analyzer-owned diagnostic message format.
 
 ### 2026-07-15: compilation-scoped execution model
 

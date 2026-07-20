@@ -86,6 +86,7 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
         List<string>? languageToolSuggestions = null;
         while (diagnostic.Properties.TryGetValue($"suggestion_{i}", out var suggestion))
         {
+          i++;
           if (suggestion == null)
           {
             continue;
@@ -98,7 +99,6 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
           }
 
           languageToolSuggestions.Add(suggestion);
-          i++;
         }
 
         if (languageToolSuggestions != null)
@@ -130,10 +130,44 @@ namespace YouShouldSpellcheck.Analyzer.CodeFixes
           return true;
         }
 
+        return TryReadLanguageToolSuggestionsFromMessage(diagnostic, allSuggestions);
+      }
+
+      return TryReadLanguageToolSuggestionsFromMessage(diagnostic, allSuggestions);
+    }
+
+    private static bool TryReadLanguageToolSuggestionsFromMessage(
+      Diagnostic diagnostic,
+      Dictionary<string, List<string>> allSuggestions)
+    {
+      if (!diagnostic.Id.StartsWith("YS2", StringComparison.Ordinal))
+      {
         return false;
       }
 
-      return false;
+      // Build and design-time-build hosts can recreate a diagnostic from compiler output
+      // without preserving custom Diagnostic.Properties. The message is preserved, so use
+      // the stable section emitted by LanguageToolCompilationRunner as a fallback.
+      const string suggestionsMarker = "\nReplace with\n";
+      var normalizedMessage = diagnostic.GetMessage().Replace("\r\n", "\n");
+      var markerIndex = normalizedMessage.LastIndexOf(suggestionsMarker, StringComparison.Ordinal);
+      if (markerIndex < 0)
+      {
+        return false;
+      }
+
+      var suggestions = normalizedMessage.Substring(markerIndex + suggestionsMarker.Length)
+        .Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+        .Where(suggestion => !string.IsNullOrWhiteSpace(suggestion))
+        .Distinct(StringComparer.Ordinal)
+        .ToList();
+      if (suggestions.Count == 0)
+      {
+        return false;
+      }
+
+      allSuggestions.Add("LanguageTool", suggestions);
+      return true;
     }
 
     private static TextDocument? FindCustomDictionary(Project project, string fileName) =>
