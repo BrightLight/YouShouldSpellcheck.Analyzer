@@ -4,8 +4,25 @@
          Keep live analysis local unless the consuming project explicitly overrides this property. -->
     <YouShouldSpellcheckLanguageToolMode>Off</YouShouldSpellcheckLanguageToolMode>
   </PropertyGroup>
+  <PropertyGroup>
+    <!-- Public language tags use BCP 47. Hunspell file names remain an implementation detail. -->
+    <YouShouldSpellcheckDictionaryMappings Condition="'$(YouShouldSpellcheckDictionaryMappings)' == ''">de-DE=de_DE_frami;en-GB=en_GB;en-US=en_US;nl-NL=nl_NL;ru-RU=russian-aot-ieyo;sv-FI=sv_FI;sv-SE=sv_SE;uk-UA=uk_UA</YouShouldSpellcheckDictionaryMappings>
+  </PropertyGroup>
   <ItemGroup>
     <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolMode" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckDictionaryMappings" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolMappings" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckDefaultLanguages" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckIdentifierLanguages" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckClassNameLanguages" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckMethodNameLanguages" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckVariableNameLanguages" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckPropertyNameLanguages" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckEnumNameLanguages" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckEnumMemberNameLanguages" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckEventNameLanguages" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckCommentLanguages" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckStringLiteralLanguages" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)dictionaries\**\*.dic" Visible="false" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)dictionaries\**\*.aff" Visible="false" />
   </ItemGroup>

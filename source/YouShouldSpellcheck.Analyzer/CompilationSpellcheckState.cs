@@ -54,7 +54,8 @@ namespace YouShouldSpellcheck.Analyzer
     public static CompilationSpellcheckState Create(AnalyzerOptions options, CancellationToken cancellationToken)
     {
       var additionalFiles = options?.AdditionalFiles ?? ImmutableArray<AdditionalText>.Empty;
-      var settings = ReadSettings(additionalFiles, cancellationToken) ?? new DefaultSpellcheckSettings();
+      var xmlSettings = ReadSettings(additionalFiles, cancellationToken, out var settingsPath);
+      var settings = ApplyMsBuildOverrides(xmlSettings ?? new SpellcheckSettings(), settingsPath, options);
       var languageToolMode = ReadLanguageToolModeOverride(options) ?? settings.LanguageToolMode;
       var sources = ReadDictionarySources(additionalFiles, cancellationToken);
       var customWords = ReadCustomWords(additionalFiles, cancellationToken);
@@ -179,10 +180,14 @@ namespace YouShouldSpellcheck.Analyzer
           : null;
     }
 
-    private static ISpellcheckSettings? ReadSettings(ImmutableArray<AdditionalText> additionalFiles, CancellationToken cancellationToken)
+    private static SpellcheckSettings? ReadSettings(
+      ImmutableArray<AdditionalText> additionalFiles,
+      CancellationToken cancellationToken,
+      out string? settingsPath)
     {
       var settingsFile = additionalFiles.FirstOrDefault(file =>
         string.Equals(Path.GetFileName(file.Path), SettingsFileName, StringComparison.OrdinalIgnoreCase));
+      settingsPath = settingsFile?.Path;
       var settingsText = settingsFile?.GetText(cancellationToken);
       if (settingsText == null)
       {
@@ -193,15 +198,102 @@ namespace YouShouldSpellcheck.Analyzer
       {
         var serializer = new XmlSerializer(typeof(SpellcheckSettings));
         using var reader = new StringReader(settingsText.ToString());
-        return serializer.Deserialize(reader) is SpellcheckSettings settings
-          ? new SpellcheckSettingsWrapper(settings, settingsFile!.Path)
-          : null;
+        return serializer.Deserialize(reader) as SpellcheckSettings;
       }
       catch (InvalidOperationException)
       {
         // Configuration diagnostics are handled in a later validation increment.
         return null;
       }
+    }
+
+    private static ISpellcheckSettings ApplyMsBuildOverrides(
+      SpellcheckSettings settings,
+      string? settingsPath,
+      AnalyzerOptions? options)
+    {
+      var globalOptions = options?.AnalyzerConfigOptionsProvider.GlobalOptions;
+      if (globalOptions == null)
+      {
+        return new SpellcheckSettingsWrapper(settings, settingsPath);
+      }
+
+      var dictionaryMappings = ReadMappings(globalOptions, "YouShouldSpellcheckDictionaryMappings");
+      var languageToolMappings = ReadMappings(globalOptions, "YouShouldSpellcheckLanguageToolMappings");
+      var overriddenSettings = new SpellcheckSettings
+      {
+        DefaultLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckDefaultLanguages", dictionaryMappings, languageToolMappings) ?? settings.DefaultLanguages,
+        IdentifierLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckIdentifierLanguages", dictionaryMappings, languageToolMappings) ?? settings.IdentifierLanguages,
+        ClassNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckClassNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.ClassNameLanguages,
+        MethodNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckMethodNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.MethodNameLanguages,
+        VariableNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckVariableNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.VariableNameLanguages,
+        PropertyNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckPropertyNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.PropertyNameLanguages,
+        EnumNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckEnumNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.EnumNameLanguages,
+        EnumMemberNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckEnumMemberNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.EnumMemberNameLanguages,
+        EventNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckEventNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.EventNameLanguages,
+        CommentLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckCommentLanguages", dictionaryMappings, languageToolMappings) ?? settings.CommentLanguages,
+        StringLiteralLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckStringLiteralLanguages", dictionaryMappings, languageToolMappings) ?? settings.StringLiteralLanguages,
+        Attributes = settings.Attributes,
+        CustomDictionariesFolder = settings.CustomDictionariesFolder,
+        LanguageToolUrl = settings.LanguageToolUrl,
+        LanguageToolMode = settings.LanguageToolMode,
+        LanguageToolScope = settings.LanguageToolScope,
+        LanguageToolTimeoutSeconds = settings.LanguageToolTimeoutSeconds,
+        LanguageToolMaxConcurrency = settings.LanguageToolMaxConcurrency,
+        MaxSuggestionsPerLanguage = settings.MaxSuggestionsPerLanguage,
+        MaxSuggestions = settings.MaxSuggestions,
+      };
+
+      return new SpellcheckSettingsWrapper(overriddenSettings, settingsPath);
+    }
+
+    private static Dictionary<string, string> ReadMappings(AnalyzerConfigOptions globalOptions, string propertyName)
+    {
+      var mappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+      if (!globalOptions.TryGetValue($"build_property.{propertyName}", out var value) || string.IsNullOrWhiteSpace(value))
+      {
+        return mappings;
+      }
+
+      foreach (var entry in value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+      {
+        var separatorIndex = entry.IndexOf('=');
+        if (separatorIndex <= 0 || separatorIndex == entry.Length - 1)
+        {
+          continue;
+        }
+
+        mappings[entry.Substring(0, separatorIndex).Trim()] = entry.Substring(separatorIndex + 1).Trim();
+      }
+
+      return mappings;
+    }
+
+    private static Language[]? ReadLanguages(
+      AnalyzerConfigOptions globalOptions,
+      string propertyName,
+      IReadOnlyDictionary<string, string> dictionaryMappings,
+      IReadOnlyDictionary<string, string> languageToolMappings)
+    {
+      if (!globalOptions.TryGetValue($"build_property.{propertyName}", out var value))
+      {
+        return null;
+      }
+
+      return value
+        .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(languageTag => languageTag.Trim())
+        .Where(languageTag => languageTag.Length > 0)
+        .Select(languageTag => new Language
+        {
+          LocalDictionaryLanguage = dictionaryMappings.TryGetValue(languageTag, out var dictionaryLanguage)
+            ? dictionaryLanguage
+            : languageTag,
+          LanguageToolLanguage = languageToolMappings.TryGetValue(languageTag, out var languageToolLanguage)
+            ? languageToolLanguage
+            : languageTag,
+        })
+        .ToArray();
     }
 
     private static ImmutableDictionary<string, DictionarySources> ReadDictionarySources(

@@ -11,6 +11,13 @@ At review time this verified ordinary project-reference compilation, but not the
 
 ## Implementation progress
 
+### 2026-07-20: MSBuild language selection
+
+- [x] Added compiler-visible MSBuild properties for default and category-specific language selection, using BCP 47 tags such as `en-US` and `de-DE`.
+- [x] Added package-provided mappings from BCP 47 tags to bundled Hunspell file names, including variants such as `de-DE=de_DE_frami`.
+- [x] Kept XML configuration as a compatibility fallback; explicitly configured MSBuild category properties take precedence.
+- [x] Made LanguageTool use the configured BCP 47 tag by default, with a separate mapping property for exceptional LanguageTool codes.
+
 ### 2026-07-17: LanguageTool request and failure behavior
 
 - [x] Limited LanguageTool candidates to complete string literals and configured attribute arguments; XML documentation remains on the local dictionaries.
@@ -294,7 +301,7 @@ Enable extended analyzer rules, add release tracking, explicitly define Fix All 
 
 ## Decisions to make during implementation
 
-- Whether complex configuration remains XML or moves to a combination of `.editorconfig`/MSBuild properties and an additional structured file.
+- [x] Common language selection now uses MSBuild properties; XML remains the structured compatibility format until attribute rules receive a dedicated MSBuild representation.
 - Whether package dictionaries are opt-in by language or a smaller default set is included automatically.
 - Custom dictionary updates remain an IDE feature and are represented as `AdditionalDocument` solution changes for project-system persistence, preview, and undo.
 - Whether LanguageTool support belongs in a separate command-line/CI tool, an IDE-only component, or is removed.

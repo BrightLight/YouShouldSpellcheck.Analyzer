@@ -23,6 +23,21 @@ The compiler analyzer uses synchronous Roslyn callbacks. Settings, Hunspell dict
 Configuration, `.dic`/`.aff` pairs, and custom word lists are supplied as MSBuild `AdditionalFiles`.
 Bundled dictionary files remain hidden package assets and are not added as visible content items to consuming projects.
 
+## MSBuild language configuration
+
+Configure languages with BCP 47 tags in the project file, `Directory.Build.props`, or an imported `.props` file. The package maps its bundled Hunspell dictionary file names automatically:
+
+```xml
+<PropertyGroup>
+  <YouShouldSpellcheckDefaultLanguages>en-US;de-DE</YouShouldSpellcheckDefaultLanguages>
+  <YouShouldSpellcheckStringLiteralLanguages>en-US;de-DE</YouShouldSpellcheckStringLiteralLanguages>
+</PropertyGroup>
+```
+
+The supported category properties are `YouShouldSpellcheckDefaultLanguages`, `YouShouldSpellcheckIdentifierLanguages`, `YouShouldSpellcheckClassNameLanguages`, `YouShouldSpellcheckMethodNameLanguages`, `YouShouldSpellcheckVariableNameLanguages`, `YouShouldSpellcheckPropertyNameLanguages`, `YouShouldSpellcheckEnumNameLanguages`, `YouShouldSpellcheckEnumMemberNameLanguages`, `YouShouldSpellcheckEventNameLanguages`, `YouShouldSpellcheckCommentLanguages`, and `YouShouldSpellcheckStringLiteralLanguages`.
+
+For project-owned dictionaries or a different bundled dictionary variant, set `YouShouldSpellcheckDictionaryMappings` with `BCP-47-tag=Hunspell-file-name` entries, separated by semicolons. For example, `de-DE=de_DE_frami`. LanguageTool uses the BCP 47 tag by default; `YouShouldSpellcheckLanguageToolMappings` uses the same format for exceptional LanguageTool codes. MSBuild language properties override the equivalent XML category setting when present. Attribute-specific language rules remain in `youshouldspellcheck.config.xml` for now.
+
 ## Custom dictionaries
 
 Custom dictionaries remain supported as project-specific text files. Create one file per language, using the name `CustomDictionary.<language>.txt`. The language part must match the configured `LocalDictionaryLanguage`; for example, use `CustomDictionary.en_US.txt` for `en_US`.
