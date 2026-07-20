@@ -102,7 +102,6 @@ namespace YouShouldSpellcheck.Analyzer.Test
         CodeActionEquivalenceKey = "Replace with (en_US): MethodName",
       };
 
-      test.ExpectedDiagnostics.AddRange(DiagnosticResult.EmptyDiagnosticResults);
       await test.RunAsync(CancellationToken.None);
     }
   }
