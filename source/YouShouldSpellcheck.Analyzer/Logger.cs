@@ -3,7 +3,7 @@ namespace YouShouldSpellcheck.Analyzer
   using System;
   using System.Diagnostics;
 
-  internal static class Logger
+  public static class Logger
   {
     [Conditional("DEBUG")]
     public static void Log(string message)

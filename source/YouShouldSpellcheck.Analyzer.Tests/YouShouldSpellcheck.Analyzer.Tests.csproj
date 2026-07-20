@@ -14,6 +14,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\YouShouldSpellcheck.Analyzer\YouShouldSpellcheck.Analyzer.csproj" />
+    <ProjectReference Include="..\YouShouldSpellcheck.Analyzer.CodeFixes\YouShouldSpellcheck.Analyzer.CodeFixes.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\dictionaries\**\*">

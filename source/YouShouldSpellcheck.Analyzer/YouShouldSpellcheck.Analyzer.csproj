@@ -53,7 +53,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" PrivateAssets="all" />
     <PackageReference Include="PolySharp" Version="1.14.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -61,6 +60,7 @@
     <PackageReference Include="WeCantSpell.Hunspell" Version="5.0.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="CodeFixes\**\*.cs" />
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
     <Compile Update="Resources.Designer.cs" DesignTime="True" AutoGen="True" DependentUpon="Resources.resx" />
@@ -85,5 +85,12 @@
     <None Include="$(OutputPath)System.Buffers.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
     <None Include="$(OutputPath)System.Memory.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
     <None Include="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+    <None Include="..\YouShouldSpellcheck.Analyzer.CodeFixes\bin\$(Configuration)\netstandard2.0\YouShouldSpellcheck.Analyzer.CodeFixes.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+    <None Include="..\YouShouldSpellcheck.Analyzer.CodeFixes\bin\$(Configuration)\netstandard2.0\Microsoft.CodeAnalysis.Workspaces.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
+    <None Include="..\YouShouldSpellcheck.Analyzer.CodeFixes\bin\$(Configuration)\netstandard2.0\Microsoft.CodeAnalysis.CSharp.Workspaces.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
   </ItemGroup>
+
+  <Target Name="BuildCodeFixAssembly" BeforeTargets="GenerateNuspec">
+    <MSBuild Projects="..\YouShouldSpellcheck.Analyzer.CodeFixes\YouShouldSpellcheck.Analyzer.CodeFixes.csproj" Targets="Build" Properties="Configuration=$(Configuration)" />
+  </Target>
 </Project>
