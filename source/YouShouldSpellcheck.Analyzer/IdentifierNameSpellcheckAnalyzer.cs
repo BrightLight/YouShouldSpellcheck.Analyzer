@@ -20,19 +20,24 @@ namespace YouShouldSpellcheck.Analyzer
 
     private protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages, CompilationSpellcheckState state)
     {
-      if (base.CheckWord(rule, word, wordLocation, context, languages, state))
+      var wordParts = this.splitWordsByCasing.Matches(word).OfType<Match>().ToArray();
+      if (wordParts.Length == 1 && wordParts[0].Index == 0 && wordParts[0].Length == word.Length)
       {
+        if (!base.CheckWord(rule, word, wordLocation, context, languages, state))
+        {
+          ReportWord(rule, word, wordLocation, context, languages, state);
+        }
+
         return true;
       }
 
-      this.CheckWordParts(rule, word, wordLocation, context, state);
+      this.CheckWordParts(rule, wordParts, wordLocation, context, state);
 
       return true;
     }
 
-    private void CheckWordParts(DiagnosticDescriptor rule, string word, Location location, SyntaxNodeAnalysisContext context, CompilationSpellcheckState state)
+    private void CheckWordParts(DiagnosticDescriptor rule, IEnumerable<Match> wordParts, Location location, SyntaxNodeAnalysisContext context, CompilationSpellcheckState state)
     {
-      var wordParts = this.splitWordsByCasing.Matches(word).OfType<Match>();
       foreach (var wordPart in wordParts)
       {
         var wordPartLocation = Location.Create(context.Node.SyntaxTree, Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(location.SourceSpan.Start + wordPart.Index, location.SourceSpan.Start + wordPart.Index + wordPart.Length));

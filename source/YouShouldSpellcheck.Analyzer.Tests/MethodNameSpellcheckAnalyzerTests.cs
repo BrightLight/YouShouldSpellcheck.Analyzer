@@ -54,6 +54,22 @@ namespace YouShouldSpellcheck.Analyzer.Test
       await CSharpAnalyzerVerifier<MethodNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(test);
     }
 
+    [Test]
+    public async Task ReportsMisspelledPartOfCompoundMethodName()
+    {
+      const string source = """
+        class MealPlanner
+        {
+          public string {|YS104:Prepate|}Meal()
+          {
+            return string.Empty;
+          }
+        }
+        """;
+
+      await CSharpAnalyzerVerifier<MethodNameSpellcheckAnalyzer>.VerifyAnalyzerAsync(source);
+    }
+
     //Diagnostic and CodeFix both triggered and checked for
     [Test]
     public async Task TestMethod3()
