@@ -21,14 +21,29 @@ namespace YouShouldSpellcheck.Analyzer.Test
     private const string Source = "[Display(Name = @\"Nach den einen folgte eine andere Tag.\")] public class Test { }";
 
     [Test]
-    public void TextCodeFixProviderIsDiscoverableThroughMef()
+    public void TextCodeFixProvidersAreDiscoverableThroughMef()
     {
       using var container = new ContainerConfiguration()
         .WithAssembly(typeof(TextCodeFixProvider).Assembly)
         .CreateContainer();
 
-      Assert.That(container.GetExports<CodeFixProvider>(),
-        Has.Some.TypeOf<TextCodeFixProvider>());
+      var providers = container.GetExports<CodeFixProvider>().ToArray();
+      Assert.Multiple(() =>
+      {
+        Assert.That(providers, Has.Some.TypeOf<TextCodeFixProvider>());
+        Assert.That(providers, Has.Some.TypeOf<LanguageToolCodeFixProvider>());
+        Assert.That(
+          providers.OfType<TextCodeFixProvider>().Single().FixableDiagnosticIds,
+          Is.EquivalentTo(new[]
+          {
+            XmlTextSpellcheckAnalyzer.CommentDiagnosticId,
+            StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId,
+            StringLiteralSpellcheckAnalyzer.AttributeArgumentStringDiagnosticId,
+          }));
+        Assert.That(
+          providers.OfType<LanguageToolCodeFixProvider>().Single().FixableDiagnosticIds,
+          Does.Contain(SpellcheckAnalyzerBase.LanguageToolGrammarDiagnosticId));
+      });
     }
 
     [Test]
@@ -74,7 +89,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
         (action, _) => actions.Add(action),
         CancellationToken.None);
 
-      await new TextCodeFixProvider().RegisterCodeFixesAsync(context);
+      await new LanguageToolCodeFixProvider().RegisterCodeFixesAsync(context);
 
       Assert.That(actions.Select(action => action.Title), Is.EquivalentTo(new[]
       {
@@ -120,7 +135,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
         (action, _) => actions.Add(action),
         CancellationToken.None);
 
-      await new TextCodeFixProvider().RegisterCodeFixesAsync(context);
+      await new LanguageToolCodeFixProvider().RegisterCodeFixesAsync(context);
 
       Assert.That(actions.Select(action => action.Title), Is.EquivalentTo(new[]
       {
