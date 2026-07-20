@@ -90,6 +90,10 @@ When LanguageTool handles a text, it replaces its local Hunspell check. If multi
 
 The MSBuild property accepts the same `Off`, `AutoFallback`, and `CompilationEnd` values and overrides `<LanguageToolMode>` for that project.
 
+The NuGet package defaults this MSBuild override to `Off` during Visual Studio design-time builds when the project has not set it explicitly. This keeps local YS100 and YS101 diagnostics in the editor's live syntax-analysis phase, where replacement and custom-dictionary code fixes are available. Normal builds still use the mode from `youshouldspellcheck.config.xml`, so an XML setting of `AutoFallback` continues to run LanguageTool and fall back to Hunspell for build diagnostics. LanguageTool YS201–YS217 diagnostics and deferred `AutoFallback` diagnostics are compilation-end diagnostics; Visual Studio displays them but does not offer document code fixes for them.
+
+To deliberately run LanguageTool during design-time analysis as well, set `YouShouldSpellcheckLanguageToolMode` explicitly in the project. This also opts into the compilation-end code-fix limitation.
+
 `LanguageToolMaxConcurrency` defaults to 1, bounds simultaneous requests per compilation, and is clamped to at least 1. Increase it only when the configured server can handle parallel projects and concurrent requests. `LanguageToolTimeoutSeconds` is the HTTP timeout and is also clamped to at least 1. The analyzer does not depend on `ThreadHelper`, `JoinableTaskFactory`, RestSharp, or a JSON package; those would either tie it to Visual Studio or add analyzer load-context dependencies without changing Roslyn's synchronous callback contract.
 
 The analyzer project uses AppVeyor's `APPVEYOR_BUILD_VERSION` as `PackageVersion`, and `appveyor.yml` sets the build version format to `1.2.{build}` and publishes the result directly as a NuGet-package artifact. This gives every CI package artifact a unique `.nupkg` filename while local packages continue to use the version declared in the analyzer project.

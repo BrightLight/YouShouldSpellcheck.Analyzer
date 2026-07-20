@@ -1,4 +1,9 @@
 <Project>
+  <PropertyGroup Condition="'$(DesignTimeBuild)' == 'true' and '$(YouShouldSpellcheckLanguageToolMode)' == ''">
+    <!-- Compilation-end diagnostics are visible in IDEs but cannot provide document code fixes.
+         Keep live analysis local unless the consuming project explicitly overrides this property. -->
+    <YouShouldSpellcheckLanguageToolMode>Off</YouShouldSpellcheckLanguageToolMode>
+  </PropertyGroup>
   <ItemGroup>
     <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolMode" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)dictionaries\**\*.dic" Visible="false" />

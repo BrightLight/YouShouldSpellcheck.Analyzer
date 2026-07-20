@@ -22,7 +22,8 @@ At review time this verified ordinary project-reference compilation, but not the
 - [x] Added `AutoFallback`, which probes once and selects either complete LanguageTool results or complete local Hunspell results for the compilation without reporting YS218 for expected unavailability.
 - [x] Added the compiler-visible `YouShouldSpellcheckLanguageToolMode` MSBuild override so grammar-specific builds can require LanguageTool while the checked-in XML remains in automatic fallback mode.
 - [x] Preserved LanguageTool replacement code fixes when an IDE recreates a build diagnostic without its custom properties by recovering suggestions from the analyzer-owned diagnostic message format.
-- [x] Separated ordinary text and compilation-end LanguageTool fixes into uniquely named MEF providers so IDE hosts can discover and classify each diagnostic lifetime independently.
+- [x] Separated ordinary text and compilation-end LanguageTool fixes into uniquely named MEF providers.
+- [x] Defaulted design-time builds to local checking so Visual Studio can offer document code fixes, while normal builds retain the configured `AutoFallback` or required LanguageTool behavior.
 
 ### 2026-07-15: compilation-scoped execution model
 
