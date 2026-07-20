@@ -235,17 +235,35 @@ namespace YouShouldSpellcheck.Analyzer
         StringLiteralLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckStringLiteralLanguages", dictionaryMappings, languageToolMappings) ?? settings.StringLiteralLanguages,
         Attributes = settings.Attributes,
         CustomDictionariesFolder = settings.CustomDictionariesFolder,
-        LanguageToolUrl = settings.LanguageToolUrl,
+        LanguageToolUrl = ReadString(globalOptions, "YouShouldSpellcheckLanguageToolUrl") ?? settings.LanguageToolUrl,
         LanguageToolMode = settings.LanguageToolMode,
-        LanguageToolScope = settings.LanguageToolScope,
-        LanguageToolTimeoutSeconds = settings.LanguageToolTimeoutSeconds,
-        LanguageToolMaxConcurrency = settings.LanguageToolMaxConcurrency,
+        LanguageToolScope = ReadEnum<LanguageToolScope>(globalOptions, "YouShouldSpellcheckLanguageToolScope") ?? settings.LanguageToolScope,
+        LanguageToolTimeoutSeconds = ReadInteger(globalOptions, "YouShouldSpellcheckLanguageToolTimeoutSeconds") ?? settings.LanguageToolTimeoutSeconds,
+        LanguageToolMaxConcurrency = ReadInteger(globalOptions, "YouShouldSpellcheckLanguageToolMaxConcurrency") ?? settings.LanguageToolMaxConcurrency,
         MaxSuggestionsPerLanguage = settings.MaxSuggestionsPerLanguage,
         MaxSuggestions = settings.MaxSuggestions,
       };
 
       return new SpellcheckSettingsWrapper(overriddenSettings, settingsPath);
     }
+
+    private static string? ReadString(AnalyzerConfigOptions globalOptions, string propertyName) =>
+      globalOptions.TryGetValue($"build_property.{propertyName}", out var value) ? value : null;
+
+    private static TEnum? ReadEnum<TEnum>(AnalyzerConfigOptions globalOptions, string propertyName)
+      where TEnum : struct
+    {
+      return globalOptions.TryGetValue($"build_property.{propertyName}", out var value)
+        && Enum.TryParse(value, ignoreCase: true, out TEnum result)
+          ? result
+          : null;
+    }
+
+    private static int? ReadInteger(AnalyzerConfigOptions globalOptions, string propertyName) =>
+      globalOptions.TryGetValue($"build_property.{propertyName}", out var value)
+        && int.TryParse(value, out var result)
+          ? result
+          : null;
 
     private static Dictionary<string, string> ReadMappings(AnalyzerConfigOptions globalOptions, string propertyName)
     {

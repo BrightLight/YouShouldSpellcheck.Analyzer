@@ -234,6 +234,27 @@ namespace YouShouldSpellcheck.Analyzer.Test
       Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Not.Contain(StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId));
     }
 
+    [Test]
+    public async Task BuildPropertiesOverrideLanguageToolConnectionSettings()
+    {
+      using var server = new OneShotLanguageToolServer();
+      var serverTask = server.RespondAsync("""{"matches":[]}""");
+      var overrides = ImmutableDictionary<string, string>.Empty
+        .Add("build_property.YouShouldSpellcheckLanguageToolUrl", server.Url)
+        .Add("build_property.YouShouldSpellcheckLanguageToolScope", "StringLiteralsOnly")
+        .Add("build_property.YouShouldSpellcheckLanguageToolTimeoutSeconds", "2")
+        .Add("build_property.YouShouldSpellcheckLanguageToolMaxConcurrency", "1");
+
+      var diagnostics = await AnalyzeAsync(
+        CreateSettings("http://127.0.0.1:1/v2", LanguageToolExecutionMode.Off),
+        modeOverride: LanguageToolExecutionMode.CompilationEnd,
+        propertyOverrides: overrides);
+      var request = await serverTask;
+
+      Assert.That(request, Does.Contain("text=This+are+wrong."));
+      Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Not.Contain(SpellcheckAnalyzerBase.LanguageToolUnavailableDiagnosticId));
+    }
+
     private static string CreateSettings(
       string url,
       LanguageToolExecutionMode mode,
@@ -257,7 +278,8 @@ namespace YouShouldSpellcheck.Analyzer.Test
       string settings,
       string source = Source,
       bool includeDictionaries = false,
-      LanguageToolExecutionMode? modeOverride = null)
+      LanguageToolExecutionMode? modeOverride = null,
+      ImmutableDictionary<string, string> propertyOverrides = null)
     {
       var syntaxTree = CSharpSyntaxTree.ParseText(source);
       var compilation = CSharpCompilation.Create(
@@ -274,11 +296,13 @@ namespace YouShouldSpellcheck.Analyzer.Test
         additionalFiles.Add(new InMemoryAdditionalText("/dictionaries/en_US.aff", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff"))));
       }
 
-      var globalOptions = modeOverride == null
-        ? ImmutableDictionary<string, string>.Empty
-        : ImmutableDictionary<string, string>.Empty.Add(
+      var globalOptions = propertyOverrides ?? ImmutableDictionary<string, string>.Empty;
+      if (modeOverride != null)
+      {
+        globalOptions = globalOptions.SetItem(
           "build_property.YouShouldSpellcheckLanguageToolMode",
           modeOverride.Value.ToString());
+      }
       var options = new AnalyzerOptions(additionalFiles.ToImmutable(), new TestAnalyzerConfigOptionsProvider(globalOptions));
 
       return await compilation

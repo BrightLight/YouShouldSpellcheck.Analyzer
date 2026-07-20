@@ -17,6 +17,7 @@ At review time this verified ordinary project-reference compilation, but not the
 - [x] Added package-provided mappings from BCP 47 tags to bundled Hunspell file names, including variants such as `de-DE=de_DE_frami`.
 - [x] Kept XML configuration as a compatibility fallback; explicitly configured MSBuild category properties take precedence.
 - [x] Made LanguageTool use the configured BCP 47 tag by default, with a separate mapping property for exceptional LanguageTool codes.
+- [x] Added MSBuild overrides for the LanguageTool URL, mode, scope, timeout, and maximum concurrency.
 
 ### 2026-07-17: LanguageTool request and failure behavior
 

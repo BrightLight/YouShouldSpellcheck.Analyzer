@@ -10,6 +10,10 @@
   </PropertyGroup>
   <ItemGroup>
     <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolMode" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolUrl" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolScope" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolTimeoutSeconds" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolMaxConcurrency" />
     <CompilerVisibleProperty Include="YouShouldSpellcheckDictionaryMappings" />
     <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolMappings" />
     <CompilerVisibleProperty Include="YouShouldSpellcheckDefaultLanguages" />
