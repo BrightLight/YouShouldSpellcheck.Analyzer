@@ -11,6 +11,14 @@ At review time this verified ordinary project-reference compilation, but not the
 
 ## Implementation progress
 
+### 2026-07-21: MSBuild attribute argument configuration
+
+- [x] Added repeatable `YouShouldSpellcheckAttributeArgument` MSBuild items with attribute type, member, kind, and per-rule language metadata.
+- [x] Projected the evaluated item collection through a compiler-visible, analyzer-config-safe property while retaining XML attribute rules as the empty-collection fallback.
+- [x] Matched configured attribute types through the bound type symbol and mapped positional arguments through the compiler-selected constructor.
+- [x] Distinguished named members from constructor parameters with an optional rule kind and reported malformed item records as YS219.
+- [x] Added coverage for aliases, overloaded constructors, rule kind filtering, XML replacement, malformed configuration, and a clean XML-free package consumer.
+
 ### 2026-07-20: MSBuild language selection
 
 - [x] Added compiler-visible MSBuild properties for default and category-specific language selection, using BCP 47 tags such as `en-US` and `de-DE`.
@@ -188,6 +196,8 @@ Acceptance checks:
 - Missing dictionaries do not cause a diagnostic flood.
 
 ### 6. High: attribute matching does not use resolved symbols
+
+Status: addressed locally on 2026-07-21. Attribute rules can now be supplied as structured MSBuild items, and matching uses the compiler-selected attribute constructor and containing type symbol. Short XML names remain a compatibility convenience.
 
 Evidence:
 

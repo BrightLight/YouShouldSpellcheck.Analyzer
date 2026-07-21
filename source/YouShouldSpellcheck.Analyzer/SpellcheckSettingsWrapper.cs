@@ -104,6 +104,8 @@ namespace YouShouldSpellcheck.Analyzer
 
     public string PropertyName => this.attributeProperty.PropertyName;
 
+    public AttributeArgumentKind Kind => this.attributeProperty.Kind;
+
     public IEnumerable<ILanguage> Languages => this.attributeProperty.Languages;
   }
 }

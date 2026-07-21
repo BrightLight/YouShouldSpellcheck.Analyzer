@@ -17,6 +17,7 @@
     <YouShouldSpellcheckStringLiteralLanguagesEncoded>$(YouShouldSpellcheckStringLiteralLanguages.Replace(';', '|'))</YouShouldSpellcheckStringLiteralLanguagesEncoded>
   </PropertyGroup>
   <ItemGroup>
+    <CompilerVisibleProperty Include="YouShouldSpellcheckAttributeArgumentsEncoded" />
     <CompilerVisibleProperty Include="YouShouldSpellcheckDictionaryMappingsEncoded" />
     <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolMappingsEncoded" />
     <CompilerVisibleProperty Include="YouShouldSpellcheckDefaultLanguagesEncoded" />
@@ -31,6 +32,15 @@
     <CompilerVisibleProperty Include="YouShouldSpellcheckCommentLanguagesEncoded" />
     <CompilerVisibleProperty Include="YouShouldSpellcheckStringLiteralLanguagesEncoded" />
   </ItemGroup>
+  <Target Name="_YouShouldSpellcheckCollectAttributeArguments"
+          BeforeTargets="GenerateMSBuildEditorConfigFileCore">
+    <PropertyGroup>
+      <!-- AttributeType~Member~Kind~Languages records. The outer pipe and inner comma
+           separators are safe in generated analyzer-config values. -->
+      <YouShouldSpellcheckAttributeArgumentsEncoded>@(YouShouldSpellcheckAttributeArgument->'%(Identity)~%(Member)~%(Kind)~%(Languages)', '|')</YouShouldSpellcheckAttributeArgumentsEncoded>
+      <YouShouldSpellcheckAttributeArgumentsEncoded>$(YouShouldSpellcheckAttributeArgumentsEncoded.Replace(';', ','))</YouShouldSpellcheckAttributeArgumentsEncoded>
+    </PropertyGroup>
+  </Target>
   <ItemGroup>
     <AdditionalFiles
       Include="$(MSBuildProjectDirectory)/CustomDictionary.*.txt"

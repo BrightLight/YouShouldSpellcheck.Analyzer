@@ -14,6 +14,7 @@
   {
     public const string AttributeArgumentStringDiagnosticId = "YS100";
     public const string StringLiteralDiagnosticId = "YS101";
+    public const string ConfigurationDiagnosticId = ConfigurationDiagnostics.InvalidConfigurationDiagnosticId;
 
     private const string StringLiteralRuleTitle = "String literal should be spelled correctly";
     private const string StringLiteralRuleDescription = "String literal should be spelled correctly.";
@@ -24,7 +25,8 @@
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
       StringLiteralRule,
-      AttributeArgumentStringRule);
+      AttributeArgumentStringRule,
+      ConfigurationDiagnostics.InvalidConfiguration);
 
     protected override bool ConsiderEscapedCharacters => true;
 
@@ -38,6 +40,16 @@
     internal override void RegisterActions(CompilationStartAnalysisContext context, CompilationSpellcheckState state)
     {
       context.RegisterSyntaxNodeAction(nodeContext => this.AnalyzeStringLiteralToken(nodeContext, state), SyntaxKind.StringLiteralExpression);
+      if (!state.ConfigurationErrors.IsDefaultOrEmpty)
+      {
+        context.RegisterCompilationEndAction(endContext =>
+        {
+          foreach (var error in state.ConfigurationErrors)
+          {
+            endContext.ReportDiagnostic(Diagnostic.Create(ConfigurationDiagnostics.InvalidConfiguration, Location.None, error));
+          }
+        });
+      }
     }
 
     private protected override bool CheckWord(DiagnosticDescriptor rule, string word, Location wordLocation, SyntaxNodeAnalysisContext context, IEnumerable<ILanguage> languages, CompilationSpellcheckState state)
@@ -75,84 +87,87 @@
 
     private void AnalyzeAttributeArgument(SyntaxNodeAnalysisContext context, AttributeArgumentSyntax attributeArgumentSyntax, CompilationSpellcheckState state)
     {
-      if (attributeArgumentSyntax.Parent?.Parent is AttributeSyntax attributeSyntax)
+      if (context.Node is not LiteralExpressionSyntax literalExpressionSyntax
+        || !TryDetermineAttributeArgumentTarget(
+          context.SemanticModel,
+          attributeArgumentSyntax,
+          context.CancellationToken,
+          out var attributeType,
+          out var memberName,
+          out var kind))
       {
-        var attributeName = attributeSyntax.Name.ToFullString();
-        var spellcheckSettings = state.Settings;
-        var attributeProperties = spellcheckSettings.Attributes?.Where(x => (x.AttributeName == attributeName) || (x.AttributeName + "Attribute" == attributeName) || (x.AttributeName == attributeName + "Attribute")).ToList();
-        if (attributeProperties == null || !attributeProperties.Any())
-        {
-          return;
-        }
+        return;
+      }
 
-        var attributeArgumentName = this.DetermineAttributeArgumentName(context.SemanticModel, attributeArgumentSyntax);
-        if (attributeArgumentName == null)
-        {
-          return;
-        }
+      var attributeArgumentRule = state.FindAttributeArgumentRule(attributeType, memberName, kind);
+      if (attributeArgumentRule == null)
+      {
+        return;
+      }
 
-        var attributePropertyLanguages = attributeProperties.FirstOrDefault(x => string.Equals(x.PropertyName, attributeArgumentName, StringComparison.OrdinalIgnoreCase));
-        if (attributePropertyLanguages != null)
-        {
-          // next lines are identical to the ones in AnalyzeStringLiteralToken.
-          // this will be resolved once we have one class per analyzer and can use inheritance to override stuff
-          // TODO: use "context.Node.SyntaxTree.FilePath" to find the "custom dictionary"
-          if (context.Node is LiteralExpressionSyntax literalExpressionSyntax)
-          {
-            var sourceMap = StringLiteralSourceMap.Create(literalExpressionSyntax.Token);
-            var text = sourceMap.Token.ValueText;
-            var stringLocation = sourceMap.ContentLocation;
-
-            var queuedForLanguageTool = state.QueueLanguageToolText(text, stringLocation, attributePropertyLanguages.Languages, LanguageToolTextKind.AttributeArgument, sourceMap.SourcePositions);
-            if (!queuedForLanguageTool || state.LanguageToolAutoFallback)
-            {
-              this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributePropertyLanguages.Languages, state, sourceMap.GetSourcePosition);
-            }
-          }
-        }
+      var sourceMap = StringLiteralSourceMap.Create(literalExpressionSyntax.Token);
+      var text = sourceMap.Token.ValueText;
+      var stringLocation = sourceMap.ContentLocation;
+      var queuedForLanguageTool = state.QueueLanguageToolText(text, stringLocation, attributeArgumentRule.Languages, LanguageToolTextKind.AttributeArgument, sourceMap.SourcePositions);
+      if (!queuedForLanguageTool || state.LanguageToolAutoFallback)
+      {
+        this.CheckLine(AttributeArgumentStringRule, text, stringLocation, context, attributeArgumentRule.Languages, state, sourceMap.GetSourcePosition);
       }
     }
 
-    private string? DetermineAttributeArgumentName(SemanticModel semanticModel, AttributeArgumentSyntax attributeArgumentSyntax)
+    private static bool TryDetermineAttributeArgumentTarget(
+      SemanticModel semanticModel,
+      AttributeArgumentSyntax attributeArgumentSyntax,
+      System.Threading.CancellationToken cancellationToken,
+      out INamedTypeSymbol attributeType,
+      out string memberName,
+      out AttributeArgumentKind kind)
     {
-      // check if syntax represents a named argument
-      // -> name is specified directly with the argument
+      attributeType = null!;
+      memberName = string.Empty;
+      kind = AttributeArgumentKind.Any;
+      if (attributeArgumentSyntax.Parent?.Parent is not AttributeSyntax attributeSyntax
+        || semanticModel.GetSymbolInfo(attributeSyntax, cancellationToken).Symbol is not IMethodSymbol constructor)
+      {
+        return false;
+      }
+
+      attributeType = constructor.ContainingType;
       if (attributeArgumentSyntax.NameEquals != null)
       {
-        return attributeArgumentSyntax.NameEquals.Name.Identifier.ValueText;
+        memberName = attributeArgumentSyntax.NameEquals.Name.Identifier.ValueText;
+        kind = AttributeArgumentKind.NamedMember;
+        return true;
       }
 
-      // syntax does not represent a named argument
-      // -> we need to find suitable constructor to deduct argument name
-      // ToDo this is a very, very simplified "constructor resolution" approach
-      // I guess it should be possible, somehow, to ask Roslyn to which compiled the current attribute-argument belongs
-      // but I don't know how to do that, hence this "has-to-do-for-now" approach
-      if (attributeArgumentSyntax.Parent?.Parent is AttributeSyntax attributeSyntax)
+      if (attributeArgumentSyntax.NameColon != null)
       {
-        var attributeTypeInfo = semanticModel.GetTypeInfo(attributeSyntax);
-        if (attributeTypeInfo.Type is INamedTypeSymbol namedTypeSymbol)
-        {
-          if (attributeSyntax.ArgumentList != null)
-          {
-            var nonNamedArguments = attributeSyntax.ArgumentList.Arguments.Where(x => x.NameEquals == null).ToList();
-            var attributeArgumentIndex = nonNamedArguments.FindIndex(x => x == attributeArgumentSyntax);
-            foreach (var constructorDefinition in namedTypeSymbol.InstanceConstructors)
-            {
-              var constructorArguments = constructorDefinition.Parameters.ToList();
-              if (constructorArguments.Count >= nonNamedArguments.Count)
-              {
-                return constructorArguments[attributeArgumentIndex].Name;
-                ////for (var i = 0; i < nonNamedArguments.Count; i++)
-                ////{
-                ////  //if (constructorArguments[i].Type == nonNamedArguments[i].
-                ////}
-              }
-            }
-          }
-        }
+        memberName = attributeArgumentSyntax.NameColon.Name.Identifier.ValueText;
+        kind = AttributeArgumentKind.ConstructorParameter;
+        return true;
       }
 
-      return null;
+      var constructorArguments = attributeSyntax.ArgumentList?.Arguments
+        .Where(argument => argument.NameEquals == null)
+        .ToList();
+      var argumentIndex = constructorArguments?.IndexOf(attributeArgumentSyntax) ?? -1;
+      if (argumentIndex < 0 || constructor.Parameters.Length == 0)
+      {
+        return false;
+      }
+
+      var parameterIndex = argumentIndex < constructor.Parameters.Length
+        ? argumentIndex
+        : constructor.Parameters.Length - 1;
+      var parameter = constructor.Parameters[parameterIndex];
+      if (argumentIndex >= constructor.Parameters.Length && !parameter.IsParams)
+      {
+        return false;
+      }
+
+      memberName = parameter.Name;
+      kind = AttributeArgumentKind.ConstructorParameter;
+      return true;
     }
   }
 }

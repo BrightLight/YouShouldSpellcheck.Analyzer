@@ -20,3 +20,4 @@ YS215 | LanguageTool | Warning | LanguageTool typography issue
 YS216 | LanguageTool | Warning | LanguageTool spelling issue
 YS217 | LanguageTool | Warning | LanguageTool Wikipedia-specific issue
 YS218 | LanguageTool | Warning | Reports an unavailable or invalid explicitly enabled LanguageTool service
+YS219 | Configuration | Warning | Reports invalid YouShouldSpellcheck analyzer configuration

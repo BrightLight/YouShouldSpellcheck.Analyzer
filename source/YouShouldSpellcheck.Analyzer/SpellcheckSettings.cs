@@ -70,11 +70,19 @@ namespace YouShouldSpellcheck.Analyzer
     StringLiteralsOnly,
   }
 
+  public enum AttributeArgumentKind
+  {
+    Any,
+    NamedMember,
+    ConstructorParameter,
+  }
+
   [Serializable]
   public class AttributeProperty
   {
     public required string AttributeName { get; init; }
     public required string PropertyName { get; init; }
+    public AttributeArgumentKind Kind { get; init; } = AttributeArgumentKind.Any;
     public required Language[] Languages { get; init; }
   }
 

@@ -33,17 +33,21 @@ namespace YouShouldSpellcheck.Analyzer
       ISpellcheckSettings settings,
       LanguageToolExecutionMode languageToolMode,
       ImmutableDictionary<string, DictionarySources> dictionarySources,
-      ImmutableDictionary<string, ImmutableHashSet<string>> customWords)
+      ImmutableDictionary<string, ImmutableHashSet<string>> customWords,
+      ImmutableArray<string> configurationErrors)
     {
       this.Settings = settings;
       this.LanguageToolMode = languageToolMode;
       this.dictionarySources = dictionarySources;
       this.customWords = customWords;
+      this.ConfigurationErrors = configurationErrors;
     }
 
     public ISpellcheckSettings Settings { get; }
 
     public LanguageToolExecutionMode LanguageToolMode { get; }
+
+    public ImmutableArray<string> ConfigurationErrors { get; }
 
     public bool LanguageToolEnabled =>
       this.LanguageToolMode != LanguageToolExecutionMode.Off
@@ -55,11 +59,15 @@ namespace YouShouldSpellcheck.Analyzer
     {
       var additionalFiles = options?.AdditionalFiles ?? ImmutableArray<AdditionalText>.Empty;
       var xmlSettings = ReadSettings(additionalFiles, cancellationToken, out var settingsPath);
-      var settings = ApplyMsBuildOverrides(xmlSettings ?? new SpellcheckSettings(), settingsPath, options);
+      var settings = ApplyMsBuildOverrides(
+        xmlSettings ?? new SpellcheckSettings(),
+        settingsPath,
+        options,
+        out var configurationErrors);
       var languageToolMode = ReadLanguageToolModeOverride(options) ?? settings.LanguageToolMode;
       var sources = ReadDictionarySources(additionalFiles, cancellationToken);
       var customWords = ReadCustomWords(additionalFiles, cancellationToken);
-      return new CompilationSpellcheckState(settings, languageToolMode, sources, customWords);
+      return new CompilationSpellcheckState(settings, languageToolMode, sources, customWords, configurationErrors);
     }
 
     public IEnumerable<ILanguage> LanguagesByRule(string ruleId)
@@ -144,6 +152,15 @@ namespace YouShouldSpellcheck.Analyzer
         .Distinct(LanguageToolCandidateComparer.Instance)
         .ToImmutableArray();
 
+    public IAttributeProperty? FindAttributeArgumentRule(
+      INamedTypeSymbol attributeType,
+      string memberName,
+      AttributeArgumentKind kind) =>
+      this.Settings.Attributes.FirstOrDefault(rule =>
+        MatchesAttributeName(attributeType, rule.AttributeName)
+        && string.Equals(rule.PropertyName, memberName, StringComparison.Ordinal)
+        && (rule.Kind == AttributeArgumentKind.Any || rule.Kind == kind));
+
     public void ReportOrDeferLocalDiagnostic(string ruleId, Diagnostic diagnostic, SyntaxNodeAnalysisContext context)
     {
       var isLanguageToolTextRule = ruleId == StringLiteralSpellcheckAnalyzer.AttributeArgumentStringDiagnosticId
@@ -210,16 +227,23 @@ namespace YouShouldSpellcheck.Analyzer
     private static ISpellcheckSettings ApplyMsBuildOverrides(
       SpellcheckSettings settings,
       string? settingsPath,
-      AnalyzerOptions? options)
+      AnalyzerOptions? options,
+      out ImmutableArray<string> configurationErrors)
     {
       var globalOptions = options?.AnalyzerConfigOptionsProvider.GlobalOptions;
       if (globalOptions == null)
       {
+        configurationErrors = ImmutableArray<string>.Empty;
         return new SpellcheckSettingsWrapper(settings, settingsPath);
       }
 
       var dictionaryMappings = ReadMappings(globalOptions, "YouShouldSpellcheckDictionaryMappings");
       var languageToolMappings = ReadMappings(globalOptions, "YouShouldSpellcheckLanguageToolMappings");
+      var attributeArguments = ReadAttributeArguments(
+        globalOptions,
+        dictionaryMappings,
+        languageToolMappings,
+        out configurationErrors);
       var overriddenSettings = new SpellcheckSettings
       {
         DefaultLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckDefaultLanguages", dictionaryMappings, languageToolMappings) ?? settings.DefaultLanguages,
@@ -233,7 +257,7 @@ namespace YouShouldSpellcheck.Analyzer
         EventNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckEventNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.EventNameLanguages,
         CommentLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckCommentLanguages", dictionaryMappings, languageToolMappings) ?? settings.CommentLanguages,
         StringLiteralLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckStringLiteralLanguages", dictionaryMappings, languageToolMappings) ?? settings.StringLiteralLanguages,
-        Attributes = settings.Attributes,
+        Attributes = attributeArguments ?? settings.Attributes,
         CustomDictionariesFolder = settings.CustomDictionariesFolder,
         LanguageToolUrl = ReadString(globalOptions, "YouShouldSpellcheckLanguageToolUrl") ?? settings.LanguageToolUrl,
         LanguageToolMode = settings.LanguageToolMode,
@@ -245,6 +269,73 @@ namespace YouShouldSpellcheck.Analyzer
       };
 
       return new SpellcheckSettingsWrapper(overriddenSettings, settingsPath);
+    }
+
+    private static AttributeProperty[]? ReadAttributeArguments(
+      AnalyzerConfigOptions globalOptions,
+      IReadOnlyDictionary<string, string> dictionaryMappings,
+      IReadOnlyDictionary<string, string> languageToolMappings,
+      out ImmutableArray<string> configurationErrors)
+    {
+      const string propertyName = "build_property.YouShouldSpellcheckAttributeArgumentsEncoded";
+      if (!globalOptions.TryGetValue(propertyName, out var encodedValue)
+        || string.IsNullOrWhiteSpace(encodedValue))
+      {
+        configurationErrors = ImmutableArray<string>.Empty;
+        return null;
+      }
+
+      var rules = new List<AttributeProperty>();
+      var errors = ImmutableArray.CreateBuilder<string>();
+      foreach (var record in encodedValue.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries))
+      {
+        var fields = record.Split(new[] { '~' }, StringSplitOptions.None);
+        if (fields.Length != 4)
+        {
+          errors.Add($"Invalid YouShouldSpellcheckAttributeArgument record '{record}'. Expected AttributeType, Member, Kind, and Languages metadata.");
+          continue;
+        }
+
+        var attributeName = fields[0].Trim();
+        var memberName = fields[1].Trim();
+        var kindText = fields[2].Trim();
+        var languagesText = fields[3].Trim();
+        if (attributeName.Length == 0 || memberName.Length == 0 || languagesText.Length == 0)
+        {
+          errors.Add($"Invalid YouShouldSpellcheckAttributeArgument record '{record}'. AttributeType, Member, and Languages must be non-empty.");
+          continue;
+        }
+
+        var kind = AttributeArgumentKind.Any;
+        if (kindText.Length > 0
+          && !Enum.TryParse(kindText, ignoreCase: true, out kind))
+        {
+          errors.Add($"Invalid attribute argument Kind '{kindText}' for '{attributeName}.{memberName}'. Use Any, NamedMember, or ConstructorParameter.");
+          continue;
+        }
+
+        var languages = CreateLanguages(
+          languagesText,
+          ',',
+          dictionaryMappings,
+          languageToolMappings);
+        if (languages.Length == 0)
+        {
+          errors.Add($"Attribute argument rule '{attributeName}.{memberName}' must specify at least one language.");
+          continue;
+        }
+
+        rules.Add(new AttributeProperty
+        {
+          AttributeName = attributeName,
+          PropertyName = memberName,
+          Kind = kind,
+          Languages = languages,
+        });
+      }
+
+      configurationErrors = errors.ToImmutable();
+      return rules.ToArray();
     }
 
     private static string? ReadString(AnalyzerConfigOptions globalOptions, string propertyName) =>
@@ -300,7 +391,15 @@ namespace YouShouldSpellcheck.Analyzer
         return null;
       }
 
-      return value
+      return CreateLanguages(value, separator, dictionaryMappings, languageToolMappings);
+    }
+
+    private static Language[] CreateLanguages(
+      string value,
+      char separator,
+      IReadOnlyDictionary<string, string> dictionaryMappings,
+      IReadOnlyDictionary<string, string> languageToolMappings) =>
+      value
         .Split(new[] { separator }, StringSplitOptions.RemoveEmptyEntries)
         .Select(languageTag => languageTag.Trim())
         .Where(languageTag => languageTag.Length > 0)
@@ -314,6 +413,28 @@ namespace YouShouldSpellcheck.Analyzer
             : languageTag,
         })
         .ToArray();
+
+    private static bool MatchesAttributeName(INamedTypeSymbol attributeType, string configuredName)
+    {
+      var normalizedConfiguredName = configuredName.Trim();
+      if (normalizedConfiguredName.StartsWith("global::", StringComparison.Ordinal))
+      {
+        normalizedConfiguredName = normalizedConfiguredName.Substring("global::".Length);
+      }
+
+      var fullName = attributeType.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
+      return string.Equals(normalizedConfiguredName, fullName, StringComparison.Ordinal)
+        || string.Equals(normalizedConfiguredName, RemoveAttributeSuffix(fullName), StringComparison.Ordinal)
+        || string.Equals(normalizedConfiguredName, attributeType.Name, StringComparison.Ordinal)
+        || string.Equals(normalizedConfiguredName, RemoveAttributeSuffix(attributeType.Name), StringComparison.Ordinal);
+    }
+
+    private static string RemoveAttributeSuffix(string attributeName)
+    {
+      const string suffix = "Attribute";
+      return attributeName.EndsWith(suffix, StringComparison.Ordinal)
+        ? attributeName.Substring(0, attributeName.Length - suffix.Length)
+        : attributeName;
     }
 
     private static bool TryReadListProperty(

@@ -88,30 +88,32 @@ try {
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <WarningsAsErrors>`$(WarningsAsErrors);YS103;YS104;YS106</WarningsAsErrors>
+    <WarningsAsErrors>`$(WarningsAsErrors);YS100;YS103;YS104;YS106</WarningsAsErrors>
     <RestorePackagesPath>`$(MSBuildProjectDirectory)\.packages</RestorePackagesPath>
+    <YouShouldSpellcheckDefaultLanguages>en-US</YouShouldSpellcheckDefaultLanguages>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="YouShouldSpellcheck.Analyzer" Version="$packageVersion" PrivateAssets="all" />
-    <AdditionalFiles Include="youshouldspellcheck.config.xml" />
+    <YouShouldSpellcheckAttributeArgument
+      Include="PackageConsumer.UiTextAttribute"
+      Member="Text"
+      Languages="en-US;de-DE" />
     <Content Include="CustomDictionary.en_US.txt" />
   </ItemGroup>
 </Project>
 "@
 
-  $settingsXml = @"
-<?xml version="1.0" encoding="utf-8"?>
-<SpellcheckSettings>
-  <DefaultLanguages>
-    <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
-  </DefaultLanguages>
-</SpellcheckSettings>
-"@
-
   $source = @"
 namespace PackageConsumer;
 
+[System.AttributeUsage(System.AttributeTargets.Class)]
+public sealed class UiTextAttribute : System.Attribute
+{
+  public string Text { get; set; } = string.Empty;
+}
+
 /// <summary>Provides meal preparation.</summary>
+[UiText(Text = "mispeling")]
 public class TypName
 {
   /// <summary>This mehtod prepares the meal.</summary>
@@ -120,7 +122,6 @@ public class TypName
 "@
 
   Set-Content -LiteralPath (Join-Path $testRoot 'PackageConsumer.csproj') -Value $consumerProject -Encoding utf8
-  Set-Content -LiteralPath (Join-Path $testRoot 'youshouldspellcheck.config.xml') -Value $settingsXml -Encoding utf8
   Set-Content -LiteralPath (Join-Path $testRoot 'Class1.cs') -Value $source -Encoding utf8
 
   Invoke-DotNet restore (Join-Path $testRoot 'PackageConsumer.csproj') --source $packageOutput --no-cache
@@ -151,6 +152,13 @@ public class TypName
     throw 'The package did not expose YouShouldSpellcheckLanguageToolMode as a compiler-visible property.'
   }
 
+  $attributeArgumentsProperty = @($evaluatedItems.Items.CompilerVisibleProperty | Where-Object {
+    $_.Identity -eq 'YouShouldSpellcheckAttributeArgumentsEncoded'
+  })
+  if ($attributeArgumentsProperty.Count -ne 1) {
+    throw 'The package did not expose attribute argument items through a compiler-visible property.'
+  }
+
   $visibleBundledFiles = @($evaluatedItems.Items.None | Where-Object {
     $_.FullPath -match '[\\/]buildTransitive[\\/]dictionaries[\\/]'
   })
@@ -163,7 +171,7 @@ public class TypName
     throw "The consumer build unexpectedly succeeded; the package analyzer did not raise YS103.`n$buildOutput"
   }
 
-  foreach ($expectedDiagnostic in @('YS103', 'YS104', 'YS106')) {
+  foreach ($expectedDiagnostic in @('YS100', 'YS103', 'YS104', 'YS106')) {
     if ($buildOutput -notmatch "\berror $expectedDiagnostic\b") {
       throw "The consumer build failed without the expected $expectedDiagnostic diagnostic.`n$buildOutput"
     }
@@ -173,13 +181,13 @@ public class TypName
     throw "The analyzer failed to load or execute in the package consumer.`n$buildOutput"
   }
 
-  Set-Content -LiteralPath (Join-Path $testRoot 'CustomDictionary.en_US.txt') -Value "Typ`nPrepate`nmehtod" -Encoding utf8
+  Set-Content -LiteralPath (Join-Path $testRoot 'CustomDictionary.en_US.txt') -Value "Ui`nTyp`nPrepate`nmehtod`nmispeling" -Encoding utf8
   $customDictionaryBuildOutput = (& dotnet build (Join-Path $testRoot 'PackageConsumer.csproj') --no-restore --verbosity minimal 2>&1 | Out-String)
   if ($LASTEXITCODE -ne 0) {
     throw "The consumer build failed after adding 'Typ' through a Content custom dictionary.`n$customDictionaryBuildOutput"
   }
 
-  if ($customDictionaryBuildOutput -match '\b(YS103|CS8032|AD0001)\b') {
+  if ($customDictionaryBuildOutput -match '\b(YS100|YS103|CS8032|AD0001)\b') {
     throw "The Content custom dictionary was not imported as an AdditionalFile.`n$customDictionaryBuildOutput"
   }
 

@@ -15,6 +15,31 @@ namespace YouShouldSpellcheck.Analyzer.Test
   [TestFixture]
   public class MsBuildConfigurationTests
   {
+    private const string AttributeSource = """
+      using UiText = Attributes.UiTextAttribute;
+
+      [UiText(1, "escapng", Caption = "Temprature")]
+      public class TypeName
+      {
+      }
+
+      namespace Attributes
+      {
+        public sealed class UiTextAttribute : System.Attribute
+        {
+          public UiTextAttribute(string label, int count)
+          {
+          }
+
+          public UiTextAttribute(int count, string text)
+          {
+          }
+
+          public string Caption { get; set; } = string.Empty;
+        }
+      }
+      """;
+
     [Test]
     public async Task Bcp47LanguagePropertyUsesMappedHunspellDictionary()
     {
@@ -85,6 +110,125 @@ namespace YouShouldSpellcheck.Analyzer.Test
           (MethodNameSpellcheckAnalyzer.MethodNameDiagnosticId, "Possible spelling mistake: Prepate"),
           (XmlTextSpellcheckAnalyzer.CommentDiagnosticId, "Possible spelling mistake: mehtod"),
         }));
+    }
+
+    [Test]
+    public async Task AttributeArgumentItemsMatchAliasNamedMemberAndSelectedConstructor()
+    {
+      var diagnostics = await AnalyzeAttributeArgumentsAsync(
+        AttributeSource,
+        "Attributes.UiTextAttribute~text~ConstructorParameter~en-US|Attributes.UiTextAttribute~Caption~NamedMember~en-US");
+
+      Assert.That(
+        diagnostics.Select(diagnostic => (diagnostic.Id, diagnostic.GetMessage())),
+        Is.EquivalentTo(new[]
+        {
+          (StringLiteralSpellcheckAnalyzer.AttributeArgumentStringDiagnosticId, "Possible spelling mistake: escapng"),
+          (StringLiteralSpellcheckAnalyzer.AttributeArgumentStringDiagnosticId, "Possible spelling mistake: Temprature"),
+        }));
+    }
+
+    [Test]
+    public async Task AttributeArgumentKindDoesNotMatchAnotherArgumentKind()
+    {
+      var diagnostics = await AnalyzeAttributeArgumentsAsync(
+        AttributeSource,
+        "Attributes.UiTextAttribute~Caption~ConstructorParameter~en-US");
+
+      Assert.That(diagnostics, Is.Empty);
+    }
+
+    [Test]
+    public async Task ConcurrentAttributeArgumentItemsStayCompilationScoped()
+    {
+      var constructorAnalysis = AnalyzeAttributeArgumentsAsync(
+        AttributeSource,
+        "Attributes.UiTextAttribute~text~ConstructorParameter~en-US");
+      var memberAnalysis = AnalyzeAttributeArgumentsAsync(
+        AttributeSource,
+        "Attributes.UiTextAttribute~Caption~NamedMember~en-US");
+
+      var results = await Task.WhenAll(constructorAnalysis, memberAnalysis);
+
+      Assert.That(
+        results[0].Select(diagnostic => diagnostic.GetMessage()),
+        Is.EqualTo(new[] { "Possible spelling mistake: escapng" }));
+      Assert.That(
+        results[1].Select(diagnostic => diagnostic.GetMessage()),
+        Is.EqualTo(new[] { "Possible spelling mistake: Temprature" }));
+    }
+
+    [Test]
+    public async Task AttributeArgumentItemsReplaceXmlAttributeRules()
+    {
+      const string settings = """
+        <SpellcheckSettings>
+          <Attributes>
+            <AttributeProperty>
+              <AttributeName>UiTextAttribute</AttributeName>
+              <PropertyName>Caption</PropertyName>
+              <Languages>
+                <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
+              </Languages>
+            </AttributeProperty>
+          </Attributes>
+        </SpellcheckSettings>
+        """;
+      var diagnostics = await AnalyzeAttributeArgumentsAsync(
+        AttributeSource,
+        "Attributes.UiTextAttribute~text~~en-US",
+        settings);
+
+      Assert.That(
+        diagnostics.Select(diagnostic => diagnostic.GetMessage()),
+        Is.EqualTo(new[] { "Possible spelling mistake: escapng" }));
+    }
+
+    [Test]
+    public async Task InvalidAttributeArgumentItemReportsConfigurationDiagnostic()
+    {
+      var diagnostics = await AnalyzeAttributeArgumentsAsync(
+        "public class TypeName { }",
+        "Attributes.UiTextAttribute~Caption~Unsupported~en-US");
+
+      Assert.That(diagnostics, Has.One.Matches<Diagnostic>(diagnostic =>
+        diagnostic.Id == StringLiteralSpellcheckAnalyzer.ConfigurationDiagnosticId
+        && diagnostic.GetMessage().Contains("Use Any, NamedMember, or ConstructorParameter.")));
+    }
+
+    private static async Task<ImmutableArray<Diagnostic>> AnalyzeAttributeArgumentsAsync(
+      string source,
+      string encodedAttributeArguments,
+      string xmlSettings = null)
+    {
+      var compilation = CSharpCompilation.Create(
+        "AttributeArgumentMsBuildConfigurationTest",
+        new[] { CSharpSyntaxTree.ParseText(source) },
+        new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) },
+        new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+      var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dictionaries");
+      var additionalFiles = ImmutableArray.CreateBuilder<AdditionalText>();
+      additionalFiles.Add(new InMemoryAdditionalText(
+        "/dictionaries/en_US.dic",
+        File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.dic"))));
+      additionalFiles.Add(new InMemoryAdditionalText(
+        "/dictionaries/en_US.aff",
+        File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff"))));
+      if (xmlSettings != null)
+      {
+        additionalFiles.Add(new InMemoryAdditionalText("/config/youshouldspellcheck.config.xml", xmlSettings));
+      }
+
+      var globalOptions = ImmutableDictionary<string, string>.Empty
+        .Add("build_property.YouShouldSpellcheckDictionaryMappingsEncoded", "en-US=en_US")
+        .Add("build_property.YouShouldSpellcheckAttributeArgumentsEncoded", encodedAttributeArguments);
+      var options = new AnalyzerOptions(
+        additionalFiles.ToImmutable(),
+        new TestAnalyzerConfigOptionsProvider(globalOptions));
+
+      return await compilation
+        .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new StringLiteralSpellcheckAnalyzer()), options)
+        .GetAnalyzerDiagnosticsAsync(CancellationToken.None);
     }
 
     private sealed class InMemoryAdditionalText : AdditionalText

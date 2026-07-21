@@ -81,6 +81,29 @@ For a project-owned dictionary, map the public tag to that dictionary's file bas
 
 Setting `YouShouldSpellcheckDictionaryMappings` replaces the package default value rather than extending it, so include every mapping required by that project, as in the example above.
 
+### Attribute argument configuration
+
+Use `YouShouldSpellcheckAttributeArgument` items to select string-valued attribute arguments. Each item identifies the fully qualified attribute type in `Include`, the named member or constructor parameter in `Member`, and its accepted languages in `Languages`:
+
+```xml
+<ItemGroup>
+  <YouShouldSpellcheckAttributeArgument
+    Include="System.ComponentModel.DataAnnotations.DisplayAttribute"
+    Member="Name"
+    Languages="en-US;de-DE" />
+
+  <YouShouldSpellcheckAttributeArgument
+    Include="MyCompany.UiTextAttribute"
+    Member="text"
+    Kind="ConstructorParameter"
+    Languages="de-DE" />
+</ItemGroup>
+```
+
+`Kind` is optional and defaults to `Any`. Use `NamedMember` to restrict a rule to a named attribute property or field, or `ConstructorParameter` to restrict it to a constructor argument. Member names are case-sensitive, like C# symbols. The analyzer resolves aliases, qualified attribute names, the optional C# `Attribute` suffix, and overloaded constructors semantically.
+
+The collection can also be declared in `Directory.Build.props`, `Directory.Build.targets`, or another imported MSBuild file, and ordinary MSBuild conditions apply. If the collection contains at least one item, it replaces the legacy XML `<Attributes>` collection. When it is empty, XML attribute rules remain the compatibility fallback. Invalid item metadata reports YS219.
+
 ### Shared configuration
 
 Place shared settings in a repository-root `Directory.Build.props` to apply them to all descendant projects:
@@ -141,7 +164,7 @@ dotnet build MyProject.csproj `
   '-p:YouShouldSpellcheckDictionaryMappings=en-US=en_US;de-AT=de_AT_custom'
 ```
 
-An explicitly set MSBuild property overrides its equivalent setting in `youshouldspellcheck.config.xml`. The XML file remains the compatibility fallback for unset properties. Attribute-specific language rules and suggestion limits remain XML settings for now.
+An explicitly set MSBuild property overrides its equivalent setting in `youshouldspellcheck.config.xml`. The XML file remains the compatibility fallback for unset properties. Attribute-specific rules use the MSBuild item collection described above; suggestion limits remain XML settings for now.
 
 LanguageTool uses the configured BCP 47 tag by default. Set `YouShouldSpellcheckLanguageToolMappings` only when a configured language tag needs a different LanguageTool code; it follows the same semicolon-separated `configured-tag=LanguageTool-tag` syntax as dictionary mappings.
 

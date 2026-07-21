@@ -94,6 +94,7 @@ namespace YouShouldSpellcheck.Analyzer
   {
     string AttributeName { get; }
     string PropertyName { get; }
+    AttributeArgumentKind Kind { get; }
     IEnumerable<ILanguage> Languages { get; }
   }
 
