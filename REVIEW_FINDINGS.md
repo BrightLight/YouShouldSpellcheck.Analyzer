@@ -11,6 +11,13 @@ At review time this verified ordinary project-reference compilation, but not the
 
 ## Implementation progress
 
+### 2026-07-21: remaining scalar configuration
+
+- [x] Added compiler-visible `YouShouldSpellcheckMaxSuggestionsPerLanguage` and `YouShouldSpellcheckMaxSuggestions` properties.
+- [x] Added `none` as an explicit empty-set sentinel for language-selection properties while preserving empty-property inheritance.
+- [x] Reported YS219 when `none` is combined with language tags.
+- [x] Removed the obsolete, unused `CustomDictionariesFolder` setting and its path-resolution code.
+
 ### 2026-07-21: MSBuild attribute argument configuration
 
 - [x] Added repeatable `YouShouldSpellcheckAttributeArgument` MSBuild items with attribute type, member, kind, and per-rule language metadata.

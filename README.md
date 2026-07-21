@@ -28,7 +28,7 @@ Bundled dictionary files remain hidden package assets and are not added as visib
 The following MSBuild properties are supported by the package. They are ordinary evaluated MSBuild properties, so they can be set in an individual `.csproj`, in `Directory.Build.props` or `Directory.Build.targets`, or in a `.props`/`.targets` file imported by the project. Use a `.props` file for shared defaults; use a `.targets` file only when the setting deliberately needs to be applied after project evaluation.
 
 All language-selection values use a semicolon-separated list of BCP 47 tags, such as `en-US;de-DE`. Tags are case-insensitive when resolved, but use conventional BCP 47 casing in source-controlled configuration.
-An unset or empty category-specific property inherits its documented fallback; MSBuild emits empty values for compiler-visible properties that a project did not set.
+An unset or empty category-specific property inherits its documented fallback; MSBuild emits empty values for compiler-visible properties that a project did not set. Set a language property to `none` to explicitly select no languages and disable that source category. The `none` sentinel must be the only value in the property.
 
 | Property | Value | Effect |
 | --- | --- | --- |
@@ -50,6 +50,8 @@ An unset or empty category-specific property inherits its documented fallback; M
 | `YouShouldSpellcheckLanguageToolScope` | `StringLiteralsAndAttributeArguments`, `AttributeArgumentsOnly`, or `StringLiteralsOnly` | Overrides the XML `LanguageToolScope` setting. |
 | `YouShouldSpellcheckLanguageToolTimeoutSeconds` | Positive integer | Overrides the XML LanguageTool request timeout; values below 1 are clamped to 1. |
 | `YouShouldSpellcheckLanguageToolMaxConcurrency` | Positive integer | Overrides the XML maximum simultaneous LanguageTool requests; values below 1 are clamped to 1. |
+| `YouShouldSpellcheckMaxSuggestionsPerLanguage` | Non-negative integer | Maximum Hunspell suggestions retained per configured language; `0` removes the limit. |
+| `YouShouldSpellcheckMaxSuggestions` | Non-negative integer | Maximum suggestions retained per diagnostic; `0` removes the limit. |
 
 The package provides these bundled dictionary mappings by default: `de-DE=de_DE_frami`, `en-GB=en_GB`, `en-US=en_US`, `nl-NL=nl_NL`, `ru-RU=russian-aot-ieyo`, `sv-FI=sv_FI`, `sv-SE=sv_SE`, and `uk-UA=uk_UA`.
 
@@ -164,7 +166,7 @@ dotnet build MyProject.csproj `
   '-p:YouShouldSpellcheckDictionaryMappings=en-US=en_US;de-AT=de_AT_custom'
 ```
 
-An explicitly set MSBuild property overrides its equivalent setting in `youshouldspellcheck.config.xml`. The XML file remains the compatibility fallback for unset properties. Attribute-specific rules use the MSBuild item collection described above; suggestion limits remain XML settings for now.
+An explicitly set MSBuild property overrides its equivalent setting in `youshouldspellcheck.config.xml`. The XML file remains the compatibility fallback for unset properties. Attribute-specific rules use the MSBuild item collection described above.
 
 LanguageTool uses the configured BCP 47 tag by default. Set `YouShouldSpellcheckLanguageToolMappings` only when a configured language tag needs a different LanguageTool code; it follows the same semicolon-separated `configured-tag=LanguageTool-tag` syntax as dictionary mappings.
 
@@ -194,17 +196,15 @@ Words can be managed directly in the text file or through the spelling diagnosti
 
 These actions create or update a Roslyn `AdditionalDocument`, so the edit is represented as a solution change instead of an untracked filesystem side effect. This allows supporting IDE hosts to preview, apply, and undo the change through their normal project-system integration. An IDE may display a newly created `.txt` file with a `Content` build action; the package's imported build targets also pass matching project-root files to Roslyn as `AdditionalFiles` during evaluation.
 
-The legacy `<CustomDictionariesFolder>` configuration element is retained for configuration compatibility but is no longer used during analysis. Custom dictionary files must be supplied through `AdditionalFiles` as shown above.
-
 ## Suggestion limits
 
-To keep the IDE code-fix menu focused, the analyzer preserves Hunspell's suggestion order, removes case-insensitive duplicates, and reports at most five suggestions per configured language and eight suggestions per diagnostic by default. Configure either limit in `youshouldspellcheck.config.xml`; use `0` to remove that limit:
+To keep the IDE code-fix menu focused, the analyzer preserves Hunspell's suggestion order, removes case-insensitive duplicates, and reports at most five suggestions per configured language and eight suggestions per diagnostic by default. Configure either limit as an MSBuild property; use `0` to remove that limit:
 
 ```xml
-<SpellcheckSettings>
-  <MaxSuggestionsPerLanguage>5</MaxSuggestionsPerLanguage>
-  <MaxSuggestions>8</MaxSuggestions>
-</SpellcheckSettings>
+<PropertyGroup>
+  <YouShouldSpellcheckMaxSuggestionsPerLanguage>5</YouShouldSpellcheckMaxSuggestionsPerLanguage>
+  <YouShouldSpellcheckMaxSuggestions>8</YouShouldSpellcheckMaxSuggestions>
+</PropertyGroup>
 ```
 
 The overall limit is shared by all local dictionaries. LanguageTool has no per-language relevance score in its response, so its distinct replacements use the overall `MaxSuggestions` limit and retain server order.

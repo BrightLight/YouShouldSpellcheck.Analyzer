@@ -11,7 +11,7 @@
     [Test]
     public void MissingAttributesDefaultsToEmpty()
     {
-      var settings = new SpellcheckSettingsWrapper(new SpellcheckSettings(), null);
+      var settings = new SpellcheckSettingsWrapper(new SpellcheckSettings());
 
       Assert.That(settings.Attributes, Is.Empty);
     }
@@ -19,10 +19,9 @@
     [Test]
     public void SuggestionLimitsDefaultAndClampToZero()
     {
-      var defaults = new SpellcheckSettingsWrapper(new SpellcheckSettings(), null);
+      var defaults = new SpellcheckSettingsWrapper(new SpellcheckSettings());
       var unlimited = new SpellcheckSettingsWrapper(
-        new SpellcheckSettings { MaxSuggestionsPerLanguage = -1, MaxSuggestions = 0 },
-        null);
+        new SpellcheckSettings { MaxSuggestionsPerLanguage = -1, MaxSuggestions = 0 });
 
       Assert.That(defaults.MaxSuggestionsPerLanguage, Is.EqualTo(5));
       Assert.That(defaults.MaxSuggestions, Is.EqualTo(8));
@@ -30,18 +29,5 @@
       Assert.That(unlimited.MaxSuggestions, Is.Zero);
     }
 
-    [Test]
-    public void TestCustomDictionariesFolder()
-    {
-      var relativePath = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"..\test\dictionaries" }, @"C:\config-folder\config.xml");
-      var absolutePath = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"C:\my-custom\dictionaries" }, @"C:\config.xml");
-      var envPath = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"%SystemRoot%\dictionaries" }, @"C:\config.xml");
-      var envPath2 = new SpellcheckSettingsWrapper(new SpellcheckSettings { CustomDictionariesFolder = @"%SystemRoot%\..\test\dictionaries" }, @"C:\config.xml");
-
-      Assert.That(relativePath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\test\dictionaries"));
-      Assert.That(absolutePath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\my-custom\dictionaries"));
-      Assert.That(envPath.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\%systemroot%\dictionaries"));
-      Assert.That(envPath2.CustomDictionariesFolder.ToLower(), Is.EqualTo(@"c:\test\dictionaries"));
-    }
   }
 }

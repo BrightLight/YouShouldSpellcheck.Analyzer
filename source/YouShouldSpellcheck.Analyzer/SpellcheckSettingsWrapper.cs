@@ -2,18 +2,15 @@ namespace YouShouldSpellcheck.Analyzer
 {
   using System;
   using System.Collections.Generic;
-  using System.IO;
   using System.Linq;
 
   public class SpellcheckSettingsWrapper : ISpellcheckSettings
   {
     private readonly SpellcheckSettings spellcheckSettings;
 
-    public SpellcheckSettingsWrapper(SpellcheckSettings spellcheckSettings, string? settingsPath)
+    public SpellcheckSettingsWrapper(SpellcheckSettings spellcheckSettings)
     {
       this.spellcheckSettings = spellcheckSettings ?? throw new ArgumentNullException(nameof(spellcheckSettings));
-
-      this.CustomDictionariesFolder = EvaluateCustomDirectoryFolder(settingsPath, this.spellcheckSettings.CustomDictionariesFolder);
     }
 
     public IEnumerable<ILanguage> DefaultLanguages => this.spellcheckSettings.DefaultLanguages;
@@ -41,8 +38,6 @@ namespace YouShouldSpellcheck.Analyzer
     public IEnumerable<IAttributeProperty> Attributes =>
       this.spellcheckSettings.Attributes?.Select(x => new AttributePropertyWrapper(x)) ?? Enumerable.Empty<IAttributeProperty>();
 
-    public string? CustomDictionariesFolder { get; }
-
     public string? LanguageToolUrl => this.spellcheckSettings.LanguageToolUrl;
 
     public LanguageToolExecutionMode LanguageToolMode => this.spellcheckSettings.LanguageToolMode;
@@ -57,38 +52,6 @@ namespace YouShouldSpellcheck.Analyzer
 
     public int MaxSuggestions => Math.Max(0, this.spellcheckSettings.MaxSuggestions);
 
-    private static string? EvaluateCustomDirectoryFolder(string? configFile, string? rawPath)
-    {
-      if (rawPath == null)
-      {
-        return null;
-      }
-
-      // Analyzer configuration must be determined entirely by tracked project inputs.
-      // Environment variable expansion would make identical compilations behave differently.
-      var path = rawPath;
-      var basePath = configFile == null ? Path.GetFullPath(".") : Path.GetDirectoryName(configFile);
-
-      string finalPath;
-      if (!Path.IsPathRooted(path) || "\\".Equals(Path.GetPathRoot(path)))
-      {
-        if (path.StartsWith(Path.DirectorySeparatorChar.ToString()))
-        {
-          finalPath = Path.Combine(Path.GetPathRoot(basePath), path.TrimStart(Path.DirectorySeparatorChar));
-        }
-        else
-        {
-          finalPath = Path.Combine(basePath, path);
-        }
-      }
-      else
-      {
-        finalPath = path;
-      }
-
-      // resolves any internal "..\" to get the true full path.
-      return Path.GetFullPath(finalPath);
-    }
   }
 
   public class AttributePropertyWrapper : IAttributeProperty

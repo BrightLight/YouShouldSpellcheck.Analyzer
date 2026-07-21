@@ -39,8 +39,6 @@ namespace YouShouldSpellcheck.Analyzer
 
     public AttributeProperty[]? Attributes { get; init; }
 
-    public string? CustomDictionariesFolder { get; init; }
-
     public string? LanguageToolUrl { get; init; }
 
     public LanguageToolExecutionMode LanguageToolMode { get; init; } = LanguageToolExecutionMode.Off;

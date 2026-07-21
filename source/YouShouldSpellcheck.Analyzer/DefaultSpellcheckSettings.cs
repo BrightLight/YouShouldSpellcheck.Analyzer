@@ -45,9 +45,6 @@ namespace YouShouldSpellcheck.Analyzer
     public IEnumerable<IAttributeProperty> Attributes => [];
 
     /// <inheritdoc />
-    public string CustomDictionariesFolder => string.Empty;
-
-    /// <inheritdoc />
     public string LanguageToolUrl => string.Empty;
 
     public LanguageToolExecutionMode LanguageToolMode => LanguageToolExecutionMode.Off;

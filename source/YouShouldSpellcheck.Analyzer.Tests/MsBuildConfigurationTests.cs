@@ -113,6 +113,59 @@ namespace YouShouldSpellcheck.Analyzer.Test
     }
 
     [Test]
+    public async Task NoneLanguageSentinelDisablesCategoryFallback()
+    {
+      var globalOptions = ImmutableDictionary<string, string>.Empty
+        .Add("build_property.YouShouldSpellcheckDefaultLanguagesEncoded", "en-US")
+        .Add("build_property.YouShouldSpellcheckStringLiteralLanguagesEncoded", "NoNe")
+        .Add("build_property.YouShouldSpellcheckDictionaryMappingsEncoded", "en-US=en_US");
+
+      var diagnostics = await AnalyzeStringLiteralsAsync(
+        "public class TypeName { public const string Text = \"Temprature\"; }",
+        globalOptions);
+
+      Assert.That(diagnostics, Is.Empty);
+    }
+
+    [Test]
+    public async Task NoneLanguageSentinelCannotBeCombinedWithLanguages()
+    {
+      var globalOptions = ImmutableDictionary<string, string>.Empty
+        .Add("build_property.YouShouldSpellcheckDefaultLanguagesEncoded", "en-US")
+        .Add("build_property.YouShouldSpellcheckStringLiteralLanguagesEncoded", "en-US|none")
+        .Add("build_property.YouShouldSpellcheckDictionaryMappingsEncoded", "en-US=en_US");
+
+      var diagnostics = await AnalyzeStringLiteralsAsync(
+        "public class TypeName { public const string Text = \"Temprature\"; }",
+        globalOptions);
+
+      Assert.That(diagnostics, Has.One.Matches<Diagnostic>(diagnostic =>
+        diagnostic.Id == StringLiteralSpellcheckAnalyzer.ConfigurationDiagnosticId
+        && diagnostic.GetMessage().Contains("must be the only configured language")));
+    }
+
+    [Test]
+    public async Task SuggestionLimitPropertiesOverrideDefaults()
+    {
+      var baseOptions = ImmutableDictionary<string, string>.Empty
+        .Add("build_property.YouShouldSpellcheckDefaultLanguagesEncoded", "en-US")
+        .Add("build_property.YouShouldSpellcheckDictionaryMappingsEncoded", "en-US=en_US");
+      var perLanguageDiagnostics = await AnalyzeStringLiteralsAsync(
+        "public class TypeName { public const string Text = \"lne\"; }",
+        baseOptions
+          .Add("build_property.YouShouldSpellcheckMaxSuggestionsPerLanguage", "1")
+          .Add("build_property.YouShouldSpellcheckMaxSuggestions", "8"));
+      var overallDiagnostics = await AnalyzeStringLiteralsAsync(
+        "public class TypeName { public const string Text = \"lne\"; }",
+        baseOptions
+          .Add("build_property.YouShouldSpellcheckMaxSuggestionsPerLanguage", "5")
+          .Add("build_property.YouShouldSpellcheckMaxSuggestions", "2"));
+
+      Assert.That(CountSuggestions(perLanguageDiagnostics.Single()), Is.EqualTo(1));
+      Assert.That(CountSuggestions(overallDiagnostics.Single()), Is.EqualTo(2));
+    }
+
+    [Test]
     public async Task AttributeArgumentItemsMatchAliasNamedMemberAndSelectedConstructor()
     {
       var diagnostics = await AnalyzeAttributeArgumentsAsync(
@@ -201,8 +254,19 @@ namespace YouShouldSpellcheck.Analyzer.Test
       string encodedAttributeArguments,
       string xmlSettings = null)
     {
+      var globalOptions = ImmutableDictionary<string, string>.Empty
+        .Add("build_property.YouShouldSpellcheckDictionaryMappingsEncoded", "en-US=en_US")
+        .Add("build_property.YouShouldSpellcheckAttributeArgumentsEncoded", encodedAttributeArguments);
+      return await AnalyzeStringLiteralsAsync(source, globalOptions, xmlSettings);
+    }
+
+    private static async Task<ImmutableArray<Diagnostic>> AnalyzeStringLiteralsAsync(
+      string source,
+      ImmutableDictionary<string, string> globalOptions,
+      string xmlSettings = null)
+    {
       var compilation = CSharpCompilation.Create(
-        "AttributeArgumentMsBuildConfigurationTest",
+        "StringLiteralMsBuildConfigurationTest",
         new[] { CSharpSyntaxTree.ParseText(source) },
         new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) },
         new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
@@ -219,9 +283,6 @@ namespace YouShouldSpellcheck.Analyzer.Test
         additionalFiles.Add(new InMemoryAdditionalText("/config/youshouldspellcheck.config.xml", xmlSettings));
       }
 
-      var globalOptions = ImmutableDictionary<string, string>.Empty
-        .Add("build_property.YouShouldSpellcheckDictionaryMappingsEncoded", "en-US=en_US")
-        .Add("build_property.YouShouldSpellcheckAttributeArgumentsEncoded", encodedAttributeArguments);
       var options = new AnalyzerOptions(
         additionalFiles.ToImmutable(),
         new TestAnalyzerConfigOptionsProvider(globalOptions));
@@ -230,6 +291,11 @@ namespace YouShouldSpellcheck.Analyzer.Test
         .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new StringLiteralSpellcheckAnalyzer()), options)
         .GetAnalyzerDiagnosticsAsync(CancellationToken.None);
     }
+
+    private static int CountSuggestions(Diagnostic diagnostic) =>
+      diagnostic.Properties.Count(property =>
+        property.Key.StartsWith("localSuggestion_", System.StringComparison.Ordinal)
+        && !property.Key.StartsWith("localSuggestionLanguage_", System.StringComparison.Ordinal));
 
     private sealed class InMemoryAdditionalText : AdditionalText
     {

@@ -65,8 +65,6 @@ namespace YouShouldSpellcheck.Analyzer
 
     IEnumerable<IAttributeProperty> Attributes { get; }
 
-    string? CustomDictionariesFolder { get; }
-
     string? LanguageToolUrl { get; }
 
     LanguageToolExecutionMode LanguageToolMode { get; }

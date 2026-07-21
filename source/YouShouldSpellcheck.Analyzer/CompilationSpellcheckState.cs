@@ -58,10 +58,9 @@ namespace YouShouldSpellcheck.Analyzer
     public static CompilationSpellcheckState Create(AnalyzerOptions options, CancellationToken cancellationToken)
     {
       var additionalFiles = options?.AdditionalFiles ?? ImmutableArray<AdditionalText>.Empty;
-      var xmlSettings = ReadSettings(additionalFiles, cancellationToken, out var settingsPath);
+      var xmlSettings = ReadSettings(additionalFiles, cancellationToken);
       var settings = ApplyMsBuildOverrides(
         xmlSettings ?? new SpellcheckSettings(),
-        settingsPath,
         options,
         out var configurationErrors);
       var languageToolMode = ReadLanguageToolModeOverride(options) ?? settings.LanguageToolMode;
@@ -199,12 +198,10 @@ namespace YouShouldSpellcheck.Analyzer
 
     private static SpellcheckSettings? ReadSettings(
       ImmutableArray<AdditionalText> additionalFiles,
-      CancellationToken cancellationToken,
-      out string? settingsPath)
+      CancellationToken cancellationToken)
     {
       var settingsFile = additionalFiles.FirstOrDefault(file =>
         string.Equals(Path.GetFileName(file.Path), SettingsFileName, StringComparison.OrdinalIgnoreCase));
-      settingsPath = settingsFile?.Path;
       var settingsText = settingsFile?.GetText(cancellationToken);
       if (settingsText == null)
       {
@@ -226,7 +223,6 @@ namespace YouShouldSpellcheck.Analyzer
 
     private static ISpellcheckSettings ApplyMsBuildOverrides(
       SpellcheckSettings settings,
-      string? settingsPath,
       AnalyzerOptions? options,
       out ImmutableArray<string> configurationErrors)
     {
@@ -234,41 +230,43 @@ namespace YouShouldSpellcheck.Analyzer
       if (globalOptions == null)
       {
         configurationErrors = ImmutableArray<string>.Empty;
-        return new SpellcheckSettingsWrapper(settings, settingsPath);
+        return new SpellcheckSettingsWrapper(settings);
       }
 
       var dictionaryMappings = ReadMappings(globalOptions, "YouShouldSpellcheckDictionaryMappings");
       var languageToolMappings = ReadMappings(globalOptions, "YouShouldSpellcheckLanguageToolMappings");
+      var errors = ImmutableArray.CreateBuilder<string>();
       var attributeArguments = ReadAttributeArguments(
         globalOptions,
         dictionaryMappings,
         languageToolMappings,
-        out configurationErrors);
+        out var attributeArgumentErrors);
+      errors.AddRange(attributeArgumentErrors);
       var overriddenSettings = new SpellcheckSettings
       {
-        DefaultLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckDefaultLanguages", dictionaryMappings, languageToolMappings) ?? settings.DefaultLanguages,
-        IdentifierLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckIdentifierLanguages", dictionaryMappings, languageToolMappings) ?? settings.IdentifierLanguages,
-        ClassNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckClassNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.ClassNameLanguages,
-        MethodNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckMethodNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.MethodNameLanguages,
-        VariableNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckVariableNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.VariableNameLanguages,
-        PropertyNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckPropertyNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.PropertyNameLanguages,
-        EnumNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckEnumNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.EnumNameLanguages,
-        EnumMemberNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckEnumMemberNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.EnumMemberNameLanguages,
-        EventNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckEventNameLanguages", dictionaryMappings, languageToolMappings) ?? settings.EventNameLanguages,
-        CommentLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckCommentLanguages", dictionaryMappings, languageToolMappings) ?? settings.CommentLanguages,
-        StringLiteralLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckStringLiteralLanguages", dictionaryMappings, languageToolMappings) ?? settings.StringLiteralLanguages,
+        DefaultLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckDefaultLanguages", dictionaryMappings, languageToolMappings, errors) ?? settings.DefaultLanguages,
+        IdentifierLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckIdentifierLanguages", dictionaryMappings, languageToolMappings, errors) ?? settings.IdentifierLanguages,
+        ClassNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckClassNameLanguages", dictionaryMappings, languageToolMappings, errors) ?? settings.ClassNameLanguages,
+        MethodNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckMethodNameLanguages", dictionaryMappings, languageToolMappings, errors) ?? settings.MethodNameLanguages,
+        VariableNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckVariableNameLanguages", dictionaryMappings, languageToolMappings, errors) ?? settings.VariableNameLanguages,
+        PropertyNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckPropertyNameLanguages", dictionaryMappings, languageToolMappings, errors) ?? settings.PropertyNameLanguages,
+        EnumNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckEnumNameLanguages", dictionaryMappings, languageToolMappings, errors) ?? settings.EnumNameLanguages,
+        EnumMemberNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckEnumMemberNameLanguages", dictionaryMappings, languageToolMappings, errors) ?? settings.EnumMemberNameLanguages,
+        EventNameLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckEventNameLanguages", dictionaryMappings, languageToolMappings, errors) ?? settings.EventNameLanguages,
+        CommentLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckCommentLanguages", dictionaryMappings, languageToolMappings, errors) ?? settings.CommentLanguages,
+        StringLiteralLanguages = ReadLanguages(globalOptions, "YouShouldSpellcheckStringLiteralLanguages", dictionaryMappings, languageToolMappings, errors) ?? settings.StringLiteralLanguages,
         Attributes = attributeArguments ?? settings.Attributes,
-        CustomDictionariesFolder = settings.CustomDictionariesFolder,
         LanguageToolUrl = ReadString(globalOptions, "YouShouldSpellcheckLanguageToolUrl") ?? settings.LanguageToolUrl,
         LanguageToolMode = settings.LanguageToolMode,
         LanguageToolScope = ReadEnum<LanguageToolScope>(globalOptions, "YouShouldSpellcheckLanguageToolScope") ?? settings.LanguageToolScope,
         LanguageToolTimeoutSeconds = ReadInteger(globalOptions, "YouShouldSpellcheckLanguageToolTimeoutSeconds") ?? settings.LanguageToolTimeoutSeconds,
         LanguageToolMaxConcurrency = ReadInteger(globalOptions, "YouShouldSpellcheckLanguageToolMaxConcurrency") ?? settings.LanguageToolMaxConcurrency,
-        MaxSuggestionsPerLanguage = settings.MaxSuggestionsPerLanguage,
-        MaxSuggestions = settings.MaxSuggestions,
+        MaxSuggestionsPerLanguage = ReadInteger(globalOptions, "YouShouldSpellcheckMaxSuggestionsPerLanguage") ?? settings.MaxSuggestionsPerLanguage,
+        MaxSuggestions = ReadInteger(globalOptions, "YouShouldSpellcheckMaxSuggestions") ?? settings.MaxSuggestions,
       };
 
-      return new SpellcheckSettingsWrapper(overriddenSettings, settingsPath);
+      configurationErrors = errors.ToImmutable();
+      return new SpellcheckSettingsWrapper(overriddenSettings);
     }
 
     private static AttributeProperty[]? ReadAttributeArguments(
@@ -383,7 +381,8 @@ namespace YouShouldSpellcheck.Analyzer
       AnalyzerConfigOptions globalOptions,
       string propertyName,
       IReadOnlyDictionary<string, string> dictionaryMappings,
-      IReadOnlyDictionary<string, string> languageToolMappings)
+      IReadOnlyDictionary<string, string> languageToolMappings,
+      ImmutableArray<string>.Builder configurationErrors)
     {
       if (!TryReadListProperty(globalOptions, propertyName, out var value, out var separator)
         || string.IsNullOrWhiteSpace(value))
@@ -391,7 +390,26 @@ namespace YouShouldSpellcheck.Analyzer
         return null;
       }
 
-      return CreateLanguages(value, separator, dictionaryMappings, languageToolMappings);
+      var languageTags = value
+        .Split(new[] { separator }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(languageTag => languageTag.Trim())
+        .Where(languageTag => languageTag.Length > 0)
+        .ToArray();
+      var hasNone = languageTags.Any(languageTag => string.Equals(languageTag, "none", StringComparison.OrdinalIgnoreCase));
+      if (hasNone && languageTags.Length == 1)
+      {
+        return [];
+      }
+
+      if (hasNone)
+      {
+        configurationErrors.Add($"Invalid {propertyName} value. The 'none' sentinel must be the only configured language.");
+        languageTags = languageTags
+          .Where(languageTag => !string.Equals(languageTag, "none", StringComparison.OrdinalIgnoreCase))
+          .ToArray();
+      }
+
+      return CreateLanguages(languageTags, dictionaryMappings, languageToolMappings);
     }
 
     private static Language[] CreateLanguages(
@@ -399,8 +417,16 @@ namespace YouShouldSpellcheck.Analyzer
       char separator,
       IReadOnlyDictionary<string, string> dictionaryMappings,
       IReadOnlyDictionary<string, string> languageToolMappings) =>
-      value
-        .Split(new[] { separator }, StringSplitOptions.RemoveEmptyEntries)
+      CreateLanguages(
+        value.Split(new[] { separator }, StringSplitOptions.RemoveEmptyEntries),
+        dictionaryMappings,
+        languageToolMappings);
+
+    private static Language[] CreateLanguages(
+      IEnumerable<string> languageTags,
+      IReadOnlyDictionary<string, string> dictionaryMappings,
+      IReadOnlyDictionary<string, string> languageToolMappings) =>
+      languageTags
         .Select(languageTag => languageTag.Trim())
         .Where(languageTag => languageTag.Length > 0)
         .Select(languageTag => new Language

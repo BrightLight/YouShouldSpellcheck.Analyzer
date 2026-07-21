@@ -88,9 +88,12 @@ try {
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <WarningsAsErrors>`$(WarningsAsErrors);YS100;YS103;YS104;YS106</WarningsAsErrors>
+    <WarningsAsErrors>`$(WarningsAsErrors);YS100;YS101;YS103;YS104;YS106</WarningsAsErrors>
     <RestorePackagesPath>`$(MSBuildProjectDirectory)\.packages</RestorePackagesPath>
     <YouShouldSpellcheckDefaultLanguages>en-US</YouShouldSpellcheckDefaultLanguages>
+    <YouShouldSpellcheckStringLiteralLanguages>none</YouShouldSpellcheckStringLiteralLanguages>
+    <YouShouldSpellcheckMaxSuggestionsPerLanguage>3</YouShouldSpellcheckMaxSuggestionsPerLanguage>
+    <YouShouldSpellcheckMaxSuggestions>4</YouShouldSpellcheckMaxSuggestions>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="YouShouldSpellcheck.Analyzer" Version="$packageVersion" PrivateAssets="all" />
@@ -116,6 +119,8 @@ public sealed class UiTextAttribute : System.Attribute
 [UiText(Text = "mispeling")]
 public class TypName
 {
+  public const string IgnoredText = "ordnary";
+
   /// <summary>This mehtod prepares the meal.</summary>
   public string PrepateMeal() => string.Empty;
 }
@@ -159,6 +164,15 @@ public class TypName
     throw 'The package did not expose attribute argument items through a compiler-visible property.'
   }
 
+  foreach ($suggestionPropertyName in @('YouShouldSpellcheckMaxSuggestionsPerLanguage', 'YouShouldSpellcheckMaxSuggestions')) {
+    $suggestionProperty = @($evaluatedItems.Items.CompilerVisibleProperty | Where-Object {
+      $_.Identity -eq $suggestionPropertyName
+    })
+    if ($suggestionProperty.Count -ne 1) {
+      throw "The package did not expose $suggestionPropertyName as a compiler-visible property."
+    }
+  }
+
   $visibleBundledFiles = @($evaluatedItems.Items.None | Where-Object {
     $_.FullPath -match '[\\/]buildTransitive[\\/]dictionaries[\\/]'
   })
@@ -175,6 +189,10 @@ public class TypName
     if ($buildOutput -notmatch "\berror $expectedDiagnostic\b") {
       throw "The consumer build failed without the expected $expectedDiagnostic diagnostic.`n$buildOutput"
     }
+  }
+
+  if ($buildOutput -match '\b(?:error|warning) YS101\b') {
+    throw "The 'none' language sentinel did not disable string-literal diagnostics.`n$buildOutput"
   }
 
   if ($buildOutput -match '\b(CS8032|AD0001)\b') {
