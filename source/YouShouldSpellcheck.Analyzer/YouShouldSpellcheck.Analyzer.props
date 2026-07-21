@@ -8,6 +8,12 @@
     <!-- Public language tags use BCP 47. Hunspell file names remain an implementation detail. -->
     <YouShouldSpellcheckDictionaryMappings Condition="'$(YouShouldSpellcheckDictionaryMappings)' == ''">de-DE=de_DE_frami;en-GB=en_GB;en-US=en_US;nl-NL=nl_NL;ru-RU=russian-aot-ieyo;sv-FI=sv_FI;sv-SE=sv_SE;uk-UA=uk_UA</YouShouldSpellcheckDictionaryMappings>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <!-- Attribute rules are configuration records, not project files. -->
+    <YouShouldSpellcheckAttributeArgument>
+      <Visible>false</Visible>
+    </YouShouldSpellcheckAttributeArgument>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolMode" />
     <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolUrl" />

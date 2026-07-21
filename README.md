@@ -104,7 +104,7 @@ Use `YouShouldSpellcheckAttributeArgument` items to select string-valued attribu
 
 `Kind` is optional and defaults to `Any`. Use `NamedMember` to restrict a rule to a named attribute property or field, or `ConstructorParameter` to restrict it to a constructor argument. Member names are case-sensitive, like C# symbols. The analyzer resolves aliases, qualified attribute names, the optional C# `Attribute` suffix, and overloaded constructors semantically.
 
-The collection can also be declared in `Directory.Build.props`, `Directory.Build.targets`, or another imported MSBuild file, and ordinary MSBuild conditions apply. An empty collection configures no attribute arguments. Invalid item metadata reports YS219.
+The collection can also be declared in `Directory.Build.props`, `Directory.Build.targets`, or another imported MSBuild file, and ordinary MSBuild conditions apply. These configuration items are hidden from Solution Explorer because their `Include` values identify attribute types rather than project files. An empty collection configures no attribute arguments. Invalid item metadata reports YS219.
 
 ### Shared configuration
 
