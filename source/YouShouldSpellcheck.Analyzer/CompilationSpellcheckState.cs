@@ -268,12 +268,13 @@ namespace YouShouldSpellcheck.Analyzer
     private static Dictionary<string, string> ReadMappings(AnalyzerConfigOptions globalOptions, string propertyName)
     {
       var mappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-      if (!globalOptions.TryGetValue($"build_property.{propertyName}", out var value) || string.IsNullOrWhiteSpace(value))
+      if (!TryReadListProperty(globalOptions, propertyName, out var value, out var separator)
+        || string.IsNullOrWhiteSpace(value))
       {
         return mappings;
       }
 
-      foreach (var entry in value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+      foreach (var entry in value.Split(new[] { separator }, StringSplitOptions.RemoveEmptyEntries))
       {
         var separatorIndex = entry.IndexOf('=');
         if (separatorIndex <= 0 || separatorIndex == entry.Length - 1)
@@ -293,13 +294,14 @@ namespace YouShouldSpellcheck.Analyzer
       IReadOnlyDictionary<string, string> dictionaryMappings,
       IReadOnlyDictionary<string, string> languageToolMappings)
     {
-      if (!globalOptions.TryGetValue($"build_property.{propertyName}", out var value))
+      if (!TryReadListProperty(globalOptions, propertyName, out var value, out var separator)
+        || string.IsNullOrWhiteSpace(value))
       {
         return null;
       }
 
       return value
-        .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+        .Split(new[] { separator }, StringSplitOptions.RemoveEmptyEntries)
         .Select(languageTag => languageTag.Trim())
         .Where(languageTag => languageTag.Length > 0)
         .Select(languageTag => new Language
@@ -312,6 +314,32 @@ namespace YouShouldSpellcheck.Analyzer
             : languageTag,
         })
         .ToArray();
+    }
+
+    private static bool TryReadListProperty(
+      AnalyzerConfigOptions globalOptions,
+      string propertyName,
+      out string value,
+      out char separator)
+    {
+      var hasEncodedValue = globalOptions.TryGetValue($"build_property.{propertyName}Encoded", out var encodedValue);
+      if (hasEncodedValue && !string.IsNullOrWhiteSpace(encodedValue))
+      {
+        value = encodedValue!;
+        separator = '|';
+        return true;
+      }
+
+      separator = ';';
+      if (globalOptions.TryGetValue($"build_property.{propertyName}", out var legacyValue))
+      {
+        value = legacyValue ?? string.Empty;
+        return true;
+      }
+
+      value = encodedValue ?? string.Empty;
+      separator = '|';
+      return hasEncodedValue;
     }
 
     private static ImmutableDictionary<string, DictionarySources> ReadDictionarySources(

@@ -28,6 +28,7 @@ Bundled dictionary files remain hidden package assets and are not added as visib
 The following MSBuild properties are supported by the package. They are ordinary evaluated MSBuild properties, so they can be set in an individual `.csproj`, in `Directory.Build.props` or `Directory.Build.targets`, or in a `.props`/`.targets` file imported by the project. Use a `.props` file for shared defaults; use a `.targets` file only when the setting deliberately needs to be applied after project evaluation.
 
 All language-selection values use a semicolon-separated list of BCP 47 tags, such as `en-US;de-DE`. Tags are case-insensitive when resolved, but use conventional BCP 47 casing in source-controlled configuration.
+An unset or empty category-specific property inherits its documented fallback; MSBuild emits empty values for compiler-visible properties that a project did not set.
 
 | Property | Value | Effect |
 | --- | --- | --- |

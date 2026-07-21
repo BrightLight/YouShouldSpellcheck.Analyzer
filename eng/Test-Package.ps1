@@ -49,6 +49,7 @@ try {
     $packageEntries = @($packageArchive.Entries | ForEach-Object { $_.FullName })
     $requiredEntries = @(
       'analyzers/dotnet/cs/YouShouldSpellcheck.Analyzer.dll',
+      'analyzers/dotnet/cs/YouShouldSpellcheck.Analyzer.CodeFixes.dll',
       'analyzers/dotnet/cs/WeCantSpell.Hunspell.dll',
       'buildTransitive/YouShouldSpellcheck.Analyzer.props',
       'buildTransitive/YouShouldSpellcheck.Analyzer.targets',
@@ -86,7 +87,8 @@ try {
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <WarningsAsErrors>`$(WarningsAsErrors);YS103</WarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>`$(WarningsAsErrors);YS103;YS104;YS106</WarningsAsErrors>
     <RestorePackagesPath>`$(MSBuildProjectDirectory)\.packages</RestorePackagesPath>
   </PropertyGroup>
   <ItemGroup>
@@ -109,8 +111,11 @@ try {
   $source = @"
 namespace PackageConsumer;
 
+/// <summary>Provides meal preparation.</summary>
 public class TypName
 {
+  /// <summary>This mehtod prepares the meal.</summary>
+  public string PrepateMeal() => string.Empty;
 }
 "@
 
@@ -158,15 +163,17 @@ public class TypName
     throw "The consumer build unexpectedly succeeded; the package analyzer did not raise YS103.`n$buildOutput"
   }
 
-  if ($buildOutput -notmatch '\berror YS103\b') {
-    throw "The consumer build failed without the expected YS103 diagnostic.`n$buildOutput"
+  foreach ($expectedDiagnostic in @('YS103', 'YS104', 'YS106')) {
+    if ($buildOutput -notmatch "\berror $expectedDiagnostic\b") {
+      throw "The consumer build failed without the expected $expectedDiagnostic diagnostic.`n$buildOutput"
+    }
   }
 
   if ($buildOutput -match '\b(CS8032|AD0001)\b') {
     throw "The analyzer failed to load or execute in the package consumer.`n$buildOutput"
   }
 
-  Set-Content -LiteralPath (Join-Path $testRoot 'CustomDictionary.en_US.txt') -Value 'Typ' -Encoding utf8
+  Set-Content -LiteralPath (Join-Path $testRoot 'CustomDictionary.en_US.txt') -Value "Typ`nPrepate`nmehtod" -Encoding utf8
   $customDictionaryBuildOutput = (& dotnet build (Join-Path $testRoot 'PackageConsumer.csproj') --no-restore --verbosity minimal 2>&1 | Out-String)
   if ($LASTEXITCODE -ne 0) {
     throw "The consumer build failed after adding 'Typ' through a Content custom dictionary.`n$customDictionaryBuildOutput"

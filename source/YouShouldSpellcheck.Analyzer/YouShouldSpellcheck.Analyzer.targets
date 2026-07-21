@@ -1,4 +1,36 @@
 <Project>
+  <PropertyGroup>
+    <!-- Semicolons are not safe inside generated analyzer-config values. Encode after
+         the consuming project has evaluated its own properties. -->
+    <YouShouldSpellcheckDictionaryMappingsEncoded>$(YouShouldSpellcheckDictionaryMappings.Replace(';', '|'))</YouShouldSpellcheckDictionaryMappingsEncoded>
+    <YouShouldSpellcheckLanguageToolMappingsEncoded>$(YouShouldSpellcheckLanguageToolMappings.Replace(';', '|'))</YouShouldSpellcheckLanguageToolMappingsEncoded>
+    <YouShouldSpellcheckDefaultLanguagesEncoded>$(YouShouldSpellcheckDefaultLanguages.Replace(';', '|'))</YouShouldSpellcheckDefaultLanguagesEncoded>
+    <YouShouldSpellcheckIdentifierLanguagesEncoded>$(YouShouldSpellcheckIdentifierLanguages.Replace(';', '|'))</YouShouldSpellcheckIdentifierLanguagesEncoded>
+    <YouShouldSpellcheckClassNameLanguagesEncoded>$(YouShouldSpellcheckClassNameLanguages.Replace(';', '|'))</YouShouldSpellcheckClassNameLanguagesEncoded>
+    <YouShouldSpellcheckMethodNameLanguagesEncoded>$(YouShouldSpellcheckMethodNameLanguages.Replace(';', '|'))</YouShouldSpellcheckMethodNameLanguagesEncoded>
+    <YouShouldSpellcheckVariableNameLanguagesEncoded>$(YouShouldSpellcheckVariableNameLanguages.Replace(';', '|'))</YouShouldSpellcheckVariableNameLanguagesEncoded>
+    <YouShouldSpellcheckPropertyNameLanguagesEncoded>$(YouShouldSpellcheckPropertyNameLanguages.Replace(';', '|'))</YouShouldSpellcheckPropertyNameLanguagesEncoded>
+    <YouShouldSpellcheckEnumNameLanguagesEncoded>$(YouShouldSpellcheckEnumNameLanguages.Replace(';', '|'))</YouShouldSpellcheckEnumNameLanguagesEncoded>
+    <YouShouldSpellcheckEnumMemberNameLanguagesEncoded>$(YouShouldSpellcheckEnumMemberNameLanguages.Replace(';', '|'))</YouShouldSpellcheckEnumMemberNameLanguagesEncoded>
+    <YouShouldSpellcheckEventNameLanguagesEncoded>$(YouShouldSpellcheckEventNameLanguages.Replace(';', '|'))</YouShouldSpellcheckEventNameLanguagesEncoded>
+    <YouShouldSpellcheckCommentLanguagesEncoded>$(YouShouldSpellcheckCommentLanguages.Replace(';', '|'))</YouShouldSpellcheckCommentLanguagesEncoded>
+    <YouShouldSpellcheckStringLiteralLanguagesEncoded>$(YouShouldSpellcheckStringLiteralLanguages.Replace(';', '|'))</YouShouldSpellcheckStringLiteralLanguagesEncoded>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="YouShouldSpellcheckDictionaryMappingsEncoded" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolMappingsEncoded" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckDefaultLanguagesEncoded" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckIdentifierLanguagesEncoded" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckClassNameLanguagesEncoded" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckMethodNameLanguagesEncoded" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckVariableNameLanguagesEncoded" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckPropertyNameLanguagesEncoded" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckEnumNameLanguagesEncoded" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckEnumMemberNameLanguagesEncoded" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckEventNameLanguagesEncoded" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckCommentLanguagesEncoded" />
+    <CompilerVisibleProperty Include="YouShouldSpellcheckStringLiteralLanguagesEncoded" />
+  </ItemGroup>
   <ItemGroup>
     <AdditionalFiles
       Include="$(MSBuildProjectDirectory)/CustomDictionary.*.txt"

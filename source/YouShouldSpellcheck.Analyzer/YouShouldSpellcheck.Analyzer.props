@@ -14,19 +14,6 @@
     <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolScope" />
     <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolTimeoutSeconds" />
     <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolMaxConcurrency" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckDictionaryMappings" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckLanguageToolMappings" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckDefaultLanguages" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckIdentifierLanguages" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckClassNameLanguages" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckMethodNameLanguages" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckVariableNameLanguages" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckPropertyNameLanguages" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckEnumNameLanguages" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckEnumMemberNameLanguages" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckEventNameLanguages" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckCommentLanguages" />
-    <CompilerVisibleProperty Include="YouShouldSpellcheckStringLiteralLanguages" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)dictionaries\**\*.dic" Visible="false" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)dictionaries\**\*.aff" Visible="false" />
   </ItemGroup>

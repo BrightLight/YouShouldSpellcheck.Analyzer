@@ -3,6 +3,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
   using System.Collections.Generic;
   using System.Collections.Immutable;
   using System.IO;
+  using System.Linq;
   using System.Threading;
   using System.Threading.Tasks;
   using Microsoft.CodeAnalysis;
@@ -36,6 +37,54 @@ namespace YouShouldSpellcheck.Analyzer.Test
         .GetAnalyzerDiagnosticsAsync(CancellationToken.None);
 
       Assert.That(diagnostics, Has.One.Matches<Diagnostic>(diagnostic => diagnostic.Id == ClassNameSpellcheckAnalyzer.ClassNameDiagnosticId));
+    }
+
+    [Test]
+    public async Task EmptyCompilerVisibleCategoryPropertiesUseDefaultLanguages()
+    {
+      const string source = """
+        public class MealPlanner
+        {
+          /// <summary>
+          /// This mehtod prepares the meal.
+          /// </summary>
+          public string PrepateMeal()
+          {
+            return string.Empty;
+          }
+        }
+        """;
+      var syntaxTree = CSharpSyntaxTree.ParseText(
+        source,
+        new CSharpParseOptions(documentationMode: DocumentationMode.Diagnose));
+      var compilation = CSharpCompilation.Create(
+        "EmptyCompilerVisibleCategoryPropertiesTest",
+        new[] { syntaxTree },
+        new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) },
+        new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+      var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dictionaries");
+      var additionalFiles = ImmutableArray.Create<AdditionalText>(
+        new InMemoryAdditionalText("/dictionaries/en_US.dic", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.dic"))),
+        new InMemoryAdditionalText("/dictionaries/en_US.aff", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff"))));
+      var globalOptions = ImmutableDictionary<string, string>.Empty
+        .Add("build_property.YouShouldSpellcheckDefaultLanguagesEncoded", "en-US")
+        .Add("build_property.YouShouldSpellcheckDictionaryMappingsEncoded", "de-DE=de_DE_frami|en-US=en_US")
+        .Add("build_property.YouShouldSpellcheckIdentifierLanguagesEncoded", string.Empty)
+        .Add("build_property.YouShouldSpellcheckMethodNameLanguagesEncoded", string.Empty)
+        .Add("build_property.YouShouldSpellcheckCommentLanguagesEncoded", string.Empty);
+      var options = new AnalyzerOptions(additionalFiles, new TestAnalyzerConfigOptionsProvider(globalOptions));
+
+      var diagnostics = await compilation
+        .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new YouShouldSpellcheckDiagnosticAnalyzer()), options)
+        .GetAnalyzerDiagnosticsAsync(CancellationToken.None);
+
+      Assert.That(
+        diagnostics.Select(diagnostic => (diagnostic.Id, diagnostic.GetMessage())),
+        Is.EquivalentTo(new[]
+        {
+          (MethodNameSpellcheckAnalyzer.MethodNameDiagnosticId, "Possible spelling mistake: Prepate"),
+          (XmlTextSpellcheckAnalyzer.CommentDiagnosticId, "Possible spelling mistake: mehtod"),
+        }));
     }
 
     private sealed class InMemoryAdditionalText : AdditionalText

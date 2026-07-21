@@ -18,6 +18,7 @@ At review time this verified ordinary project-reference compilation, but not the
 - [x] Kept XML configuration as a compatibility fallback; explicitly configured MSBuild category properties take precedence.
 - [x] Made LanguageTool use the configured BCP 47 tag by default, with a separate mapping property for exceptional LanguageTool codes.
 - [x] Added MSBuild overrides for the LanguageTool URL, mode, scope, timeout, and maximum concurrency.
+- [x] Treated empty compiler-visible category properties as unset and safely encoded semicolon-separated MSBuild values so identifiers and XML documentation continue to inherit mapped default languages in package consumers.
 
 ### 2026-07-17: LanguageTool request and failure behavior
 

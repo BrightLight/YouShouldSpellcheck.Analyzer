@@ -86,8 +86,6 @@
     <None Include="$(OutputPath)System.Memory.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
     <None Include="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
     <None Include="..\YouShouldSpellcheck.Analyzer.CodeFixes\bin\$(Configuration)\netstandard2.0\YouShouldSpellcheck.Analyzer.CodeFixes.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
-    <None Include="..\YouShouldSpellcheck.Analyzer.CodeFixes\bin\$(Configuration)\netstandard2.0\Microsoft.CodeAnalysis.Workspaces.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
-    <None Include="..\YouShouldSpellcheck.Analyzer.CodeFixes\bin\$(Configuration)\netstandard2.0\Microsoft.CodeAnalysis.CSharp.Workspaces.dll" Pack="true" PackagePath="analyzers\dotnet\cs" />
   </ItemGroup>
 
   <Target Name="BuildCodeFixAssembly" BeforeTargets="GenerateNuspec" Condition="'$(NoBuild)' != 'true'">
