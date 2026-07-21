@@ -11,6 +11,13 @@ At review time this verified ordinary project-reference compilation, but not the
 
 ## Implementation progress
 
+### 2026-07-21: XML configuration removal
+
+- [x] Removed `youshouldspellcheck.config.xml` discovery and deserialization from analyzer execution.
+- [x] Removed XML serialization annotations and migrated all tests to compiler-visible MSBuild options.
+- [x] Converted the demo and LanguageTool documentation to MSBuild properties and attribute items.
+- [x] Deleted the demo XML configuration file; dictionaries and custom words remain tracked `AdditionalFiles`.
+
 ### 2026-07-21: remaining scalar configuration
 
 - [x] Added compiler-visible `YouShouldSpellcheckMaxSuggestionsPerLanguage` and `YouShouldSpellcheckMaxSuggestions` properties.
@@ -21,16 +28,16 @@ At review time this verified ordinary project-reference compilation, but not the
 ### 2026-07-21: MSBuild attribute argument configuration
 
 - [x] Added repeatable `YouShouldSpellcheckAttributeArgument` MSBuild items with attribute type, member, kind, and per-rule language metadata.
-- [x] Projected the evaluated item collection through a compiler-visible, analyzer-config-safe property while retaining XML attribute rules as the empty-collection fallback.
+- [x] Projected the evaluated item collection through a compiler-visible, analyzer-config-safe property.
 - [x] Matched configured attribute types through the bound type symbol and mapped positional arguments through the compiler-selected constructor.
 - [x] Distinguished named members from constructor parameters with an optional rule kind and reported malformed item records as YS219.
-- [x] Added coverage for aliases, overloaded constructors, rule kind filtering, XML replacement, malformed configuration, and a clean XML-free package consumer.
+- [x] Added coverage for aliases, overloaded constructors, rule kind filtering, malformed configuration, and a clean package consumer.
 
 ### 2026-07-20: MSBuild language selection
 
 - [x] Added compiler-visible MSBuild properties for default and category-specific language selection, using BCP 47 tags such as `en-US` and `de-DE`.
 - [x] Added package-provided mappings from BCP 47 tags to bundled Hunspell file names, including variants such as `de-DE=de_DE_frami`.
-- [x] Kept XML configuration as a compatibility fallback; explicitly configured MSBuild category properties take precedence.
+- [x] Initially kept XML configuration as a compatibility fallback, then removed it after every supported setting received an MSBuild representation.
 - [x] Made LanguageTool use the configured BCP 47 tag by default, with a separate mapping property for exceptional LanguageTool codes.
 - [x] Added MSBuild overrides for the LanguageTool URL, mode, scope, timeout, and maximum concurrency.
 - [x] Treated empty compiler-visible category properties as unset and safely encoded semicolon-separated MSBuild values so identifiers and XML documentation continue to inherit mapped default languages in package consumers.
@@ -44,7 +51,7 @@ At review time this verified ordinary project-reference compilation, but not the
 - [x] Applied multi-language acceptance semantics by reporting only spans flagged by every configured LanguageTool language.
 - [x] Added request-body, scope, XML exclusion, mixed-success, and multi-language integration coverage.
 - [x] Added `AutoFallback`, which probes once and selects either complete LanguageTool results or complete local Hunspell results for the compilation without reporting YS218 for expected unavailability.
-- [x] Added the compiler-visible `YouShouldSpellcheckLanguageToolMode` MSBuild override so grammar-specific builds can require LanguageTool while the checked-in XML remains in automatic fallback mode.
+- [x] Added the compiler-visible `YouShouldSpellcheckLanguageToolMode` property so grammar-specific builds can require LanguageTool while shared configuration remains in automatic fallback mode.
 - [x] Preserved LanguageTool replacement code fixes when an IDE recreates a build diagnostic without its custom properties by recovering suggestions from the analyzer-owned diagnostic message format.
 - [x] Separated ordinary text and compilation-end LanguageTool fixes into uniquely named MEF providers.
 - [x] Defaulted design-time builds to local checking so Visual Studio can offer document code fixes, while normal builds retain the configured `AutoFallback` or required LanguageTool behavior.
@@ -204,7 +211,7 @@ Acceptance checks:
 
 ### 6. High: attribute matching does not use resolved symbols
 
-Status: addressed locally on 2026-07-21. Attribute rules can now be supplied as structured MSBuild items, and matching uses the compiler-selected attribute constructor and containing type symbol. Short XML names remain a compatibility convenience.
+Status: addressed locally on 2026-07-21. Attribute rules are supplied as structured MSBuild items, and matching uses the compiler-selected attribute constructor and containing type symbol.
 
 Evidence:
 
@@ -320,7 +327,7 @@ Enable extended analyzer rules, add release tracking, explicitly define Fix All 
 
 ## Decisions to make during implementation
 
-- [x] Common language selection now uses MSBuild properties; XML remains the structured compatibility format until attribute rules receive a dedicated MSBuild representation.
+- [x] All analyzer configuration now uses MSBuild properties and structured attribute-rule items.
 - Whether package dictionaries are opt-in by language or a smaller default set is included automatically.
 - Custom dictionary updates remain an IDE feature and are represented as `AdditionalDocument` solution changes for project-system persistence, preview, and undo.
 - Whether LanguageTool support belongs in a separate command-line/CI tool, an IDE-only component, or is removed.

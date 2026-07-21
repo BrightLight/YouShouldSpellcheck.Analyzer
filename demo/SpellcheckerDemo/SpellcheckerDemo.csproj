@@ -12,6 +12,14 @@
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <YouShouldSpellcheckDefaultLanguages>en-US</YouShouldSpellcheckDefaultLanguages>
+    <YouShouldSpellcheckClassNameLanguages>en-US</YouShouldSpellcheckClassNameLanguages>
+    <YouShouldSpellcheckMethodNameLanguages>en-US</YouShouldSpellcheckMethodNameLanguages>
+    <YouShouldSpellcheckVariableNameLanguages>en-US</YouShouldSpellcheckVariableNameLanguages>
+    <YouShouldSpellcheckPropertyNameLanguages>en-US</YouShouldSpellcheckPropertyNameLanguages>
+    <YouShouldSpellcheckCommentLanguages>en-US;de-DE</YouShouldSpellcheckCommentLanguages>
+    <YouShouldSpellcheckStringLiteralLanguages>en-US;de-DE</YouShouldSpellcheckStringLiteralLanguages>
+    <YouShouldSpellcheckLanguageToolUrl>http://localhost:8081/v2/</YouShouldSpellcheckLanguageToolUrl>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -46,7 +54,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <AdditionalFiles Include="youshouldspellcheck.config.xml" />
+    <YouShouldSpellcheckAttributeArgument Include="System.ComponentModel.DataAnnotations.DisplayAttribute" Member="Name" Languages="de-DE" />
+    <YouShouldSpellcheckAttributeArgument Include="System.ComponentModel.DisplayNameAttribute" Member="displayName" Kind="ConstructorParameter" Languages="de-DE" />
+    <YouShouldSpellcheckAttributeArgument Include="System.ComponentModel.DataAnnotations.DisplayAttribute" Member="Description" Languages="en-US;de-DE" />
+    <YouShouldSpellcheckAttributeArgument Include="System.ComponentModel.DataAnnotations.RegularExpressionAttribute" Member="ErrorMessage" Languages="en-US" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

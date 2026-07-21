@@ -20,7 +20,7 @@ The package smoke test creates the NuGet package, restores it into a clean tempo
 
 The compiler analyzer uses synchronous Roslyn callbacks. Settings, Hunspell dictionaries, custom words, parsed dictionaries, spelling caches, and optional LanguageTool work are scoped to each compilation. This allows projects with different language configurations to be analyzed concurrently in the same compiler or IDE process.
 
-Configuration, `.dic`/`.aff` pairs, and custom word lists are supplied as MSBuild `AdditionalFiles`.
+Configuration is supplied through MSBuild properties and items. `.dic`/`.aff` pairs and custom word lists are supplied as MSBuild `AdditionalFiles`.
 Bundled dictionary files remain hidden package assets and are not added as visible content items to consuming projects.
 
 ## MSBuild language configuration
@@ -45,11 +45,11 @@ An unset or empty category-specific property inherits its documented fallback; M
 | `YouShouldSpellcheckStringLiteralLanguages` | BCP 47 list | Languages for ordinary string literals. |
 | `YouShouldSpellcheckDictionaryMappings` | `BCP-47-tag=Hunspell-file-name` entries, separated by semicolons | Maps a configured tag to the base name of its `.dic`/`.aff` pair. |
 | `YouShouldSpellcheckLanguageToolMappings` | `BCP-47-tag=LanguageTool-tag` entries, separated by semicolons | Overrides the LanguageTool code for exceptional tags. Unmapped tags use their BCP 47 tag directly. |
-| `YouShouldSpellcheckLanguageToolMode` | `Off`, `AutoFallback`, or `CompilationEnd` | Overrides the XML `LanguageToolMode` setting. |
-| `YouShouldSpellcheckLanguageToolUrl` | URL, for example `http://localhost:8081/v2` | Overrides the XML `LanguageToolUrl` setting. |
-| `YouShouldSpellcheckLanguageToolScope` | `StringLiteralsAndAttributeArguments`, `AttributeArgumentsOnly`, or `StringLiteralsOnly` | Overrides the XML `LanguageToolScope` setting. |
-| `YouShouldSpellcheckLanguageToolTimeoutSeconds` | Positive integer | Overrides the XML LanguageTool request timeout; values below 1 are clamped to 1. |
-| `YouShouldSpellcheckLanguageToolMaxConcurrency` | Positive integer | Overrides the XML maximum simultaneous LanguageTool requests; values below 1 are clamped to 1. |
+| `YouShouldSpellcheckLanguageToolMode` | `Off`, `AutoFallback`, or `CompilationEnd` | Selects LanguageTool execution behavior. |
+| `YouShouldSpellcheckLanguageToolUrl` | URL, for example `http://localhost:8081/v2` | Sets the LanguageTool endpoint. |
+| `YouShouldSpellcheckLanguageToolScope` | `StringLiteralsAndAttributeArguments`, `AttributeArgumentsOnly`, or `StringLiteralsOnly` | Selects the source categories sent to LanguageTool. |
+| `YouShouldSpellcheckLanguageToolTimeoutSeconds` | Positive integer | Sets the LanguageTool request timeout; values below 1 are clamped to 1. |
+| `YouShouldSpellcheckLanguageToolMaxConcurrency` | Positive integer | Sets the maximum simultaneous LanguageTool requests; values below 1 are clamped to 1. |
 | `YouShouldSpellcheckMaxSuggestionsPerLanguage` | Non-negative integer | Maximum Hunspell suggestions retained per configured language; `0` removes the limit. |
 | `YouShouldSpellcheckMaxSuggestions` | Non-negative integer | Maximum suggestions retained per diagnostic; `0` removes the limit. |
 
@@ -104,7 +104,7 @@ Use `YouShouldSpellcheckAttributeArgument` items to select string-valued attribu
 
 `Kind` is optional and defaults to `Any`. Use `NamedMember` to restrict a rule to a named attribute property or field, or `ConstructorParameter` to restrict it to a constructor argument. Member names are case-sensitive, like C# symbols. The analyzer resolves aliases, qualified attribute names, the optional C# `Attribute` suffix, and overloaded constructors semantically.
 
-The collection can also be declared in `Directory.Build.props`, `Directory.Build.targets`, or another imported MSBuild file, and ordinary MSBuild conditions apply. If the collection contains at least one item, it replaces the legacy XML `<Attributes>` collection. When it is empty, XML attribute rules remain the compatibility fallback. Invalid item metadata reports YS219.
+The collection can also be declared in `Directory.Build.props`, `Directory.Build.targets`, or another imported MSBuild file, and ordinary MSBuild conditions apply. An empty collection configures no attribute arguments. Invalid item metadata reports YS219.
 
 ### Shared configuration
 
@@ -166,8 +166,6 @@ dotnet build MyProject.csproj `
   '-p:YouShouldSpellcheckDictionaryMappings=en-US=en_US;de-AT=de_AT_custom'
 ```
 
-An explicitly set MSBuild property overrides its equivalent setting in `youshouldspellcheck.config.xml`. The XML file remains the compatibility fallback for unset properties. Attribute-specific rules use the MSBuild item collection described above.
-
 LanguageTool uses the configured BCP 47 tag by default. Set `YouShouldSpellcheckLanguageToolMappings` only when a configured language tag needs a different LanguageTool code; it follows the same semicolon-separated `configured-tag=LanguageTool-tag` syntax as dictionary mappings.
 
 ## Custom dictionaries
@@ -214,16 +212,14 @@ The overall limit is shared by all local dictionaries. LanguageTool has no per-l
 LanguageTool is disabled by default, so ordinary IDE and build analysis remains offline and deterministic. It can be explicitly enabled for nightly builds or an IDE session with a local LanguageTool server:
 
 ```xml
-<SpellcheckSettings>
-  <StringLiteralLanguages>
-    <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
-  </StringLiteralLanguages>
-  <LanguageToolUrl>http://localhost:8081/v2</LanguageToolUrl>
-  <LanguageToolMode>AutoFallback</LanguageToolMode>
-  <LanguageToolScope>StringLiteralsAndAttributeArguments</LanguageToolScope>
-  <LanguageToolTimeoutSeconds>30</LanguageToolTimeoutSeconds>
-  <LanguageToolMaxConcurrency>1</LanguageToolMaxConcurrency>
-</SpellcheckSettings>
+<PropertyGroup>
+  <YouShouldSpellcheckStringLiteralLanguages>en-US</YouShouldSpellcheckStringLiteralLanguages>
+  <YouShouldSpellcheckLanguageToolUrl>http://localhost:8081/v2</YouShouldSpellcheckLanguageToolUrl>
+  <YouShouldSpellcheckLanguageToolMode>AutoFallback</YouShouldSpellcheckLanguageToolMode>
+  <YouShouldSpellcheckLanguageToolScope>StringLiteralsAndAttributeArguments</YouShouldSpellcheckLanguageToolScope>
+  <YouShouldSpellcheckLanguageToolTimeoutSeconds>30</YouShouldSpellcheckLanguageToolTimeoutSeconds>
+  <YouShouldSpellcheckLanguageToolMaxConcurrency>1</YouShouldSpellcheckLanguageToolMaxConcurrency>
+</PropertyGroup>
 ```
 
 LanguageTool has three execution modes:
@@ -238,7 +234,7 @@ Both enabled modes collect complete string literals and configured attribute arg
 
 When LanguageTool handles a text, it replaces its local Hunspell check. If multiple LanguageTool languages apply, a source span is reported only when every configured language flags that span. Network availability and response time necessarily affect enabled builds. In an IDE, diagnostics arrive at the end of an analysis pass rather than one string at a time.
 
-`AutoFallback` supports a checked-in URL while developers and ordinary CI agents remain independent of LanguageTool. A grammar-specific build can require the server without modifying the checked-in XML:
+`AutoFallback` supports a checked-in URL while developers and ordinary CI agents remain independent of LanguageTool. A grammar-specific build can require the server without changing the shared project configuration:
 
 ```xml
 <PropertyGroup>
@@ -246,7 +242,7 @@ When LanguageTool handles a text, it replaces its local Hunspell check. If multi
 </PropertyGroup>
 ```
 
-All LanguageTool settings can instead be supplied as MSBuild properties for that project:
+The complete LanguageTool configuration can be placed in the project or a shared props file:
 
 ```xml
 <PropertyGroup>
@@ -258,7 +254,7 @@ All LanguageTool settings can instead be supplied as MSBuild properties for that
 </PropertyGroup>
 ```
 
-The NuGet package defaults this MSBuild override to `Off` during Visual Studio design-time builds when the project has not set it explicitly. This keeps local YS100 and YS101 diagnostics in the editor's live syntax-analysis phase, where replacement and custom-dictionary code fixes are available. Normal builds still use the mode from `youshouldspellcheck.config.xml`, so an XML setting of `AutoFallback` continues to run LanguageTool and fall back to Hunspell for build diagnostics. LanguageTool YS201–YS217 diagnostics and deferred `AutoFallback` diagnostics are compilation-end diagnostics; Visual Studio displays them but does not offer document code fixes for them.
+The NuGet package defaults this property to `Off` during Visual Studio design-time builds when the project has not set it explicitly. This keeps local YS100 and YS101 diagnostics in the editor's live syntax-analysis phase, where replacement and custom-dictionary code fixes are available. Normal builds use the configured property and also default to `Off` when it is unset. LanguageTool YS201–YS217 diagnostics and deferred `AutoFallback` diagnostics are compilation-end diagnostics; Visual Studio displays them but does not offer document code fixes for them.
 
 To deliberately run LanguageTool during design-time analysis as well, set `YouShouldSpellcheckLanguageToolMode` explicitly in the project. This also opts into the compilation-end code-fix limitation.
 

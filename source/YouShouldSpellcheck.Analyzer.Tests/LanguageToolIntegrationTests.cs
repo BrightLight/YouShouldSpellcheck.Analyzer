@@ -40,7 +40,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
         {"matches":[{"message":"Use 'is' with a singular subject.","shortMessage":"Agreement error","offset":5,"length":3,"replacements":[{"value":"is"}],"rule":{"id":"SUBJECT_VERB_AGREEMENT","issueType":"grammar","category":{"id":"GRAMMAR"}}}]}
         """);
 
-      var diagnostics = await AnalyzeAsync(CreateSettings(server.Url, LanguageToolExecutionMode.CompilationEnd));
+      var diagnostics = await AnalyzeAsync(CreateProperties(server.Url, LanguageToolExecutionMode.CompilationEnd));
       var request = await serverTask;
 
       Assert.That(request, Does.Contain("language=en-US"));
@@ -53,7 +53,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
     [Test]
     public async Task LanguageToolUrlDoesNotPerformNetworkChecksUnlessExplicitlyEnabled()
     {
-      var diagnostics = await AnalyzeAsync(CreateSettings("http://127.0.0.1:1/v2", LanguageToolExecutionMode.Off));
+      var diagnostics = await AnalyzeAsync(CreateProperties("http://127.0.0.1:1/v2", LanguageToolExecutionMode.Off));
 
       Assert.That(diagnostics, Is.Empty);
     }
@@ -66,7 +66,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
       var port = ((IPEndPoint)listener.LocalEndpoint).Port;
       listener.Stop();
 
-      var diagnostics = await AnalyzeAsync(CreateSettings($"http://127.0.0.1:{port}/v2", LanguageToolExecutionMode.CompilationEnd));
+      var diagnostics = await AnalyzeAsync(CreateProperties($"http://127.0.0.1:{port}/v2", LanguageToolExecutionMode.CompilationEnd));
 
       Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Contain(SpellcheckAnalyzerBase.LanguageToolUnavailableDiagnosticId));
     }
@@ -81,7 +81,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
       using var server = new OneShotLanguageToolServer();
       var serverTask = server.RespondAsync("""{"matches":[]}""");
 
-      var diagnostics = await AnalyzeAsync(CreateSettings(server.Url, LanguageToolExecutionMode.CompilationEnd), source);
+      var diagnostics = await AnalyzeAsync(CreateProperties(server.Url, LanguageToolExecutionMode.CompilationEnd), source);
       var request = await serverTask;
 
       Assert.That(request, Does.Contain("text=This+are+wrong."));
@@ -97,24 +97,16 @@ namespace YouShouldSpellcheck.Analyzer.Test
         [Ui(Text = "Attribute UI text.")]
         public class Test { public string Text = "Ordinary UI text."; }
         """;
-      const string attributes = """
-        <Attributes>
-          <AttributeProperty>
-            <AttributeName>UiAttribute</AttributeName>
-            <PropertyName>Text</PropertyName>
-            <Languages><Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" /></Languages>
-          </AttributeProperty>
-        </Attributes>
-        """;
+      const string attributes = "UiAttribute~Text~~en-US";
       using var server = new OneShotLanguageToolServer();
       var serverTask = server.RespondAsync("""{"matches":[]}""");
-      var settings = CreateSettings(
+      var properties = CreateProperties(
         server.Url,
         LanguageToolExecutionMode.CompilationEnd,
         LanguageToolScope.AttributeArgumentsOnly,
         attributes: attributes);
 
-      var diagnostics = await AnalyzeAsync(settings, source);
+      var diagnostics = await AnalyzeAsync(properties, source);
       var request = await serverTask;
 
       Assert.That(request, Does.Contain("text=Attribute+UI+text."));
@@ -132,7 +124,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
           ? new TestResponse(500, """{"error":"failure"}""")
           : new TestResponse(200, """{"matches":[{"message":"Agreement error","offset":5,"length":3,"replacements":[],"rule":{"id":"AGREEMENT","issueType":"grammar","category":{"id":"GRAMMAR"}}}]}"""));
 
-      var diagnostics = await AnalyzeAsync(CreateSettings(server.Url, LanguageToolExecutionMode.CompilationEnd), source);
+      var diagnostics = await AnalyzeAsync(CreateProperties(server.Url, LanguageToolExecutionMode.CompilationEnd), source);
       await serverTask;
 
       Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Contain(SpellcheckAnalyzerBase.LanguageToolGrammarDiagnosticId));
@@ -142,17 +134,14 @@ namespace YouShouldSpellcheck.Analyzer.Test
     [Test]
     public async Task FindingIsSuppressedWhenAnotherConfiguredLanguageAcceptsTheSpan()
     {
-      const string languages = """
-        <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
-        <Language LocalDictionaryLanguage="de_DE" LanguageToolLanguage="de-DE" />
-        """;
+      const string languages = "en-US|de-DE";
       using var server = new MultiRequestLanguageToolServer();
       var serverTask = server.RespondAsync(2, request =>
         request.Contains("language=en-US", System.StringComparison.Ordinal)
           ? new TestResponse(200, """{"matches":[{"message":"Agreement error","offset":5,"length":3,"replacements":[],"rule":{"id":"AGREEMENT","issueType":"grammar","category":{"id":"GRAMMAR"}}}]}""")
           : new TestResponse(200, """{"matches":[]}"""));
 
-      var diagnostics = await AnalyzeAsync(CreateSettings(server.Url, LanguageToolExecutionMode.CompilationEnd, languages: languages));
+      var diagnostics = await AnalyzeAsync(CreateProperties(server.Url, LanguageToolExecutionMode.CompilationEnd, languages: languages));
       await serverTask;
 
       Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Not.Contain(SpellcheckAnalyzerBase.LanguageToolGrammarDiagnosticId));
@@ -166,7 +155,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
       var serverTask = server.RespondAsync(1, _ => new TestResponse(500, """{"error":"failure"}"""));
 
       var diagnostics = await AnalyzeAsync(
-        CreateSettings(server.Url, LanguageToolExecutionMode.AutoFallback),
+        CreateProperties(server.Url, LanguageToolExecutionMode.AutoFallback),
         source,
         includeDictionaries: true);
       var requests = await serverTask;
@@ -184,7 +173,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
       var serverTask = server.RespondAsync("""{"matches":[{"message":"Agreement error","offset":7,"length":3,"replacements":[],"rule":{"id":"AGREEMENT","issueType":"grammar","category":{"id":"GRAMMAR"}}}]}""");
 
       var diagnostics = await AnalyzeAsync(
-        CreateSettings(server.Url, LanguageToolExecutionMode.AutoFallback),
+        CreateProperties(server.Url, LanguageToolExecutionMode.AutoFallback),
         source,
         includeDictionaries: true);
       await serverTask;
@@ -206,7 +195,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
           : new TestResponse(500, """{"error":"failure"}"""));
 
       var diagnostics = await AnalyzeAsync(
-        CreateSettings(server.Url, LanguageToolExecutionMode.AutoFallback),
+        CreateProperties(server.Url, LanguageToolExecutionMode.AutoFallback),
         source,
         includeDictionaries: true);
       await serverTask;
@@ -224,7 +213,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
       var serverTask = server.RespondAsync(1, _ => new TestResponse(500, """{"error":"failure"}"""));
 
       var diagnostics = await AnalyzeAsync(
-        CreateSettings(server.Url, LanguageToolExecutionMode.AutoFallback),
+        CreateProperties(server.Url, LanguageToolExecutionMode.AutoFallback),
         source,
         includeDictionaries: true,
         modeOverride: LanguageToolExecutionMode.CompilationEnd);
@@ -246,7 +235,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
         .Add("build_property.YouShouldSpellcheckLanguageToolMaxConcurrency", "1");
 
       var diagnostics = await AnalyzeAsync(
-        CreateSettings("http://127.0.0.1:1/v2", LanguageToolExecutionMode.Off),
+        CreateProperties("http://127.0.0.1:1/v2", LanguageToolExecutionMode.Off),
         modeOverride: LanguageToolExecutionMode.CompilationEnd,
         propertyOverrides: overrides);
       var request = await serverTask;
@@ -255,27 +244,28 @@ namespace YouShouldSpellcheck.Analyzer.Test
       Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Does.Not.Contain(SpellcheckAnalyzerBase.LanguageToolUnavailableDiagnosticId));
     }
 
-    private static string CreateSettings(
+    private static ImmutableDictionary<string, string> CreateProperties(
       string url,
       LanguageToolExecutionMode mode,
       LanguageToolScope scope = LanguageToolScope.StringLiteralsAndAttributeArguments,
       string languages = null,
-      string attributes = null) => $$"""
-      <SpellcheckSettings>
-        <StringLiteralLanguages>
-          {{languages ?? "<Language LocalDictionaryLanguage=\"en_US\" LanguageToolLanguage=\"en-US\" />"}}
-        </StringLiteralLanguages>
-        {{attributes}}
-        <LanguageToolUrl>{{url}}</LanguageToolUrl>
-        <LanguageToolMode>{{mode}}</LanguageToolMode>
-        <LanguageToolScope>{{scope}}</LanguageToolScope>
-        <LanguageToolTimeoutSeconds>2</LanguageToolTimeoutSeconds>
-        <LanguageToolMaxConcurrency>1</LanguageToolMaxConcurrency>
-      </SpellcheckSettings>
-      """;
+      string attributes = null)
+    {
+      var properties = ImmutableDictionary<string, string>.Empty
+        .Add("build_property.YouShouldSpellcheckStringLiteralLanguagesEncoded", languages ?? "en-US")
+        .Add("build_property.YouShouldSpellcheckDictionaryMappingsEncoded", "en-US=en_US|de-DE=de_DE")
+        .Add("build_property.YouShouldSpellcheckLanguageToolUrl", url)
+        .Add("build_property.YouShouldSpellcheckLanguageToolMode", mode.ToString())
+        .Add("build_property.YouShouldSpellcheckLanguageToolScope", scope.ToString())
+        .Add("build_property.YouShouldSpellcheckLanguageToolTimeoutSeconds", "2")
+        .Add("build_property.YouShouldSpellcheckLanguageToolMaxConcurrency", "1");
+      return attributes == null
+        ? properties
+        : properties.Add("build_property.YouShouldSpellcheckAttributeArgumentsEncoded", attributes);
+    }
 
     private static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(
-      string settings,
+      ImmutableDictionary<string, string> properties,
       string source = Source,
       bool includeDictionaries = false,
       LanguageToolExecutionMode? modeOverride = null,
@@ -288,7 +278,6 @@ namespace YouShouldSpellcheck.Analyzer.Test
         new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) },
         new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
       var additionalFiles = ImmutableArray.CreateBuilder<AdditionalText>();
-      additionalFiles.Add(new InMemoryAdditionalText("/config/youshouldspellcheck.config.xml", settings));
       if (includeDictionaries)
       {
         var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dictionaries");
@@ -296,7 +285,9 @@ namespace YouShouldSpellcheck.Analyzer.Test
         additionalFiles.Add(new InMemoryAdditionalText("/dictionaries/en_US.aff", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff"))));
       }
 
-      var globalOptions = propertyOverrides ?? ImmutableDictionary<string, string>.Empty;
+      var globalOptions = propertyOverrides == null
+        ? properties
+        : properties.SetItems(propertyOverrides);
       if (modeOverride != null)
       {
         globalOptions = globalOptions.SetItem(

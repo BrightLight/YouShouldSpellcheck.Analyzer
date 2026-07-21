@@ -1,8 +1,5 @@
 namespace YouShouldSpellcheck.Analyzer
 {
-  using System;
-  using System.Xml.Serialization;
-
   // TODO: analyzer should be able to allow configuration for separate types of nodes
   // and allow a configuration (on/off) and valid languages/dictionaries per node type:
   // - attribute argument (maybe attribute-specific, e.g. ResourceNames?)
@@ -12,7 +9,6 @@ namespace YouShouldSpellcheck.Analyzer
   // - class name
   // - argument name
   // - allow default language(s) (used if not specified otherwise on node type level)
-  [Serializable]
   public class SpellcheckSettings
   {
     public Language[] DefaultLanguages { get; init; } = [];
@@ -75,7 +71,6 @@ namespace YouShouldSpellcheck.Analyzer
     ConstructorParameter,
   }
 
-  [Serializable]
   public class AttributeProperty
   {
     public required string AttributeName { get; init; }
@@ -84,13 +79,10 @@ namespace YouShouldSpellcheck.Analyzer
     public required Language[] Languages { get; init; }
   }
 
-  [Serializable]
   public class Language : ILanguage
   {
-    [XmlAttribute]
     public required string LocalDictionaryLanguage { get; init; }
 
-    [XmlAttribute]
     public required string LanguageToolLanguage { get; init; }
   }
 }

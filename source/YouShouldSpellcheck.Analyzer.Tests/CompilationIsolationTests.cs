@@ -1,5 +1,6 @@
 namespace YouShouldSpellcheck.Analyzer.Test
 {
+  using System.Collections.Generic;
   using System.Collections.Immutable;
   using System.IO;
   using System.Linq;
@@ -14,14 +15,6 @@ namespace YouShouldSpellcheck.Analyzer.Test
   [TestFixture]
   public class CompilationIsolationTests
   {
-    private const string Settings = """
-      <SpellcheckSettings>
-        <DefaultLanguages>
-          <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
-        </DefaultLanguages>
-      </SpellcheckSettings>
-      """;
-
     [Test]
     public async Task ConcurrentCompilationsKeepAdditionalFilesIsolated()
     {
@@ -65,24 +58,26 @@ namespace YouShouldSpellcheck.Analyzer.Test
     public async Task SuggestionLimitsKeepTheHighestRankedHunspellSuggestions()
     {
       const string source = "public class TypeName { public const string Text = \"lne\"; }";
-      var defaultSuggestions = await GetSuggestionsAsync(Settings, source);
-      var limitedSuggestions = await GetSuggestionsAsync(
-        Settings.Replace("<DefaultLanguages>", "<MaxSuggestionsPerLanguage>2</MaxSuggestionsPerLanguage><MaxSuggestions>2</MaxSuggestions><DefaultLanguages>"),
-        source);
+      var defaultSuggestions = await GetSuggestionsAsync(source);
+      var limitedSuggestions = await GetSuggestionsAsync(source, maxSuggestionsPerLanguage: 2, maxSuggestions: 2);
 
       Assert.That(defaultSuggestions, Has.Length.EqualTo(5));
       Assert.That(defaultSuggestions, Does.Contain("line"));
       Assert.That(limitedSuggestions, Is.EqualTo(defaultSuggestions.Take(2)));
     }
 
-    private static async Task<string[]> GetSuggestionsAsync(string settings, string source)
+    private static async Task<string[]> GetSuggestionsAsync(
+      string source,
+      int? maxSuggestionsPerLanguage = null,
+      int? maxSuggestions = null)
     {
       var diagnostics = await AnalyzeAsync(
         new StringLiteralSpellcheckAnalyzer(),
         "SuggestionLimitProject",
         string.Empty,
         source,
-        settings);
+        maxSuggestionsPerLanguage,
+        maxSuggestions);
 
       return diagnostics.Single(result => result.Id == StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId)
         .Properties
@@ -98,7 +93,8 @@ namespace YouShouldSpellcheck.Analyzer.Test
       string assemblyName,
       string customWords,
       string source = "public class Zorbax { }",
-      string settings = null)
+      int? maxSuggestionsPerLanguage = null,
+      int? maxSuggestions = null)
     {
       var syntaxTree = CSharpSyntaxTree.ParseText(source);
       var compilation = CSharpCompilation.Create(
@@ -109,15 +105,59 @@ namespace YouShouldSpellcheck.Analyzer.Test
 
       var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dictionaries");
       var additionalFiles = ImmutableArray.Create<AdditionalText>(
-        new InMemoryAdditionalText("/config/youshouldspellcheck.config.xml", settings ?? Settings),
         new InMemoryAdditionalText("/dictionaries/en_US.dic", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.dic"))),
         new InMemoryAdditionalText("/dictionaries/en_US.aff", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff"))),
         new InMemoryAdditionalText("/custom/CustomDictionary.en_US.txt", customWords));
-      var options = new AnalyzerOptions(additionalFiles);
+      var globalOptions = ImmutableDictionary<string, string>.Empty
+        .Add("build_property.YouShouldSpellcheckDefaultLanguagesEncoded", "en-US")
+        .Add("build_property.YouShouldSpellcheckDictionaryMappingsEncoded", "en-US=en_US");
+      if (maxSuggestionsPerLanguage != null)
+      {
+        globalOptions = globalOptions.Add(
+          "build_property.YouShouldSpellcheckMaxSuggestionsPerLanguage",
+          maxSuggestionsPerLanguage.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+      }
+
+      if (maxSuggestions != null)
+      {
+        globalOptions = globalOptions.Add(
+          "build_property.YouShouldSpellcheckMaxSuggestions",
+          maxSuggestions.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+      }
+
+      var options = new AnalyzerOptions(additionalFiles, new TestAnalyzerConfigOptionsProvider(globalOptions));
 
       return await compilation
         .WithAnalyzers(ImmutableArray.Create(analyzer), options)
         .GetAnalyzerDiagnosticsAsync(CancellationToken.None);
+    }
+
+    private sealed class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
+    {
+      private static readonly AnalyzerConfigOptions EmptyOptions = new TestAnalyzerConfigOptions(ImmutableDictionary<string, string>.Empty);
+
+      public TestAnalyzerConfigOptionsProvider(ImmutableDictionary<string, string> globalOptions)
+      {
+        this.GlobalOptions = new TestAnalyzerConfigOptions(globalOptions);
+      }
+
+      public override AnalyzerConfigOptions GlobalOptions { get; }
+
+      public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => EmptyOptions;
+
+      public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => EmptyOptions;
+    }
+
+    private sealed class TestAnalyzerConfigOptions : AnalyzerConfigOptions
+    {
+      private readonly IReadOnlyDictionary<string, string> options;
+
+      public TestAnalyzerConfigOptions(IReadOnlyDictionary<string, string> options)
+      {
+        this.options = options;
+      }
+
+      public override bool TryGetValue(string key, out string value) => this.options.TryGetValue(key, out value);
     }
 
     private sealed class InMemoryAdditionalText : AdditionalText

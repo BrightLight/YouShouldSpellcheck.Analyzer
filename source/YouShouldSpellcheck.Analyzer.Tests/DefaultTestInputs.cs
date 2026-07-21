@@ -6,28 +6,16 @@ namespace YouShouldSpellcheck.Analyzer.Test
 
   internal static class DefaultTestInputs
   {
-    private const string Settings = """
-      <?xml version="1.0" encoding="utf-8"?>
-      <SpellcheckSettings>
-        <DefaultLanguages>
-          <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
-        </DefaultLanguages>
-        <Attributes>
-          <AttributeProperty>
-            <AttributeName>DisplayAttribute</AttributeName>
-            <PropertyName>Name</PropertyName>
-            <Languages>
-              <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
-            </Languages>
-          </AttributeProperty>
-        </Attributes>
-      </SpellcheckSettings>
+    public const string GlobalConfig = """
+      is_global = true
+      build_property.YouShouldSpellcheckDefaultLanguagesEncoded = en-US
+      build_property.YouShouldSpellcheckDictionaryMappingsEncoded = en-US=en_US
+      build_property.YouShouldSpellcheckAttributeArgumentsEncoded = System.ComponentModel.DataAnnotations.DisplayAttribute~Name~~en-US
       """;
 
     public static IEnumerable<(string Filename, string Content)> Get()
     {
       var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dictionaries");
-      yield return ("/config/youshouldspellcheck.config.xml", Settings);
       yield return ("/dictionaries/en_US.dic", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.dic")));
       yield return ("/dictionaries/en_US.aff", File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff")));
     }

@@ -212,32 +212,6 @@ namespace YouShouldSpellcheck.Analyzer.Test
     }
 
     [Test]
-    public async Task AttributeArgumentItemsReplaceXmlAttributeRules()
-    {
-      const string settings = """
-        <SpellcheckSettings>
-          <Attributes>
-            <AttributeProperty>
-              <AttributeName>UiTextAttribute</AttributeName>
-              <PropertyName>Caption</PropertyName>
-              <Languages>
-                <Language LocalDictionaryLanguage="en_US" LanguageToolLanguage="en-US" />
-              </Languages>
-            </AttributeProperty>
-          </Attributes>
-        </SpellcheckSettings>
-        """;
-      var diagnostics = await AnalyzeAttributeArgumentsAsync(
-        AttributeSource,
-        "Attributes.UiTextAttribute~text~~en-US",
-        settings);
-
-      Assert.That(
-        diagnostics.Select(diagnostic => diagnostic.GetMessage()),
-        Is.EqualTo(new[] { "Possible spelling mistake: escapng" }));
-    }
-
-    [Test]
     public async Task InvalidAttributeArgumentItemReportsConfigurationDiagnostic()
     {
       var diagnostics = await AnalyzeAttributeArgumentsAsync(
@@ -251,19 +225,17 @@ namespace YouShouldSpellcheck.Analyzer.Test
 
     private static async Task<ImmutableArray<Diagnostic>> AnalyzeAttributeArgumentsAsync(
       string source,
-      string encodedAttributeArguments,
-      string xmlSettings = null)
+      string encodedAttributeArguments)
     {
       var globalOptions = ImmutableDictionary<string, string>.Empty
         .Add("build_property.YouShouldSpellcheckDictionaryMappingsEncoded", "en-US=en_US")
         .Add("build_property.YouShouldSpellcheckAttributeArgumentsEncoded", encodedAttributeArguments);
-      return await AnalyzeStringLiteralsAsync(source, globalOptions, xmlSettings);
+      return await AnalyzeStringLiteralsAsync(source, globalOptions);
     }
 
     private static async Task<ImmutableArray<Diagnostic>> AnalyzeStringLiteralsAsync(
       string source,
-      ImmutableDictionary<string, string> globalOptions,
-      string xmlSettings = null)
+      ImmutableDictionary<string, string> globalOptions)
     {
       var compilation = CSharpCompilation.Create(
         "StringLiteralMsBuildConfigurationTest",
@@ -278,11 +250,6 @@ namespace YouShouldSpellcheck.Analyzer.Test
       additionalFiles.Add(new InMemoryAdditionalText(
         "/dictionaries/en_US.aff",
         File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff"))));
-      if (xmlSettings != null)
-      {
-        additionalFiles.Add(new InMemoryAdditionalText("/config/youshouldspellcheck.config.xml", xmlSettings));
-      }
-
       var options = new AnalyzerOptions(
         additionalFiles.ToImmutable(),
         new TestAnalyzerConfigOptionsProvider(globalOptions));
