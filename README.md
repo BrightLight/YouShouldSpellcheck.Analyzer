@@ -23,6 +23,10 @@ The compiler analyzer uses synchronous Roslyn callbacks. Settings, Hunspell dict
 Configuration is supplied through MSBuild properties and items. `.dic`/`.aff` pairs and custom word lists are supplied as MSBuild `AdditionalFiles`.
 Bundled dictionary files remain hidden package assets and are not added as visible content items to consuming projects.
 
+The analyzer reads and parses only dictionary pairs referenced by a project's effective language settings. Spelling checks and suggestions are cached within that compilation, and superseded editor analysis can cancel Hunspell checks and suggestion searches. This is especially important for solutions containing many projects because every project has an independent compilation and configuration.
+
+For the fastest editor feedback in a large Visual Studio solution, set **Tools > Options > Text Editor > C# > Advanced > Run background code analysis for** to **Current document**. Visual Studio then runs Roslyn analyzers only for the active document instead of scheduling them across every document in the solution. Also configure `none` for source categories that a project does not need, or limit the analyzer's shared language configuration to the projects that should be spellchecked. See Microsoft's [live code analysis scope documentation](https://learn.microsoft.com/en-us/visualstudio/code-quality/configure-live-code-analysis-scope-managed-code?view=visualstudio).
+
 ## MSBuild language configuration
 
 The following MSBuild properties are supported by the package. They are ordinary evaluated MSBuild properties, so they can be set in an individual `.csproj`, in `Directory.Build.props` or `Directory.Build.targets`, or in a `.props`/`.targets` file imported by the project. Use a `.props` file for shared defaults; use a `.targets` file only when the setting deliberately needs to be applied after project evaluation.

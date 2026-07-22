@@ -117,10 +117,14 @@ namespace YouShouldSpellcheck.Analyzer
       IEnumerable<ILanguage> languages,
       CompilationSpellcheckState state)
     {
-      return this.isGuid.IsMatch(word) || IsWordCorrect(word, languages, state);
+      return this.isGuid.IsMatch(word) || IsWordCorrect(word, languages, state, context.CancellationToken);
     }
 
-    private static bool IsWordCorrect(string word, IEnumerable<ILanguage> languages, CompilationSpellcheckState state)
+    private static bool IsWordCorrect(
+      string word,
+      IEnumerable<ILanguage> languages,
+      CompilationSpellcheckState state,
+      System.Threading.CancellationToken cancellationToken)
     {
       if (string.IsNullOrWhiteSpace(word) || languages == null)
       {
@@ -129,7 +133,7 @@ namespace YouShouldSpellcheck.Analyzer
 
       var languageArray = languages as ILanguage[] ?? languages.ToArray();
       return languageArray.Length == 0
-        || languageArray.Any(language => state.IsWordCorrect(word, language.LocalDictionaryLanguage));
+        || languageArray.Any(language => state.IsWordCorrect(word, language.LocalDictionaryLanguage, cancellationToken));
     }
 
     private protected static void ReportWord(
@@ -151,7 +155,7 @@ namespace YouShouldSpellcheck.Analyzer
         foreach (var language in languageArray)
         {
           var suggestionsForLanguage = 0;
-          foreach (var suggestion in state.Suggest(word, language.LocalDictionaryLanguage))
+          foreach (var suggestion in state.Suggest(word, language.LocalDictionaryLanguage, context.CancellationToken))
           {
             if (string.IsNullOrWhiteSpace(suggestion)
               || !distinctSuggestions.Add(suggestion))

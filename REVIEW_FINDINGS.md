@@ -11,6 +11,13 @@ At review time this verified ordinary project-reference compilation, but not the
 
 ## Implementation progress
 
+### 2026-07-22: large-solution analyzer performance
+
+- [x] Limited `AdditionalText.GetText` calls to dictionary pairs and custom word lists referenced by the effective project configuration; unrelated bundled dictionaries remain available without being loaded by the analyzer.
+- [x] Cached Hunspell suggestions by language and misspelled word within each compilation, avoiding repeated expensive searches for duplicate misspellings without sharing state between projects.
+- [x] Passed Roslyn cancellation through Hunspell checks and suggestion searches so superseded editor analysis stops promptly.
+- [x] Added regression coverage proving that unused configured mappings do not cause their dictionary files to be read.
+
 ### 2026-07-21: XML configuration removal
 
 - [x] Removed `youshouldspellcheck.config.xml` discovery and deserialization from analyzer execution.
@@ -234,10 +241,12 @@ Acceptance checks:
 
 ### 7. Medium: every bundled dictionary is added to every consumer compilation
 
+Status: addressed for analyzer loading on 2026-07-22. Bundled pairs remain `AdditionalFiles` so arbitrary per-project mappings work without direct filesystem access, but the analyzer calls `GetText` only for dictionary names selected by effective category or attribute settings. The remaining MSBuild/project-system cost of listing the hidden files is smaller than loading their approximately 20 MB of text per compilation and can be revisited separately.
+
 Evidence:
 
 - `YouShouldSpellcheck.Analyzer.props` adds every packaged `.dic` and `.aff` file as an `AdditionalFile`.
-- Dictionary `SourceText` and parsed word lists are retained in static collections.
+- `CompilationSpellcheckState` filters those files against all effective language settings before reading `SourceText`, then lazily parses only dictionaries used by analyzed words.
 
 Impact:
 

@@ -24,6 +24,7 @@ namespace YouShouldSpellcheck.Analyzer
     private readonly ImmutableDictionary<string, ImmutableHashSet<string>> customWords;
     private readonly ConcurrentDictionary<string, Lazy<WordList?>> dictionaries = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<Tuple<string, string>, bool> spellingCache = new();
+    private readonly ConcurrentDictionary<Tuple<string, string>, Lazy<ImmutableArray<string>>> suggestionCache = new();
     private readonly ConcurrentQueue<LanguageToolCandidate> languageToolCandidates = new();
     private readonly ConcurrentQueue<Diagnostic> languageToolFallbackDiagnostics = new();
 
@@ -57,8 +58,9 @@ namespace YouShouldSpellcheck.Analyzer
     {
       var additionalFiles = options?.AdditionalFiles ?? ImmutableArray<AdditionalText>.Empty;
       var settings = ReadMsBuildSettings(options, out var configurationErrors);
-      var sources = ReadDictionarySources(additionalFiles, cancellationToken);
-      var customWords = ReadCustomWords(additionalFiles, cancellationToken);
+      var configuredDictionaryLanguages = GetConfiguredDictionaryLanguages(settings);
+      var sources = ReadDictionarySources(additionalFiles, configuredDictionaryLanguages, cancellationToken);
+      var customWords = ReadCustomWords(additionalFiles, configuredDictionaryLanguages, cancellationToken);
       return new CompilationSpellcheckState(settings, settings.LanguageToolMode, sources, customWords, configurationErrors);
     }
 
@@ -89,7 +91,7 @@ namespace YouShouldSpellcheck.Analyzer
       }
     }
 
-    public bool IsWordCorrect(string word, string language)
+    public bool IsWordCorrect(string word, string language, CancellationToken cancellationToken)
     {
       if (string.IsNullOrEmpty(language))
       {
@@ -97,20 +99,31 @@ namespace YouShouldSpellcheck.Analyzer
       }
 
       var key = Tuple.Create(language, word);
-      return this.spellingCache.GetOrAdd(key, _ => this.CheckWordCore(word, language));
+      return this.spellingCache.GetOrAdd(key, _ => this.CheckWordCore(word, language, cancellationToken));
     }
 
-    public IEnumerable<string> Suggest(string word, string language)
+    public IEnumerable<string> Suggest(string word, string language, CancellationToken cancellationToken)
     {
       if (!this.dictionarySources.ContainsKey(language))
       {
         return Enumerable.Empty<string>();
       }
 
-      var dictionary = this.dictionaries.GetOrAdd(
-        language,
-        key => new Lazy<WordList?>(() => this.CreateDictionary(key), LazyThreadSafetyMode.ExecutionAndPublication));
-      return dictionary.Value?.Suggest(word) ?? Enumerable.Empty<string>();
+      var key = Tuple.Create(language, word);
+      var suggestions = this.suggestionCache.GetOrAdd(
+        key,
+        _ => new Lazy<ImmutableArray<string>>(
+          () => this.SuggestCore(word, language, cancellationToken),
+          LazyThreadSafetyMode.ExecutionAndPublication));
+      try
+      {
+        return suggestions.Value;
+      }
+      catch (OperationCanceledException)
+      {
+        this.suggestionCache.TryRemove(key, out _);
+        throw;
+      }
     }
 
     public bool QueueLanguageToolText(
@@ -447,8 +460,33 @@ namespace YouShouldSpellcheck.Analyzer
       return hasEncodedValue;
     }
 
+    private static ImmutableHashSet<string> GetConfiguredDictionaryLanguages(ISpellcheckSettings settings)
+    {
+      var languages = new[]
+      {
+        settings.DefaultLanguages,
+        settings.IdentifierLanguages,
+        settings.ClassNameLanguages,
+        settings.MethodNameLanguages,
+        settings.VariableNameLanguages,
+        settings.PropertyNameLanguages,
+        settings.EnumNameLanguages,
+        settings.EnumMemberNameLanguages,
+        settings.EventNameLanguages,
+        settings.CommentLanguages,
+        settings.StringLiteralLanguages,
+      }
+        .SelectMany(configuredLanguages => configuredLanguages)
+        .Concat(settings.Attributes.SelectMany(attribute => attribute.Languages))
+        .Select(language => language.LocalDictionaryLanguage)
+        .Where(language => !string.IsNullOrWhiteSpace(language));
+
+      return languages.ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
     private static ImmutableDictionary<string, DictionarySources> ReadDictionarySources(
       ImmutableArray<AdditionalText> additionalFiles,
+      ImmutableHashSet<string> configuredDictionaryLanguages,
       CancellationToken cancellationToken)
     {
       var filesByPath = additionalFiles
@@ -458,6 +496,12 @@ namespace YouShouldSpellcheck.Analyzer
       foreach (var dictionaryFile in additionalFiles.Where(file => string.Equals(Path.GetExtension(file.Path), ".dic", StringComparison.OrdinalIgnoreCase)))
       {
         cancellationToken.ThrowIfCancellationRequested();
+        var dictionaryLanguage = Path.GetFileNameWithoutExtension(dictionaryFile.Path);
+        if (!configuredDictionaryLanguages.Contains(dictionaryLanguage))
+        {
+          continue;
+        }
+
         var affixPath = Path.ChangeExtension(dictionaryFile.Path, ".aff");
         if (!filesByPath.TryGetValue(affixPath, out var affixFile))
         {
@@ -468,7 +512,7 @@ namespace YouShouldSpellcheck.Analyzer
         var affixText = affixFile.GetText(cancellationToken);
         if (dictionaryText != null && affixText != null)
         {
-          builder[Path.GetFileNameWithoutExtension(dictionaryFile.Path)] = new DictionarySources(dictionaryText, affixText);
+          builder[dictionaryLanguage] = new DictionarySources(dictionaryText, affixText);
         }
       }
 
@@ -477,6 +521,7 @@ namespace YouShouldSpellcheck.Analyzer
 
     private static ImmutableDictionary<string, ImmutableHashSet<string>> ReadCustomWords(
       ImmutableArray<AdditionalText> additionalFiles,
+      ImmutableHashSet<string> configuredDictionaryLanguages,
       CancellationToken cancellationToken)
     {
       var builder = ImmutableDictionary.CreateBuilder<string, ImmutableHashSet<string>>(StringComparer.OrdinalIgnoreCase);
@@ -490,6 +535,11 @@ namespace YouShouldSpellcheck.Analyzer
         }
 
         var language = fileName.Substring(CustomDictionaryPrefix.Length, fileName.Length - CustomDictionaryPrefix.Length - ".txt".Length);
+        if (!configuredDictionaryLanguages.Contains(language))
+        {
+          continue;
+        }
+
         var text = file.GetText(cancellationToken);
         if (text != null)
         {
@@ -503,7 +553,7 @@ namespace YouShouldSpellcheck.Analyzer
       return builder.ToImmutable();
     }
 
-    private bool CheckWordCore(string word, string language)
+    private bool CheckWordCore(string word, string language, CancellationToken cancellationToken)
     {
       if (this.customWords.TryGetValue(language, out var words) && words.Contains(word))
       {
@@ -519,7 +569,15 @@ namespace YouShouldSpellcheck.Analyzer
       var dictionary = this.dictionaries.GetOrAdd(
         language,
         key => new Lazy<WordList?>(() => this.CreateDictionary(key), LazyThreadSafetyMode.ExecutionAndPublication));
-      return dictionary.Value?.Check(word) ?? true;
+      return dictionary.Value?.Check(word, cancellationToken) ?? true;
+    }
+
+    private ImmutableArray<string> SuggestCore(string word, string language, CancellationToken cancellationToken)
+    {
+      var dictionary = this.dictionaries.GetOrAdd(
+        language,
+        key => new Lazy<WordList?>(() => this.CreateDictionary(key), LazyThreadSafetyMode.ExecutionAndPublication));
+      return dictionary.Value?.Suggest(word, cancellationToken).ToImmutableArray() ?? ImmutableArray<string>.Empty;
     }
 
     private WordList? CreateDictionary(string language)

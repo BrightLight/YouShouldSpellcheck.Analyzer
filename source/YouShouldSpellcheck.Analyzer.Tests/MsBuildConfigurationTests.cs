@@ -66,6 +66,45 @@ namespace YouShouldSpellcheck.Analyzer.Test
     }
 
     [Test]
+    public async Task ReadsOnlyDictionariesUsedByEffectiveSettings()
+    {
+      const string source = "public class TypeName { public const string Text = \"Temprature Temprature\"; }";
+      var compilation = CSharpCompilation.Create(
+        "UsedDictionarySourcesTest",
+        new[] { CSharpSyntaxTree.ParseText(source) },
+        new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) },
+        new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+      var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dictionaries");
+      var usedDictionary = new CountingAdditionalText(
+        "/dictionaries/en_US.dic",
+        File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.dic")));
+      var usedAffix = new CountingAdditionalText(
+        "/dictionaries/en_US.aff",
+        File.ReadAllText(Path.Combine(dictionaryFolder, "en_US.aff")));
+      var unusedDictionary = new CountingAdditionalText("/dictionaries/de_DE_frami.dic", "unused");
+      var unusedAffix = new CountingAdditionalText("/dictionaries/de_DE_frami.aff", "unused");
+      var globalOptions = ImmutableDictionary<string, string>.Empty
+        .Add("build_property.YouShouldSpellcheckDefaultLanguagesEncoded", "en-US")
+        .Add("build_property.YouShouldSpellcheckDictionaryMappingsEncoded", "en-US=en_US|de-DE=de_DE_frami");
+      var options = new AnalyzerOptions(
+        ImmutableArray.Create<AdditionalText>(usedDictionary, usedAffix, unusedDictionary, unusedAffix),
+        new TestAnalyzerConfigOptionsProvider(globalOptions));
+
+      var diagnostics = await compilation
+        .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new YouShouldSpellcheckDiagnosticAnalyzer()), options)
+        .GetAnalyzerDiagnosticsAsync(CancellationToken.None);
+
+      Assert.Multiple(() =>
+      {
+        Assert.That(diagnostics.Count(diagnostic => diagnostic.Id == StringLiteralSpellcheckAnalyzer.StringLiteralDiagnosticId), Is.EqualTo(2));
+        Assert.That(usedDictionary.GetTextCallCount, Is.EqualTo(1));
+        Assert.That(usedAffix.GetTextCallCount, Is.EqualTo(1));
+        Assert.That(unusedDictionary.GetTextCallCount, Is.Zero);
+        Assert.That(unusedAffix.GetTextCallCount, Is.Zero);
+      });
+    }
+
+    [Test]
     public async Task DictionarySourceEncodingIsPreservedForChecksAndSuggestions()
     {
       const string source = "public class TypeName { public const string Text = \"Empfänger Empfänget\"; }";
@@ -325,6 +364,28 @@ namespace YouShouldSpellcheck.Analyzer.Test
       public override string Path { get; }
 
       public override SourceText GetText(CancellationToken cancellationToken = default) => this.text;
+    }
+
+    private sealed class CountingAdditionalText : AdditionalText
+    {
+      private readonly SourceText text;
+      private int getTextCallCount;
+
+      public CountingAdditionalText(string path, string text)
+      {
+        this.Path = path;
+        this.text = SourceText.From(text);
+      }
+
+      public int GetTextCallCount => this.getTextCallCount;
+
+      public override string Path { get; }
+
+      public override SourceText GetText(CancellationToken cancellationToken = default)
+      {
+        Interlocked.Increment(ref this.getTextCallCount);
+        return this.text;
+      }
     }
 
     private sealed class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
