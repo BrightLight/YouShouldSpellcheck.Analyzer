@@ -537,7 +537,10 @@ namespace YouShouldSpellcheck.Analyzer
     private static Stream GenerateStream(SourceText sourceText)
     {
       var stream = new MemoryStream();
-      using (var writer = new StreamWriter(stream, new UTF8Encoding(false), 1024, leaveOpen: true))
+      // Hunspell interprets both streams according to the SET directive in the affix file.
+      // Preserve Roslyn's detected AdditionalText encoding so that directive remains accurate.
+      var encoding = sourceText.Encoding ?? new UTF8Encoding(false);
+      using (var writer = new StreamWriter(stream, encoding, 1024, leaveOpen: true))
       {
         sourceText.Write(writer);
       }

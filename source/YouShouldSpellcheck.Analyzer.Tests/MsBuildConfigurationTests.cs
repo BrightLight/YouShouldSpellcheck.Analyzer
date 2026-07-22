@@ -4,6 +4,7 @@ namespace YouShouldSpellcheck.Analyzer.Test
   using System.Collections.Immutable;
   using System.IO;
   using System.Linq;
+  using System.Text;
   using System.Threading;
   using System.Threading.Tasks;
   using Microsoft.CodeAnalysis;
@@ -62,6 +63,48 @@ namespace YouShouldSpellcheck.Analyzer.Test
         .GetAnalyzerDiagnosticsAsync(CancellationToken.None);
 
       Assert.That(diagnostics, Has.One.Matches<Diagnostic>(diagnostic => diagnostic.Id == ClassNameSpellcheckAnalyzer.ClassNameDiagnosticId));
+    }
+
+    [Test]
+    public async Task DictionarySourceEncodingIsPreservedForChecksAndSuggestions()
+    {
+      const string source = "public class TypeName { public const string Text = \"Empfänger Empfänget\"; }";
+      var compilation = CSharpCompilation.Create(
+        "DictionarySourceEncodingTest",
+        new[] { CSharpSyntaxTree.ParseText(source) },
+        new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) },
+        new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+      var dictionaryFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, "dictionaries");
+      var dictionaryEncoding = Encoding.GetEncoding("ISO-8859-1");
+      var additionalFiles = ImmutableArray.Create<AdditionalText>(
+        new InMemoryAdditionalText(
+          "/dictionaries/de_DE_frami.dic",
+          File.ReadAllText(Path.Combine(dictionaryFolder, "de_DE_frami.dic"), dictionaryEncoding),
+          dictionaryEncoding),
+        new InMemoryAdditionalText(
+          "/dictionaries/de_DE_frami.aff",
+          File.ReadAllText(Path.Combine(dictionaryFolder, "de_DE_frami.aff"), dictionaryEncoding),
+          dictionaryEncoding));
+      var globalOptions = ImmutableDictionary<string, string>.Empty
+        .Add("build_property.YouShouldSpellcheckDefaultLanguagesEncoded", "de-DE")
+        .Add("build_property.YouShouldSpellcheckDictionaryMappingsEncoded", "de-DE=de_DE_frami");
+      var options = new AnalyzerOptions(additionalFiles, new TestAnalyzerConfigOptionsProvider(globalOptions));
+
+      var diagnostics = await compilation
+        .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new StringLiteralSpellcheckAnalyzer()), options)
+        .GetAnalyzerDiagnosticsAsync(CancellationToken.None);
+
+      var diagnostic = diagnostics.Single();
+      var suggestions = diagnostic.Properties
+        .Where(property => property.Key.StartsWith("localSuggestion_", System.StringComparison.Ordinal)
+          && !property.Key.StartsWith("localSuggestionLanguage_", System.StringComparison.Ordinal))
+        .Select(property => property.Value);
+      Assert.Multiple(() =>
+      {
+        Assert.That(diagnostic.GetMessage(), Is.EqualTo("Possible spelling mistake: Empfänget"));
+        Assert.That(suggestions, Does.Contain("Empfänger"));
+        Assert.That(suggestions, Does.Not.Contain("EmpfÃ¤nger"));
+      });
     }
 
     [Test]
@@ -269,9 +312,14 @@ namespace YouShouldSpellcheck.Analyzer.Test
       private readonly SourceText text;
 
       public InMemoryAdditionalText(string path, string text)
+        : this(path, text, null)
+      {
+      }
+
+      public InMemoryAdditionalText(string path, string text, Encoding encoding)
       {
         this.Path = path;
-        this.text = SourceText.From(text);
+        this.text = SourceText.From(text, encoding);
       }
 
       public override string Path { get; }
